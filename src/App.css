@@ -1,0 +1,98 @@
+/* App-specific styles */
+
+/* Selection color — scroll-behavior removed (Lenis handles smooth scroll) */
+::selection {
+  background: rgba(230, 25, 128, 0.3);
+  color: white;
+}
+
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid #e61980;
+  outline-offset: 2px;
+}
+
+/* Custom cursor for interactive elements */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Ensure images don't overflow */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Glass morphism enhancements */
+.glass-panel {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Button hover effects */
+button {
+  transition: all 0.3s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* Link underline animation */
+.link-underline {
+  position: relative;
+}
+
+.link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: #e61980;
+  transition: width 0.3s ease;
+}
+
+.link-underline:hover::after {
+  width: 100%;
+}
+
+/* Parallax container */
+.parallax-container {
+  overflow: hidden;
+  position: relative;
+}
+
+/* Loading state for images */
+img {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+img[loading] {
+  opacity: 0;
+}
+
+/* Responsive typography adjustments */
+@media (max-width: 768px) {
+  .text-outline {
+    -webkit-text-stroke: 1px rgba(255, 255, 255, 0.8);
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
