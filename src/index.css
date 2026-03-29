@@ -37,14 +37,6 @@
   font-family: 'Agatho', serif;
 }
 
-@font-face {
-  font-family: 'Orange Avenue';
-  src: url('/fonts/OrangeAvenueDEMO-Regular.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
