@@ -5,10 +5,12 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function Navigation(_props: {
+interface NavigationProps {
   activeFilter?: string;
   setActiveFilter?: (filter: string) => void;
-} = {}) {
+}
+
+export default function Navigation(_props: NavigationProps = {}) {
   const navRef = useRef<HTMLElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
