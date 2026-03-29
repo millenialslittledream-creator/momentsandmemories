@@ -13,24 +13,23 @@ export default function Footer() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // ── Scrubbed entrance: footer fades and rises into view ──
+      // ClipPath reveal entrance
       gsap.fromTo(
         sectionRef.current,
-        { opacity: 0.5, y: 40 },
+        { clipPath: 'inset(12% 8% 12% 8% round 32px)' },
         {
-          opacity: 1,
-          y: 0,
+          clipPath: 'inset(0% 0% 0% 0% round 0px)',
           ease: 'none',
           scrollTrigger: {
             trigger: sectionRef.current,
-            start: 'top 90%',
-            end: 'top 50%',
-            scrub: 0.5,
+            start: 'top 85%',
+            end: 'top 25%',
+            scrub: 0.8,
           },
         }
       );
 
-      // Icon animation — fires after scrubbed entrance
+      // Icon animation
       gsap.fromTo(
         iconRef.current,
         { opacity: 0, scale: 0 },

@@ -43,7 +43,23 @@ export default function Invitations() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Heading animation — starts earlier (during gradient bridge)
+      // ClipPath reveal entrance
+      gsap.fromTo(
+        sectionRef.current,
+        { clipPath: 'inset(12% 8% 12% 8% round 32px)' },
+        {
+          clipPath: 'inset(0% 0% 0% 0% round 0px)',
+          ease: 'none',
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: 'top 85%',
+            end: 'top 25%',
+            scrub: 0.8,
+          },
+        }
+      );
+
+      // Heading animation
       gsap.fromTo(
         headingRef.current,
         { opacity: 0, y: 80 },
@@ -60,7 +76,7 @@ export default function Invitations() {
         }
       );
 
-      // Cards staggered entrance — single batch trigger
+      // Cards staggered entrance
       gsap.fromTo(
         cardsRef.current.filter(Boolean),
         { opacity: 0, y: 80, scale: 0.95 },
@@ -79,7 +95,7 @@ export default function Invitations() {
         }
       );
 
-      // Parallax — one single ScrollTrigger for all cards
+      // Parallax
       gsap.to(cardsRef.current.filter(Boolean), {
         y: (i: number) => (i % 2 === 0 ? -30 : -50),
         ease: 'none',

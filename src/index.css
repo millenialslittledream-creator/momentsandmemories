@@ -37,6 +37,7 @@
   font-family: 'Agatho', serif;
 }
 
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

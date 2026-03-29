@@ -12,7 +12,8 @@ export default function QuoteSection() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Quote fade in and scale — scrubbed for cinematic feel
+
+      // Quote fade in and scale
       gsap.fromTo(
         quoteRef.current,
         { opacity: 0, y: 40, scale: 0.97 },
@@ -55,7 +56,7 @@ export default function QuoteSection() {
       ref={sectionRef}
       className="relative w-full py-24 md:py-32 bg-[#EADDD7] flex items-center justify-center overflow-hidden"
     >
-      {/* Subtle texture overlay — matches DecorGifts & Timeline */}
+      {/* Subtle texture overlay */}
       <div
         className="absolute inset-0 z-0 opacity-20 mix-blend-multiply pointer-events-none"
         style={{

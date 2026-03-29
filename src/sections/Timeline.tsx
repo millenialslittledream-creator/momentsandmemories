@@ -10,7 +10,7 @@ const timelineSteps = [
     number: '01',
     title: 'DESIGN',
     heading: 'Craft an invitation.',
-    description: 'Begin with the first impression. Texture, type, and tone combined into a singular vision.',
+    description: 'Pick a template, add your details, and make it yours in minutes.',
     textGridClass: 'col-start-1 row-start-1 flex items-center justify-end pr-8 h-full',
     textAlign: 'right' as const,
     imageGridClass: 'col-start-3 row-start-1 flex items-center justify-start pl-8 h-full',
@@ -26,7 +26,7 @@ const timelineSteps = [
     number: '02',
     title: 'SHARE',
     heading: 'Gather with ease.',
-    description: 'Digital delivery or physical post. Track every RSVP in real-time as the guest list grows.',
+    description: 'Send it to your guests instantly.',
     textGridClass: 'col-start-3 row-start-2 flex items-center justify-start pl-8 h-full',
     textAlign: 'left' as const,
     imageGridClass: 'col-start-1 row-start-2 flex items-center justify-end pr-8 h-full',
@@ -42,7 +42,7 @@ const timelineSteps = [
     number: '03',
     title: 'CURATE',
     heading: 'Shape the space.',
-    description: 'From table linens to ambient lighting. Select details that define the mood and atmosphere.',
+    description: 'Track RSVPs & shape every detail of your event.',
     textGridClass: 'col-start-1 row-start-3 flex items-center justify-end pr-8 h-full',
     textAlign: 'right' as const,
     imageGridClass: 'col-start-3 row-start-3 flex items-center justify-start pl-8 h-full',
@@ -247,7 +247,7 @@ export default function Timeline() {
           <span className="text-xs tracking-[0.2em] font-bold text-[#9cb092] mb-4 uppercase block font-ciguatera">
             THE JOURNEY
           </span>
-          <h2 className="text-5xl md:text-6xl font-serif-exp mb-8 leading-tight">
+          <h2 className="text-4xl md:text-6xl font-serif-exp mb-8 leading-tight">
             From Invitation <br /> to Atmosphere.
           </h2>
           <p className="text-lg text-[#b8c8b6] font-display leading-relaxed max-w-md mx-auto">
@@ -304,7 +304,7 @@ export default function Timeline() {
                   <span className="text-xs md:text-sm font-display font-semibold tracking-[0.2em] mb-2 opacity-70 text-[#9cb092] block">
                     {step.number} — {step.title}
                   </span>
-                  <h3 className="text-3xl font-serif-exp mb-3">{step.heading}</h3>
+                  <h3 className="text-2xl font-serif-exp mb-3">{step.heading}</h3>
                   <p className="text-[#b2c3b1] text-sm leading-relaxed">
                     {step.description}
                   </p>

@@ -49,7 +49,7 @@ const floatingImages = [
 
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
   const imagesRef = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function Hero() {
         { opacity: 1, y: 0, duration: 1.2, ease: 'power3.out', delay: 0.3 }
       );
 
-      // Staggered image entrance — bloom in from center
+      // Staggered image entrance
       imagesRef.current.forEach((img, i) => {
         if (!img) return;
         gsap.fromTo(
@@ -114,27 +114,6 @@ export default function Hero() {
           }
         );
       });
-
-      // Section exit: pin hero, scale down gently, fade, round corners
-      gsap.fromTo(
-        sectionRef.current,
-        { scale: 1, opacity: 1, borderRadius: '0px' },
-        {
-          scale: 0.92,
-          opacity: 0.3,
-          borderRadius: '24px',
-          ease: 'none',
-          immediateRender: false,
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: 'bottom bottom',
-            end: '+=80%',
-            scrub: 0.6,
-            pin: true,
-            pinSpacing: true,
-          },
-        }
-      );
     }, sectionRef);
 
     return () => ctx.revert();
@@ -175,12 +154,14 @@ export default function Hero() {
 
       {/* Center Content - Overlay */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[30]">
-        <h1
-          ref={titleRef}
-          className="font-serif-exp leading-none tracking-tighter text-center"
-        >
-          <span className="block italic text-[#556c4d] text-[6vw]">moments & memories</span>
-        </h1>
+        <div ref={titleRef} className="text-center">
+          <h1 className="font-serif-exp leading-none tracking-tighter">
+            <span className="block italic text-[#556c4d] text-[6vw]">moments & memories</span>
+          </h1>
+          <p className="mt-4 text-[#8a9e82] font-display text-[1.2vw] md:text-lg tracking-wide max-w-xl mx-auto">
+            Create Beautiful Evites & Find Perfect Gifts for Every Occasion
+          </p>
+        </div>
       </div>
     </section>
   );
