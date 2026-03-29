@@ -5,10 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function Navigation({
-  activeFilter,
-  setActiveFilter
-}: {
+export default function Navigation(_props: {
   activeFilter?: string;
   setActiveFilter?: (filter: string) => void;
 } = {}) {
