@@ -8,7 +8,7 @@ export default function Shop() {
   const headerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  const [activeFilter, setActiveFilter] = useState('All');
+  const [activeFilter] = useState('All');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -129,7 +129,7 @@ export default function Shop() {
       />
       <div className="fixed inset-0 z-[1] bg-[#111914]/70 pointer-events-none" />
       
-      <Navigation activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
+      <Navigation />
 
       <main className="relative z-10 flex-grow pb-32">
         <div className="container mx-auto px-6">
