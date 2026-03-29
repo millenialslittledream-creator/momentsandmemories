@@ -45,7 +45,7 @@ module.exports = {
       },
       fontFamily: {
         display: ["Space Grotesk", "sans-serif"],
-        "serif-exp": ["Bodoni Moda", "Playfair Display", "serif"],
+        "serif-exp": ["Orange Avenue", "Bodoni Moda", "Playfair Display", "serif"],
         ragika: ["Ragika", "serif"],
         ciguatera: ["Ciguatera", "serif"],
         agatho: ["Agatho", "serif"],
