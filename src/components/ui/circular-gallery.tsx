@@ -36,7 +36,7 @@ interface CircularGalleryProps
 * OGL Helper Utilities
 ----------------------------------- */
 function debounce(func: (...args: any[]) => void, wait: number) {
-  let timeout: NodeJS.Timeout;
+  let timeout: ReturnType<typeof setTimeout>;
   return function (this: any, ...args: any[]) {
     clearTimeout(timeout);
     timeout = setTimeout(() => func.apply(this, args), wait);
@@ -437,11 +437,11 @@ class GalleryApp {
   raf!: number;
   onItemClick?: (index: number) => void;
   originalItemCount: number = 0;
-  boundOnResize: () => void;
-  boundOnWheel: (e: WheelEvent) => void;
-  boundOnTouchDown: (e: MouseEvent | TouchEvent) => void;
-  boundOnTouchMove: (e: MouseEvent | TouchEvent) => void;
-  boundOnTouchUp: (e: MouseEvent | TouchEvent) => void;
+  boundOnResize!: () => void;
+  boundOnWheel!: (e: WheelEvent) => void;
+  boundOnTouchDown!: (e: MouseEvent | TouchEvent) => void;
+  boundOnTouchMove!: (e: MouseEvent | TouchEvent) => void;
+  boundOnTouchUp!: (e: MouseEvent | TouchEvent) => void;
 
   constructor(
     container: HTMLElement,
@@ -656,8 +656,7 @@ class GalleryApp {
     this.boundOnTouchUp = this.onTouchUp;
 
     window.addEventListener("resize", this.boundOnResize);
-    window.addEventListener("mousewheel", this.boundOnWheel);
-    window.addEventListener("wheel", this.boundOnWheel);
+    window.addEventListener("wheel", this.boundOnWheel as EventListener);
     this.container.addEventListener("mousedown", this.boundOnTouchDown);
     window.addEventListener("mousemove", this.boundOnTouchMove);
     window.addEventListener("mouseup", this.boundOnTouchUp);
@@ -669,8 +668,7 @@ class GalleryApp {
   destroy() {
     window.cancelAnimationFrame(this.raf);
     window.removeEventListener("resize", this.boundOnResize);
-    window.removeEventListener("mousewheel", this.boundOnWheel);
-    window.removeEventListener("wheel", this.boundOnWheel);
+    window.removeEventListener("wheel", this.boundOnWheel as EventListener);
     this.container.removeEventListener("mousedown", this.boundOnTouchDown);
     window.removeEventListener("mousemove", this.boundOnTouchMove);
     window.removeEventListener("mouseup", this.boundOnTouchUp);
