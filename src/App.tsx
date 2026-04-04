@@ -6,6 +6,7 @@ import { ReactLenis } from 'lenis/react';
 import type { LenisRef } from 'lenis/react';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
+import CreateEvite from './pages/CreateEvite';
 import './App.css';
 
 // Register GSAP plugins globally
@@ -42,6 +43,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
+          <Route path="/create" element={<CreateEvite />} />
         </Routes>
       </Router>
     </ReactLenis>

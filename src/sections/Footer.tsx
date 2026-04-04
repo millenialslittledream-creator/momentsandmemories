@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function Footer() {
+  const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement>(null);
   const iconRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -135,7 +137,10 @@ export default function Footer() {
           <div className="noise-btn-container">
             <div className="noise-btn-bg" />
             <div className="noise-texture" />
-            <button className="btn-inner bg-[#3d4a35] text-white backdrop-blur-md border border-black/10 px-10 py-4 font-display font-semibold text-lg hover:bg-[#4d5a44] transition-all shadow-lg">
+            <button
+              onClick={() => navigate('/create')}
+              className="btn-inner bg-[#3d4a35] text-white backdrop-blur-md border border-black/10 px-10 py-4 font-display font-semibold text-lg hover:bg-[#4d5a44] transition-all shadow-lg"
+            >
               Start Designing
             </button>
           </div>

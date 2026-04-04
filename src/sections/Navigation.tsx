@@ -84,7 +84,7 @@ export default function Navigation() {
         <div className="flex items-center gap-6 md:gap-8">
           {[
             { label: 'Home', id: 'hero', path: '/' },
-            { label: 'Create Evite', id: 'invitations', path: '/' },
+            { label: 'Create Evite', id: '', path: '/create' },
             { label: 'Shop Gifts', id: '', path: '/shop' },
             { label: 'Login', id: '', path: '/' },
           ].map((item) => (
