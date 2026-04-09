@@ -5,6 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ReactLenis } from 'lenis/react';
 import type { LenisRef } from 'lenis/react';
 import Home from './pages/Home';
+import ScrollToTop from './components/ScrollToTop';
 import Shop from './pages/Shop';
 import CreateEvite from './pages/CreateEvite';
 import './App.css';
@@ -40,6 +41,7 @@ function App() {
   return (
     <ReactLenis root ref={lenisRef} options={{ lerp: 0.07, wheelMultiplier: 0.9 }}>
       <Router>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />

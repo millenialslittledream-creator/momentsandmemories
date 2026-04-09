@@ -14,23 +14,7 @@ export default function DecorGifts() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // ── ClipPath reveal entrance — section opens like an expanding card ──
-      gsap.fromTo(
-        sectionRef.current,
-        { clipPath: 'inset(12% 8% 12% 8% round 32px)' },
-        {
-          clipPath: 'inset(0% 0% 0% 0% round 0px)',
-          ease: 'none',
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: 'top 85%',
-            end: 'top 25%',
-            scrub: 0.8,
-          },
-        }
-      );
-
-      // Heading animation — fires after clip opens
+      // Heading animation
       gsap.fromTo(
         headingRef.current,
         { opacity: 0, y: 60 },

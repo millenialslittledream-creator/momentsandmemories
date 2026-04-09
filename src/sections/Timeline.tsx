@@ -92,35 +92,6 @@ export default function Timeline() {
 
     const ctx = gsap.context(() => {
 
-      // ── Section entrance: clipPath reveal (card expanding to full-bleed) ──
-      gsap.fromTo(
-        section,
-        { clipPath: 'inset(8% 4% 8% 4% round 24px)' },
-        {
-          clipPath: 'inset(0% 0% 0% 0% round 0px)',
-          ease: 'none',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 90%',
-            end: 'top 20%',
-            scrub: 0.6,
-          },
-        }
-      );
-
-      // ── Content exit fade: subtle fade as user scrolls past bottom ──
-      gsap.to(section.querySelector('.container'), {
-        opacity: 0.4,
-        y: -30,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: section,
-          start: 'bottom 60%',
-          end: 'bottom top',
-          scrub: true,
-        },
-      });
-
       // ── Set all initial hidden states ─────────────────────────────────
 
       gsap.set(headingRef.current, { opacity: 0, y: 30 });

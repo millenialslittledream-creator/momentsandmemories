@@ -6,6 +6,8 @@ import EventTypeSelector from '@/sections/create/EventTypeSelector';
 import EventDetailsForm from '@/sections/create/EventDetailsForm';
 import TemplateGallery from '@/sections/create/TemplateGallery';
 import FinalPreview from '@/sections/create/FinalPreview';
+import GuestDetails, { createGuest, type Guest } from '@/sections/create/GuestDetails';
+import PaymentStep from '@/sections/create/PaymentStep';
 import {
   commonFields,
   eventSpecificFields,
@@ -17,6 +19,8 @@ const STEPS = [
   { label: 'Enter Details', icon: 'edit_note' },
   { label: 'Pick Design', icon: 'palette' },
   { label: 'Final Look', icon: 'visibility' },
+  { label: 'Guests', icon: 'group' },
+  { label: 'Payment', icon: 'payment' },
 ] as const;
 
 export default function CreateEvite() {
@@ -29,6 +33,8 @@ export default function CreateEvite() {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const [confirmed, setConfirmed] = useState(false);
+  const [guests, setGuests] = useState<Guest[]>([createGuest()]);
+  const [deliveryPreference, setDeliveryPreference] = useState<'email' | 'phone' | 'both'>('email');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -44,12 +50,10 @@ export default function CreateEvite() {
 
   // Scroll to top whenever step changes or confirmed
   useEffect(() => {
-    // scrollIntoView is the most reliable cross-browser method
     topAnchorRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
-    // Fallback after layout settles
     const raf = requestAnimationFrame(() => {
       topAnchorRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
       window.scrollTo(0, 0);
@@ -82,11 +86,21 @@ export default function CreateEvite() {
     return valid;
   };
 
+  const validateGuests = (): boolean => {
+    return guests.every((g) => {
+      if (!g.name.trim()) return false;
+      if ((deliveryPreference === 'email' || deliveryPreference === 'both') && !g.email.trim()) return false;
+      if ((deliveryPreference === 'phone' || deliveryPreference === 'both') && !g.phone.trim()) return false;
+      return true;
+    });
+  };
+
   const handleNext = () => {
     if (step === 0 && !eventType) return;
     if (step === 1 && !validateStep2()) return;
     if (step === 2 && !selectedTemplate) return;
-    if (step < 3) {
+    if (step === 4 && !validateGuests()) return;
+    if (step < 5) {
       setStep((s) => s + 1);
     }
   };
@@ -105,6 +119,11 @@ export default function CreateEvite() {
     setConfirmed(true);
   };
 
+  // Auto-advance from step 0 when event type is selected
+  const handleAutoAdvance = useCallback(() => {
+    setStep(1);
+  }, []);
+
   return (
     <div ref={pageRef} className="relative min-h-screen bg-[#EADDD7] text-[#e4eee1] overflow-x-hidden flex flex-col">
       <div ref={topAnchorRef} className="absolute top-0 left-0 w-0 h-0" aria-hidden="true" />
@@ -120,8 +139,8 @@ export default function CreateEvite() {
       <Navigation />
 
       {/* Progress Indicator */}
-      <div className="relative z-10 pt-28 pb-8 px-6">
-        <div className="max-w-lg mx-auto flex items-center justify-between">
+      <div className="relative z-10 pt-24 pb-4 px-6">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
           {STEPS.map((s, i) => (
             <div key={s.label} className="flex items-center">
               <div className="flex flex-col items-center">
@@ -148,7 +167,7 @@ export default function CreateEvite() {
               </div>
               {i < STEPS.length - 1 && (
                 <div
-                  className={`w-16 sm:w-24 h-px mx-3 transition-colors duration-500 ${
+                  className={`w-8 sm:w-16 h-px mx-1.5 sm:mx-3 transition-colors duration-500 ${
                     i < step ? 'bg-[#9cb092]/60' : 'bg-white/10'
                   }`}
                 />
@@ -171,7 +190,7 @@ export default function CreateEvite() {
                 Thank <span className="text-[#9cb092] not-italic font-agatho">You</span>
               </h1>
               <p className="text-sm md:text-base font-display tracking-[0.15em] text-[#b2c3b1] max-w-md mb-3">
-                Your evite has been created successfully.
+                Your evite has been created and sent successfully.
               </p>
               <p className="text-xs font-display tracking-[0.2em] text-[#b2c3b1]/50 uppercase mb-12">
                 Your guests are going to love it
@@ -188,7 +207,11 @@ export default function CreateEvite() {
           ) : (
             <>
               {step === 0 && (
-                <EventTypeSelector selected={eventType} onSelect={setEventType} />
+                <EventTypeSelector
+                  selected={eventType}
+                  onSelect={setEventType}
+                  onAutoAdvance={handleAutoAdvance}
+                />
               )}
               {step === 1 && eventType && (
                 <EventDetailsForm
@@ -211,6 +234,21 @@ export default function CreateEvite() {
                   eventType={eventType}
                   selectedTemplate={selectedTemplate}
                   formData={formData}
+                  onFieldChange={handleFieldChange}
+                />
+              )}
+              {step === 4 && (
+                <GuestDetails
+                  guests={guests}
+                  onGuestsChange={setGuests}
+                  deliveryPreference={deliveryPreference}
+                  onDeliveryPreferenceChange={setDeliveryPreference}
+                />
+              )}
+              {step === 5 && (
+                <PaymentStep
+                  guestCount={guests.length}
+                  onConfirm={handleConfirm}
                 />
               )}
             </>
@@ -218,8 +256,8 @@ export default function CreateEvite() {
         </div>
       </main>
 
-      {/* Bottom Navigation Bar — hidden on confirmed screen */}
-      {!confirmed && (
+      {/* Bottom Navigation Bar — hidden on confirmed screen and payment step */}
+      {!confirmed && step !== 5 && (
         <div className="sticky bottom-0 z-40 border-t border-white/10">
           <div className="bg-[#111914]/80 backdrop-blur-md px-6 py-4">
             <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -231,39 +269,25 @@ export default function CreateEvite() {
                 {step === 0 ? 'Home' : 'Back'}
               </button>
 
-              {step < 3 ? (
-                <div className="noise-btn-container">
-                  <div className="noise-btn-bg" />
-                  <div className="noise-texture" />
-                  <button
-                    onClick={handleNext}
-                    disabled={
-                      (step === 0 && !eventType) ||
-                      (step === 2 && !selectedTemplate)
-                    }
-                    className={`btn-inner px-10 py-3 font-display text-[10px] tracking-[0.2em] uppercase flex items-center gap-2 transition-all ${
-                      (step === 0 && !eventType) || (step === 2 && !selectedTemplate)
-                        ? 'bg-white/5 text-white/20 cursor-not-allowed'
-                        : 'bg-[#3d4a35] text-white hover:bg-[#4d5a44] shadow-lg'
-                    }`}
-                  >
-                    {step === 2 ? 'Preview' : 'Next'}
-                    <span className="material-icons text-sm">arrow_forward</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="noise-btn-container">
-                  <div className="noise-btn-bg" />
-                  <div className="noise-texture" />
-                  <button
-                    onClick={handleConfirm}
-                    className="btn-inner px-10 py-3 font-display text-[10px] tracking-[0.2em] uppercase flex items-center gap-2 transition-all bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3] shadow-lg font-bold"
-                  >
-                    Confirm
-                    <span className="material-icons text-sm">check</span>
-                  </button>
-                </div>
-              )}
+              <div className="noise-btn-container">
+                <div className="noise-btn-bg" />
+                <div className="noise-texture" />
+                <button
+                  onClick={handleNext}
+                  disabled={
+                    (step === 0 && !eventType) ||
+                    (step === 2 && !selectedTemplate)
+                  }
+                  className={`btn-inner px-10 py-3 font-display text-[10px] tracking-[0.2em] uppercase flex items-center gap-2 transition-all ${
+                    (step === 0 && !eventType) || (step === 2 && !selectedTemplate)
+                      ? 'bg-white/5 text-white/20 cursor-not-allowed'
+                      : 'bg-[#3d4a35] text-white hover:bg-[#4d5a44] shadow-lg'
+                  }`}
+                >
+                  {step === 2 ? 'Preview' : 'Next'}
+                  <span className="material-icons text-sm">arrow_forward</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

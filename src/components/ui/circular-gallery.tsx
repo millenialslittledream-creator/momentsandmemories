@@ -599,10 +599,8 @@ class GalleryApp {
     }
   }
 
-  onWheel(e: WheelEvent) {
-    const delta = e.deltaY || (e as any).wheelDelta || e.detail;
-    this.scroll.target += (delta > 0 ? this.scrollSpeed : -this.scrollSpeed) * 0.2;
-    this.onCheckDebounce();
+  onWheel(_e: WheelEvent) {
+    // Disabled: carousel should only move via mouse/touch drag, not page scroll
   }
 
   onCheck() {

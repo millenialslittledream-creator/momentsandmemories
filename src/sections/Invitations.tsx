@@ -43,22 +43,6 @@ export default function Invitations() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // ClipPath reveal entrance
-      gsap.fromTo(
-        sectionRef.current,
-        { clipPath: 'inset(12% 8% 12% 8% round 32px)' },
-        {
-          clipPath: 'inset(0% 0% 0% 0% round 0px)',
-          ease: 'none',
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: 'top 85%',
-            end: 'top 25%',
-            scrub: 0.8,
-          },
-        }
-      );
-
       // Heading animation
       gsap.fromTo(
         headingRef.current,
@@ -114,18 +98,26 @@ export default function Invitations() {
   return (
     <section
       ref={sectionRef}
-      className="relative w-full py-32 overflow-hidden text-[#1f2a1c]"
+      className="relative w-full py-32 overflow-hidden bg-[#EADDD7] text-[#e4eee1]"
     >
+      {/* Stone texture overlay — consistent theme */}
+      <div
+        className="absolute inset-0 z-0 opacity-30 mix-blend-multiply pointer-events-none"
+        style={{
+          backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuD0yNSOWSBJLsv1-47TiuxQ15AFQ4nsrk2tyl20R-zvNNsiDXBNDhZVYz1yHqSCTtqtGcVjl35j2rrDIrA-d5xW6tM2FPDinMxC7wGNXKzBCT0JhfwdSkLFQPVqU1yfc1GtqRHSfxSmlitg3lWmrbcCqzLdzR4XsiD9nN9-_O7fp4ViDdX7MFMvLLa9exuWvETBq8HCVRb7NcpP7tWvqDoEWCeegHipJmlKBCM4gpRO9AROi6bPaa2gmQvHKabiYnelhLueCkgQ9QIe')`,
+        }}
+      />
+      <div className="absolute inset-0 z-[1] bg-[#111914]/70 pointer-events-none" />
 
       <div className="container mx-auto px-6 relative z-10">
         {/* Heading */}
         <div ref={headingRef} className="flex flex-col md:flex-row items-start justify-between mb-24">
           <div className="md:w-1/2">
-            <h2 className="text-4xl md:text-5xl font-serif-exp italic mb-6 text-[#1b2618] leading-tight">
+            <h2 className="text-4xl md:text-5xl font-serif-exp italic mb-6 text-[#e4eee1] leading-tight">
               Design Invitations That Move <br />
               <span className="text-primary not-italic font-agatho">With Your Celebration.</span>
             </h2>
-            <p className="text-[#495b48] font-display text-lg leading-relaxed max-w-md">
+            <p className="text-[#b2c3b1] font-display text-lg leading-relaxed max-w-md">
               Our invitations aren't static cards. They're living canvases that carry the emotion of your moment.
             </p>
           </div>
@@ -167,10 +159,10 @@ export default function Invitations() {
 
               {/* Card Info */}
               <div className="mt-6 text-center w-full">
-                <h3 className="text-xl font-serif-exp text-[#1f2a1c]">
+                <h3 className="text-xl font-serif-exp text-[#e4eee1]">
                   {card.title}
                 </h3>
-                <p className="text-xs tracking-widest text-[#3f5240] mt-2">
+                <p className="text-xs tracking-widest text-[#b2c3b1] mt-2">
                   {card.subtitle}
                 </p>
               </div>

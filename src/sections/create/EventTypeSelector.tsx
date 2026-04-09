@@ -5,9 +5,10 @@ import { eventTypes, type EventType } from '@/data/eventFields';
 interface EventTypeSelectorProps {
   selected: EventType | null;
   onSelect: (type: EventType) => void;
+  onAutoAdvance?: () => void;
 }
 
-export default function EventTypeSelector({ selected, onSelect }: EventTypeSelectorProps) {
+export default function EventTypeSelector({ selected, onSelect, onAutoAdvance }: EventTypeSelectorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
 
@@ -38,66 +39,56 @@ export default function EventTypeSelector({ selected, onSelect }: EventTypeSelec
   return (
     <div ref={containerRef}>
       {/* Heading */}
-      <div ref={headingRef} className="flex flex-col items-center mb-16 mt-8">
-        <h1 className="text-4xl md:text-6xl font-serif-exp italic text-center mb-6 relative z-10">
-          What are we <br />
-          <span className="text-[#9cb092] not-italic font-agatho">Celebrating?</span>
+      <div ref={headingRef} className="flex flex-col items-center mb-8 mt-4">
+        <h1 className="text-3xl md:text-5xl font-serif-exp italic text-center mb-4 relative z-10">
+          What special moment are we <br />
+          <span className="text-[#9cb092] not-italic font-agatho">bringing to life today?</span>
         </h1>
         <p className="text-xs md:text-sm font-display tracking-[0.25em] text-[#b2c3b1] uppercase">
           Choose your occasion
         </p>
-        <div className="w-[1px] h-12 bg-[#9cb092]/40 mt-8" />
+        <div className="w-[1px] h-8 bg-[#9cb092]/40 mt-4" />
       </div>
 
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 max-w-5xl mx-auto">
         {eventTypes.map((event) => {
           const isSelected = selected === event.id;
           return (
             <button
               key={event.id}
-              onClick={() => onSelect(event.id)}
+              onClick={() => {
+                onSelect(event.id);
+                if (onAutoAdvance) {
+                  setTimeout(() => onAutoAdvance(), 400);
+                }
+              }}
               className={`event-type-card group relative overflow-hidden text-left transition-all duration-500 border ${
                 isSelected
-                  ? 'border-[#9cb092] shadow-2xl shadow-[#9cb092]/10 scale-[1.02]'
-                  : 'border-white/10 hover:border-white/25 hover:shadow-lg'
+                  ? 'border-[#9cb092] shadow-2xl shadow-[#9cb092]/20 scale-[1.02]'
+                  : 'border-[#d5cbc3] hover:border-[#9cb092]/40 hover:shadow-lg'
               }`}
             >
-              {/* Card background */}
+              {/* Card background — light cream like the page bg */}
               <div className={`absolute inset-0 transition-all duration-500 ${
-                isSelected ? 'bg-[#9cb092]/15' : 'bg-white/[0.03]'
+                isSelected ? 'bg-[#EADDD7]' : 'bg-[#EADDD7]'
               }`} />
-              <div className="absolute inset-0 backdrop-blur-sm" />
 
-              <div className="relative p-8">
+              <div className="relative p-5">
                 {/* Icon */}
                 <span
-                  className={`material-icons text-4xl mb-6 block transition-all duration-500 ${
-                    isSelected ? 'text-[#9cb092]' : 'text-[#b2c3b1]/50 group-hover:text-[#b2c3b1]'
+                  className={`material-icons text-3xl mb-3 block transition-all duration-500 ${
+                    isSelected ? 'text-[#9cb092]' : 'text-[#7a8a72] group-hover:text-[#9cb092]'
                   }`}
                 >
                   {event.icon}
                 </span>
 
                 {/* Label */}
-                <h3 className="font-serif-exp text-xl text-[#e4eee1] mb-2 italic">{event.label}</h3>
-                <p className="font-display text-[10px] tracking-[0.15em] uppercase leading-relaxed text-[#b2c3b1]/60">
+                <h3 className="font-serif-exp text-base text-[#2a3328] mb-1 italic">{event.label}</h3>
+                <p className="font-display text-[9px] tracking-[0.12em] uppercase leading-relaxed text-[#5a6358] line-clamp-2">
                   {event.description}
                 </p>
-
-                {/* Corner brackets on hover/select */}
-                <div className={`absolute top-3 left-3 w-4 h-4 border-t border-l transition-opacity duration-500 ${
-                  isSelected ? 'border-[#9cb092] opacity-100' : 'border-white/30 opacity-0 group-hover:opacity-100'
-                }`} />
-                <div className={`absolute top-3 right-3 w-4 h-4 border-t border-r transition-opacity duration-500 ${
-                  isSelected ? 'border-[#9cb092] opacity-100' : 'border-white/30 opacity-0 group-hover:opacity-100'
-                }`} />
-                <div className={`absolute bottom-3 left-3 w-4 h-4 border-b border-l transition-opacity duration-500 ${
-                  isSelected ? 'border-[#9cb092] opacity-100' : 'border-white/30 opacity-0 group-hover:opacity-100'
-                }`} />
-                <div className={`absolute bottom-3 right-3 w-4 h-4 border-b border-r transition-opacity duration-500 ${
-                  isSelected ? 'border-[#9cb092] opacity-100' : 'border-white/30 opacity-0 group-hover:opacity-100'
-                }`} />
 
                 {/* Selected check */}
                 {isSelected && (
