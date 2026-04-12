@@ -86,7 +86,7 @@ export default function Navigation() {
             { label: 'Home', id: 'hero', path: '/' },
             { label: 'Create Evite', id: '', path: '/create' },
             { label: 'Shop Gifts', id: '', path: '/shop' },
-            { label: 'Login', id: '', path: '/' },
+            { label: 'Login', id: '', path: '/sign-in' },
           ].map((item) => (
             <button
               key={item.label}

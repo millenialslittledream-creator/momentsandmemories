@@ -4,10 +4,17 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ReactLenis } from 'lenis/react';
 import type { LenisRef } from 'lenis/react';
+import { Toaster } from 'sonner';
+import { AuthProvider } from './context/AuthContext';
 import Home from './pages/Home';
 import ScrollToTop from './components/ScrollToTop';
 import Shop from './pages/Shop';
 import CreateEvite from './pages/CreateEvite';
+import SignIn from './pages/SignIn';
+import SignUp from './pages/SignUp';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/VerifyEmail';
 import './App.css';
 
 // Register GSAP plugins globally
@@ -39,16 +46,24 @@ function App() {
   }, []);
 
   return (
-    <ReactLenis root ref={lenisRef} options={{ lerp: 0.07, wheelMultiplier: 0.9 }}>
-      <Router>
-        <ScrollToTop />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/create" element={<CreateEvite />} />
-        </Routes>
-      </Router>
-    </ReactLenis>
+    <AuthProvider>
+      <ReactLenis root ref={lenisRef} options={{ lerp: 0.07, wheelMultiplier: 0.9 }}>
+        <Router>
+          <ScrollToTop />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/create" element={<CreateEvite />} />
+            <Route path="/sign-in" element={<SignIn />} />
+            <Route path="/sign-up" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+          </Routes>
+          <Toaster position="top-center" richColors />
+        </Router>
+      </ReactLenis>
+    </AuthProvider>
   );
 }
 
