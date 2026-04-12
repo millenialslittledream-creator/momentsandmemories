@@ -39,8 +39,10 @@ const SignIn = () => {
         toast.success("Welcome back!");
         navigate("/");
       }
-    } catch {
-      setError("An unexpected error occurred");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
+      toast.error(message);
+      setError(message);
     } finally {
       setLoading(false);
     }

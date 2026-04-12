@@ -43,6 +43,7 @@ const SignUp = () => {
       });
 
       if (error) {
+        toast.error(error.message);
         setErrors({ email: error.message });
         return;
       }
@@ -53,9 +54,14 @@ const SignUp = () => {
       } else if (data.session) {
         toast.success("Account created successfully!");
         navigate("/");
+      } else {
+        toast.error("Sign up failed. Please try again.");
+        setErrors({ email: "Sign up failed. Please try again." });
       }
-    } catch {
-      setErrors({ email: "An unexpected error occurred" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
+      toast.error(message);
+      setErrors({ email: message });
     } finally {
       setLoading(false);
     }
