@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useAuth } from '@/context/AuthContext';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -10,6 +11,7 @@ export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -86,7 +88,6 @@ export default function Navigation() {
             { label: 'Home', id: 'hero', path: '/' },
             { label: 'Create Evite', id: '', path: '/create' },
             { label: 'Shop Gifts', id: '', path: '/shop' },
-            { label: 'Login', id: '', path: '/sign-in' },
           ].map((item) => (
             <button
               key={item.label}
@@ -96,6 +97,21 @@ export default function Navigation() {
               {item.label}
             </button>
           ))}
+          {user ? (
+            <button
+              onClick={async () => { await signOut(); navigate('/'); }}
+              className="text-[10px] md:text-[11px] font-display tracking-[0.2em] uppercase hover:opacity-70 transition-opacity whitespace-nowrap"
+            >
+              Logout
+            </button>
+          ) : (
+            <button
+              onClick={() => handleNavClick('', '/sign-in')}
+              className="text-[10px] md:text-[11px] font-display tracking-[0.2em] uppercase hover:opacity-70 transition-opacity whitespace-nowrap"
+            >
+              Login
+            </button>
+          )}
         </div>
       </nav>
 
