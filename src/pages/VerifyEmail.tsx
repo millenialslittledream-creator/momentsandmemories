@@ -9,7 +9,7 @@ const VerifyEmail = () => {
   const location = useLocation();
   const email = (location.state as { email?: string })?.email || "";
 
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState(["", "", "", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(120);
@@ -32,7 +32,7 @@ const VerifyEmail = () => {
     const newOtp = [...otp];
     newOtp[index] = value.slice(-1);
     setOtp(newOtp);
-    if (value && index < 5) {
+    if (value && index < 7) {
       inputRefs.current[index + 1]?.focus();
     }
   }, [otp]);
@@ -45,17 +45,17 @@ const VerifyEmail = () => {
 
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
     e.preventDefault();
-    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 8);
     const newOtp = [...otp];
     for (let i = 0; i < text.length; i++) newOtp[i] = text[i];
     setOtp(newOtp);
-    inputRefs.current[Math.min(text.length, 5)]?.focus();
+    inputRefs.current[Math.min(text.length, 7)]?.focus();
   }, [otp]);
 
   const handleVerify = async () => {
     const code = otp.join("");
-    if (code.length < 6) {
-      toast.error("Please enter the full 6-digit code");
+    if (code.length < 8) {
+      toast.error("Please enter the full 8-digit code");
       return;
     }
     if (!email) {
@@ -141,16 +141,16 @@ const VerifyEmail = () => {
                 </div>
                 <div className="text-center mb-8">
                   <p className="text-[#1a2418]/80 text-sm">
-                    Enter the 6-digit code sent to <br />
+                    Enter the 8-digit code sent to <br />
                     <span className="font-bold text-[#1a2418] mt-1 block">{email || "your email"}</span>
                   </p>
                 </div>
-                <div className="flex justify-center gap-3 mb-8" onPaste={handlePaste}>
+                <div className="flex justify-center gap-2 mb-8" onPaste={handlePaste}>
                   {otp.map((digit, i) => (
                     <input
                       key={i}
                       ref={el => { inputRefs.current[i] = el; }}
-                      className="auth-input-dark w-12 h-14 rounded-lg text-center text-2xl font-serif-exp font-bold text-[#1a2418] placeholder-[#1a2418]/20 focus:ring-0"
+                      className="auth-input-dark w-10 h-12 md:w-12 md:h-14 rounded-lg text-center text-xl md:text-2xl font-serif-exp font-bold text-[#1a2418] placeholder-[#1a2418]/20 focus:ring-0"
                       maxLength={1}
                       placeholder="•"
                       value={digit}
