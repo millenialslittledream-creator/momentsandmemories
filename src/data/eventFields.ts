@@ -27,7 +27,7 @@ export const eventTypes: EventTypeInfo[] = [
   },
   {
     id: 'marriage',
-    label: 'Marriage',
+    label: 'Wedding',
     description: 'Announce your special day with elegance and grace',
     icon: 'favorite',
     color: '#c4a882',
@@ -59,6 +59,63 @@ export const commonFields: EventField[] = [
   { name: 'hostName', label: 'Host Name(s)', type: 'text', placeholder: 'Who is hosting?', required: true },
   { name: 'eventDate', label: 'Event Date', type: 'date', required: true },
   { name: 'eventTime', label: 'Event Time', type: 'time', required: true },
+  { name: 'timezone', label: 'Timezone', type: 'select', options: [
+    // ── United States ──
+    'US - Eastern (ET) New York, Washington DC',
+    'US - Central (CT) Chicago, Houston, Dallas',
+    'US - Mountain (MT) Denver, Salt Lake City',
+    'US - Arizona (MT no DST) Phoenix',
+    'US - Pacific (PT) Los Angeles, San Francisco',
+    'US - Alaska (AKT) Anchorage, Fairbanks',
+    'US - Hawaii (HT) Honolulu, Maui',
+    'US - Atlantic (AST) Puerto Rico, US Virgin Islands',
+    'US - Samoa (SST) Pago Pago',
+    'US - Chamorro (ChST) Guam, Saipan',
+    // ── Americas ──
+    '(UTC-05:00) Toronto, Montreal',
+    '(UTC-06:00) Mexico City, Guadalajara',
+    '(UTC-04:00) Halifax, Santo Domingo, Caracas',
+    '(UTC-03:30) Newfoundland',
+    '(UTC-03:00) Buenos Aires, São Paulo, Santiago',
+    '(UTC-05:00) Bogota, Lima, Quito',
+    // ── Europe ──
+    '(UTC+00:00) London, Dublin, Lisbon',
+    '(UTC+01:00) Paris, Berlin, Rome, Madrid',
+    '(UTC+02:00) Athens, Helsinki, Bucharest',
+    '(UTC+03:00) Moscow, Istanbul, Minsk',
+    // ── Africa ──
+    '(UTC+00:00) Accra, Dakar',
+    '(UTC+01:00) Lagos, Algiers, Tunis',
+    '(UTC+02:00) Cairo, Johannesburg, Harare',
+    '(UTC+03:00) Nairobi, Addis Ababa, Dar es Salaam',
+    // ── Middle East ──
+    '(UTC+03:00) Riyadh, Kuwait, Baghdad',
+    '(UTC+03:30) Tehran',
+    '(UTC+04:00) Dubai, Abu Dhabi, Muscat',
+    '(UTC+04:30) Kabul',
+    // ── South Asia ──
+    '(UTC+05:00) Karachi, Tashkent',
+    '(UTC+05:30) Mumbai, New Delhi, Colombo',
+    '(UTC+05:45) Kathmandu',
+    '(UTC+06:00) Dhaka, Almaty',
+    '(UTC+06:30) Yangon',
+    // ── East & Southeast Asia ──
+    '(UTC+07:00) Bangkok, Jakarta, Ho Chi Minh City',
+    '(UTC+08:00) Singapore, Beijing, Hong Kong, Taipei',
+    '(UTC+09:00) Tokyo, Seoul',
+    // ── Oceania ──
+    '(UTC+08:00) Perth',
+    '(UTC+09:30) Adelaide, Darwin',
+    '(UTC+10:00) Sydney, Melbourne, Brisbane',
+    '(UTC+12:00) Auckland, Fiji',
+    '(UTC+13:00) Apia, Tongatapu',
+    // ── Other ──
+    '(UTC-12:00) Baker Island',
+    '(UTC-11:00) Niue, Midway',
+    '(UTC-02:00) South Georgia',
+    '(UTC-01:00) Azores, Cape Verde',
+    '(UTC+14:00) Line Islands',
+  ], required: true },
   { name: 'venue', label: 'Venue / Location', type: 'text', placeholder: 'Where is the event?', required: true },
   { name: 'rsvpContact', label: 'RSVP Contact (Phone or Email)', type: 'text', placeholder: 'How should guests RSVP?', required: true },
   { name: 'customMessage', label: 'Custom Message', type: 'textarea', placeholder: 'Add a personal note (optional)', required: false },
@@ -67,14 +124,11 @@ export const commonFields: EventField[] = [
 export const eventSpecificFields: Record<EventType, EventField[]> = {
   birthday: [
     { name: 'celebrantName', label: "Celebrant's Name", type: 'text', placeholder: "Who's the birthday star?", required: true },
-    { name: 'age', label: 'Age / Turning', type: 'number', placeholder: 'e.g. 25', required: false },
-    { name: 'theme', label: 'Theme', type: 'text', placeholder: 'e.g. Retro, Garden Party (optional)', required: false },
   ],
   marriage: [
+    { name: 'celebrantName', label: "Couple's Names", type: 'text', placeholder: "e.g. Sarah & John", required: true },
     { name: 'brideName', label: "Bride's Name", type: 'text', placeholder: "Bride's full name", required: true },
     { name: 'groomName', label: "Groom's Name", type: 'text', placeholder: "Groom's full name", required: true },
-    { name: 'ceremonyType', label: 'Ceremony Type', type: 'select', options: ['Religious', 'Civil', 'Both'], required: true },
-    { name: 'receptionVenue', label: 'Reception Venue (if different)', type: 'text', placeholder: 'Leave blank if same as ceremony', required: false },
   ],
   babyshower: [
     { name: 'parentNames', label: "Parent(s) Name", type: 'text', placeholder: "Parent(s) name", required: true },

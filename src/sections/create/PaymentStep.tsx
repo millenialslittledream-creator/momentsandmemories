@@ -11,9 +11,9 @@ interface PaymentStepProps {
 export default function PaymentStep({ guestCount, onConfirm }: PaymentStepProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'upi' | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | null>(null);
   const [cardData, setCardData] = useState({ number: '', expiry: '', cvc: '', name: '' });
-  const [upiId, setUpiId] = useState('');
+  const [billing, setBilling] = useState({ address: '', city: '', state: '', zip: '' });
   const [agreed, setAgreed] = useState(false);
 
   const pricePerEvite = 2.99;
@@ -40,24 +40,22 @@ export default function PaymentStep({ guestCount, onConfirm }: PaymentStepProps)
 
   const isFormValid = () => {
     if (!paymentMethod || !agreed) return false;
-    if (paymentMethod === 'card') {
-      return cardData.number && cardData.expiry && cardData.cvc && cardData.name;
-    }
-    return !!upiId;
+    return cardData.number && cardData.expiry && cardData.cvc && cardData.name &&
+      billing.address && billing.city && billing.state && billing.zip;
   };
 
   return (
     <div ref={containerRef}>
       {/* Heading */}
-      <div ref={headingRef} className="flex flex-col items-center mb-6 mt-4">
-        <h1 className="text-3xl md:text-5xl font-serif-exp italic text-center mb-3 relative z-10">
+      <div ref={headingRef} className="flex flex-col items-center mb-4 mt-2">
+        <h1 className="text-2xl md:text-4xl font-serif-exp italic text-center mb-2 relative z-10">
           Almost there, <br />
           <span className="text-[#9cb092] not-italic font-agatho">let's wrap it up.</span>
         </h1>
-        <div className="w-[1px] h-6 bg-[#9cb092]/40 mt-3" />
+        <div className="w-[1px] h-4 bg-[#9cb092]/40 mt-2" />
       </div>
 
-      <div className="max-w-2xl mx-auto space-y-8">
+      <div className="max-w-2xl mx-auto space-y-6">
         {/* Order Summary */}
         <div className="payment-section glass-panel rounded-none p-8">
           <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-6 pb-3 border-b border-white/10 flex items-center gap-3">
@@ -91,10 +89,10 @@ export default function PaymentStep({ guestCount, onConfirm }: PaymentStepProps)
             Payment Method
           </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <div className="mb-8">
             <button
               onClick={() => setPaymentMethod('card')}
-              className={`py-5 px-4 border transition-all duration-300 flex items-center gap-4 ${
+              className={`w-full py-5 px-4 border transition-all duration-300 flex items-center gap-4 ${
                 paymentMethod === 'card'
                   ? 'border-[#9cb092] bg-[#9cb092]/10 shadow-lg shadow-[#9cb092]/10'
                   : 'border-white/10 bg-white/[0.03] hover:border-white/25'
@@ -113,31 +111,6 @@ export default function PaymentStep({ guestCount, onConfirm }: PaymentStepProps)
                 </p>
                 <p className="font-display text-[9px] text-[#b2c3b1]/50 mt-0.5">
                   Visa, Mastercard, Amex
-                </p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setPaymentMethod('upi')}
-              className={`py-5 px-4 border transition-all duration-300 flex items-center gap-4 ${
-                paymentMethod === 'upi'
-                  ? 'border-[#9cb092] bg-[#9cb092]/10 shadow-lg shadow-[#9cb092]/10'
-                  : 'border-white/10 bg-white/[0.03] hover:border-white/25'
-              }`}
-            >
-              <span
-                className={`material-icons text-2xl ${
-                  paymentMethod === 'upi' ? 'text-[#9cb092]' : 'text-[#b2c3b1]/50'
-                }`}
-              >
-                account_balance
-              </span>
-              <div className="text-left">
-                <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#e4eee1]">
-                  UPI
-                </p>
-                <p className="font-display text-[9px] text-[#b2c3b1]/50 mt-0.5">
-                  GPay, PhonePe, Paytm
                 </p>
               </div>
             </button>
@@ -216,22 +189,69 @@ export default function PaymentStep({ guestCount, onConfirm }: PaymentStepProps)
               </div>
             </div>
           )}
+        </div>
 
-          {/* UPI Field */}
-          {paymentMethod === 'upi' && (
-            <div className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        {/* Billing Address */}
+        <div className="payment-section glass-panel rounded-none p-8">
+          <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-6 pb-3 border-b border-white/10 flex items-center gap-3">
+            <span className="material-icons text-[#9cb092] text-lg">home</span>
+            Billing Address
+          </h3>
+          <div className="space-y-5">
+            <div className="space-y-1.5">
               <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
-                UPI ID
+                Street Address
               </Label>
               <Input
                 type="text"
-                value={upiId}
-                onChange={(e) => setUpiId(e.target.value)}
-                placeholder="yourname@upi"
+                value={billing.address}
+                onChange={(e) => setBilling({ ...billing, address: e.target.value })}
+                placeholder="123 Main Street"
                 className={inputClass}
               />
             </div>
-          )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
+                  City
+                </Label>
+                <Input
+                  type="text"
+                  value={billing.city}
+                  onChange={(e) => setBilling({ ...billing, city: e.target.value })}
+                  placeholder="City"
+                  className={inputClass}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
+                  State
+                </Label>
+                <Input
+                  type="text"
+                  value={billing.state}
+                  onChange={(e) => setBilling({ ...billing, state: e.target.value })}
+                  placeholder="State"
+                  className={inputClass}
+                />
+              </div>
+            </div>
+            <div className="w-1/2">
+              <div className="space-y-1.5">
+                <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
+                  ZIP Code
+                </Label>
+                <Input
+                  type="text"
+                  value={billing.zip}
+                  onChange={(e) => setBilling({ ...billing, zip: e.target.value.replace(/\D/g, '').slice(0, 5) })}
+                  placeholder="12345"
+                  className={inputClass}
+                  maxLength={5}
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Terms */}

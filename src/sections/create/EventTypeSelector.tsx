@@ -16,20 +16,20 @@ export default function EventTypeSelector({ selected, onSelect, onAutoAdvance }:
     const ctx = gsap.context(() => {
       gsap.fromTo(
         headingRef.current,
-        { opacity: 0, y: 40 },
-        { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.4, ease: 'power3.out' }
       );
       gsap.fromTo(
         '.event-type-card',
-        { opacity: 0, y: 60, scale: 0.95 },
+        { opacity: 0, y: 30, scale: 0.97 },
         {
           opacity: 1,
           y: 0,
           scale: 1,
-          duration: 0.8,
-          stagger: 0.12,
+          duration: 0.3,
+          stagger: 0.04,
           ease: 'power3.out',
-          delay: 0.3,
+          delay: 0.1,
         }
       );
     }, containerRef);
@@ -39,15 +39,15 @@ export default function EventTypeSelector({ selected, onSelect, onAutoAdvance }:
   return (
     <div ref={containerRef}>
       {/* Heading */}
-      <div ref={headingRef} className="flex flex-col items-center mb-8 mt-4">
-        <h1 className="text-3xl md:text-5xl font-serif-exp italic text-center mb-4 relative z-10">
+      <div ref={headingRef} className="flex flex-col items-center mb-4 mt-2">
+        <h1 className="text-2xl md:text-4xl font-serif-exp italic text-center mb-2 relative z-10">
           What special moment are we <br />
           <span className="text-[#9cb092] not-italic font-agatho">bringing to life today?</span>
         </h1>
-        <p className="text-xs md:text-sm font-display tracking-[0.25em] text-[#b2c3b1] uppercase">
+        <p className="text-[10px] md:text-xs font-display tracking-[0.25em] text-[#b2c3b1] uppercase">
           Choose your occasion
         </p>
-        <div className="w-[1px] h-8 bg-[#9cb092]/40 mt-4" />
+        <div className="w-[1px] h-4 bg-[#9cb092]/40 mt-2" />
       </div>
 
       {/* Cards Grid */}

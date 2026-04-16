@@ -72,10 +72,10 @@ export default function TemplateGallery({
         <div className="w-[1px] h-6 bg-[#9cb092]/40 mt-2" />
       </div>
 
-      {/* Two-panel layout: carousel left, preview right */}
-      <div className="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto items-stretch">
-        {/* Circular Gallery Carousel */}
-        <div className="flex-1 h-[400px] md:h-[480px]">
+      {/* Vertical layout: carousel → preview → upload */}
+      <div className="flex flex-col gap-6 max-w-4xl mx-auto">
+        {/* Circular Gallery Carousel — top */}
+        <div className="h-[340px] md:h-[400px]">
           <CircularGallery
             items={galleryItems}
             bend={3}
@@ -87,8 +87,8 @@ export default function TemplateGallery({
           />
         </div>
 
-        {/* Live Preview — compact */}
-        <div className="lg:w-[280px] flex-shrink-0">
+        {/* Live Preview — middle */}
+        <div className="max-w-xs mx-auto w-full">
           {selected ? (
             <div>
               <h3 className="font-display text-[10px] tracking-[0.25em] uppercase text-[#b2c3b1] mb-3 text-center">
@@ -106,7 +106,7 @@ export default function TemplateGallery({
                       You're invited to
                     </p>
                     <h4 className="font-serif-exp text-lg text-white italic leading-tight">
-                      {eventInfo?.label === 'Marriage'
+                      {eventInfo?.label === 'Wedding'
                         ? `${formData.brideName || 'Bride'} & ${formData.groomName || 'Groom'}`
                         : `${displayName}'s ${eventInfo?.label}`}
                     </h4>
@@ -128,23 +128,44 @@ export default function TemplateGallery({
                     </div>
                   </div>
                 </div>
-                <div className="bg-[#111914] p-3 text-center border-t border-white/10">
-                  <p className="font-display text-[9px] tracking-[0.15em] text-[#b2c3b1] uppercase">
-                    <span className="font-semibold text-[#9cb092]">{selected.name}</span>
-                    <span className="text-[#b2c3b1]/40 mx-1.5">&middot;</span>
-                    <span className="text-[#b2c3b1]/50">{selected.style}</span>
-                  </p>
-                </div>
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full border border-dashed border-white/10 bg-white/[0.02] min-h-[300px]">
+            <div className="flex flex-col items-center justify-center border border-dashed border-white/10 bg-white/[0.02] min-h-[200px]">
               <span className="material-icons text-[#b2c3b1]/20 text-4xl mb-3">palette</span>
               <p className="font-display text-[10px] tracking-[0.15em] text-[#b2c3b1]/40 uppercase text-center px-4">
                 Click a template to preview
               </p>
             </div>
           )}
+        </div>
+
+        {/* Upload Custom Theme/Video — bottom */}
+        <div className="max-w-xs mx-auto w-full border border-dashed border-white/10 bg-white/[0.02] p-4">
+          <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/60 mb-3 text-center">
+            Or upload your own
+          </p>
+          <label className="flex flex-col items-center justify-center py-4 cursor-pointer hover:bg-white/[0.04] transition-colors rounded">
+            <span className="material-icons text-[#9cb092]/50 text-2xl mb-2">cloud_upload</span>
+            <span className="font-display text-[9px] tracking-[0.15em] text-[#b2c3b1]/50 uppercase">
+              Image or Video
+            </span>
+            <span className="font-display text-[8px] text-[#b2c3b1]/30 mt-1">
+              JPG, PNG, MP4 (max 10MB)
+            </span>
+            <input
+              type="file"
+              accept="image/*,video/mp4"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const url = URL.createObjectURL(file);
+                  onSelect(`custom_${url}`);
+                }
+              }}
+            />
+          </label>
         </div>
       </div>
     </div>

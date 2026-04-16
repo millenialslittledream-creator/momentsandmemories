@@ -95,12 +95,12 @@ export default function FinalPreview({
   return (
     <div ref={containerRef}>
       {/* Heading */}
-      <div ref={headingRef} className="flex flex-col items-center mb-6 mt-4">
-        <h1 className="text-3xl md:text-5xl font-serif-exp italic text-center mb-3 relative z-10">
+      <div ref={headingRef} className="flex flex-col items-center mb-4 mt-2">
+        <h1 className="text-2xl md:text-4xl font-serif-exp italic text-center mb-2 relative z-10">
           Here's your celebration, <br />
           <span className="text-[#9cb092] not-italic font-agatho">brought to life.</span>
         </h1>
-        <div className="w-[1px] h-6 bg-[#9cb092]/40 mt-3" />
+        <div className="w-[1px] h-4 bg-[#9cb092]/40 mt-2" />
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8 max-w-5xl mx-auto">
@@ -118,7 +118,7 @@ export default function FinalPreview({
                   You're invited to
                 </p>
                 <h4 className="font-serif-exp text-xl text-white italic leading-tight">
-                  {eventInfo?.label === 'Marriage'
+                  {eventInfo?.label === 'Wedding'
                     ? `${formData.brideName || 'Bride'} & ${formData.groomName || 'Groom'}`
                     : `${displayName}'s ${eventInfo?.label}`}
                 </h4>
@@ -150,13 +150,6 @@ export default function FinalPreview({
                   </p>
                 )}
               </div>
-            </div>
-            <div className="bg-[#111914] p-2.5 text-center border-t border-white/10">
-              <p className="font-display text-[9px] tracking-[0.15em] text-[#b2c3b1] uppercase">
-                <span className="font-semibold text-[#9cb092]">{template.name}</span>
-                <span className="text-[#b2c3b1]/40 mx-1.5">&middot;</span>
-                <span className="text-[#b2c3b1]/50">{template.style}</span>
-              </p>
             </div>
           </div>
         </div>
@@ -248,17 +241,6 @@ export default function FinalPreview({
               })}
             </div>
 
-            <div className="mt-10 p-5 border border-[#9cb092]/20 bg-[#9cb092]/5">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="material-icons text-[#9cb092] text-lg">check_circle</span>
-                <h4 className="font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092]">
-                  All set!
-                </h4>
-              </div>
-              <p className="font-display text-[11px] text-[#b2c3b1]/70 leading-relaxed">
-                Your evite looks great. Click any detail above to make a quick edit, or continue to add your guests.
-              </p>
-            </div>
           </div>
         </div>
       </div>

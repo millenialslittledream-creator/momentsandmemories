@@ -75,12 +75,10 @@ export default function Navigation() {
           : 'bg-transparent text-[#f2f6ef]'
           }`}
       >
-        {/* Left Side - Logo (hidden at top, appears on scroll) */}
-        <div
-          className={`transition-all duration-500 ${isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        >
+        {/* Left Side - Logo (always visible) */}
+        <button onClick={() => handleNavClick('hero', '/')} className="transition-all duration-500 cursor-pointer select-none">
           <span className="font-serif-exp italic text-xl tracking-wide">moments & memories</span>
-        </div>
+        </button>
 
         {/* Right Side - Nav Links */}
         <div className="flex items-center gap-6 md:gap-8">

@@ -21,11 +21,7 @@ import {
   type EventField,
 } from '@/data/eventFields';
 
-const SUB_EVENTS = [
-  { id: 'mehendi', label: 'Mehendi', icon: 'spa' },
-  { id: 'haldi', label: 'Haldi', icon: 'local_florist' },
-  { id: 'sangeet', label: 'Sangeet', icon: 'music_note' },
-] as const;
+// Sub-events are now dynamic — users can add any event type
 
 interface EventDetailsFormProps {
   eventType: EventType;
@@ -34,7 +30,7 @@ interface EventDetailsFormProps {
   errors: Record<string, boolean>;
 }
 
-/* ── Time Picker (scroll-friendly number inputs) ──────────── */
+/* ── Time Picker (text inputs with local state — validates on blur) ── */
 function TimePicker({
   value,
   onChange,
@@ -44,33 +40,38 @@ function TimePicker({
   onChange: (val: string) => void;
   hasError: boolean;
 }) {
-  const parseTime = (v: string) => {
-    if (!v) return { hour: '', minute: '', period: 'PM' };
-    const match24 = v.match(/^(\d{1,2}):(\d{2})$/);
-    if (match24) {
-      let h = parseInt(match24[1]);
-      const m = match24[2];
-      const period = h >= 12 ? 'PM' : 'AM';
-      if (h > 12) h -= 12;
-      if (h === 0) h = 12;
-      return { hour: String(h), minute: m, period };
+  // Parse the parent value once for initial/sync state
+  const parse = (v: string) => {
+    if (!v) return { h: '', m: '', p: 'PM' };
+    const m12 = v.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (m12) return { h: m12[1], m: m12[2], p: m12[3].toUpperCase() };
+    const m24 = v.match(/^(\d{1,2}):(\d{2})$/);
+    if (m24) {
+      let hr = parseInt(m24[1]);
+      const per = hr >= 12 ? 'PM' : 'AM';
+      if (hr > 12) hr -= 12;
+      if (hr === 0) hr = 12;
+      return { h: String(hr), m: m24[2], p: per };
     }
-    const match12 = v.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-    if (match12) {
-      return { hour: match12[1], minute: match12[2], period: match12[3].toUpperCase() };
-    }
-    return { hour: '', minute: '', period: 'PM' };
+    return { h: '', m: '', p: 'PM' };
   };
 
-  const { hour, minute, period } = parseTime(value);
+  const parsed = parse(value);
+  const [hour, setHour] = useState(parsed.h);
+  const [minute, setMinute] = useState(parsed.m);
+  const [period, setPeriod] = useState(parsed.p);
 
-  const buildTime = (h: string, m: string, p: string) => {
-    if (!h || !m) return '';
-    return `${h}:${m} ${p}`;
+  // Sync from parent when value changes externally
+  useEffect(() => {
+    const p = parse(value);
+    setHour(p.h);
+    setMinute(p.m);
+    setPeriod(p.p);
+  }, [value]);
+
+  const commit = (h: string, m: string, p: string) => {
+    if (h && m) onChange(`${h}:${m} ${p}`);
   };
-
-  const clampHour = (n: number) => ((n - 1 + 12) % 12) + 1;
-  const clampMinute = (n: number) => ((n % 60) + 60) % 60;
 
   const baseClass = `bg-white/[0.06] backdrop-blur-sm border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display text-center text-sm outline-none transition-colors h-9 rounded-md ${
     hasError ? 'border-red-400/60 ring-1 ring-red-400/20' : ''
@@ -80,52 +81,56 @@ function TimePicker({
     <div className="flex items-center gap-1.5">
       {/* Hour */}
       <input
-        type="number"
-        min={1}
-        max={12}
+        type="text"
+        inputMode="numeric"
+        maxLength={2}
         value={hour}
         placeholder="HH"
         onChange={(e) => {
-          const h = clampHour(parseInt(e.target.value) || 1);
-          onChange(buildTime(String(h), minute || '00', period));
+          const raw = e.target.value.replace(/\D/g, '').slice(0, 2);
+          setHour(raw);
         }}
-        onWheel={(e) => {
-          e.preventDefault();
-          const cur = parseInt(hour) || 12;
-          const h = clampHour(cur + (e.deltaY < 0 ? 1 : -1));
-          onChange(buildTime(String(h), minute || '00', period));
+        onBlur={() => {
+          let h = parseInt(hour) || 0;
+          if (h < 1) h = 12;
+          if (h > 12) h = 12;
+          const s = String(h);
+          setHour(s);
+          commit(s, minute || '00', period);
         }}
-        className={`${baseClass} w-[56px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+        className={`${baseClass} w-[56px]`}
       />
 
-      <span className="text-[#b2c3b1]/60 font-display text-lg font-bold">:</span>
+      <span className="text-[#b2c3b1]/60 font-display text-lg font-bold select-none">:</span>
 
       {/* Minute */}
       <input
-        type="number"
-        min={0}
-        max={59}
+        type="text"
+        inputMode="numeric"
+        maxLength={2}
         value={minute}
         placeholder="MM"
         onChange={(e) => {
-          const m = clampMinute(parseInt(e.target.value) || 0);
-          onChange(buildTime(hour || '12', String(m).padStart(2, '0'), period));
+          const raw = e.target.value.replace(/\D/g, '').slice(0, 2);
+          setMinute(raw);
         }}
-        onWheel={(e) => {
-          e.preventDefault();
-          const cur = parseInt(minute) || 0;
-          const m = clampMinute(cur + (e.deltaY < 0 ? 5 : -5));
-          onChange(buildTime(hour || '12', String(m).padStart(2, '0'), period));
+        onBlur={() => {
+          let m = parseInt(minute) || 0;
+          if (m > 59) m = 59;
+          const s = String(m).padStart(2, '0');
+          setMinute(s);
+          commit(hour || '12', s, period);
         }}
-        className={`${baseClass} w-[56px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+        className={`${baseClass} w-[56px]`}
       />
 
-      {/* AM/PM toggle button */}
+      {/* AM/PM toggle */}
       <button
         type="button"
         onClick={() => {
           const newP = period === 'AM' ? 'PM' : 'AM';
-          onChange(buildTime(hour || '12', minute || '00', newP));
+          setPeriod(newP);
+          commit(hour || '12', minute || '00', newP);
         }}
         className={`${baseClass} w-[56px] cursor-pointer hover:bg-[#9cb092]/10 active:scale-95`}
       >
@@ -287,6 +292,29 @@ function renderField(
     hasError ? 'border-red-400/60 ring-1 ring-red-400/20' : ''
   }`;
 
+  // Timezone — native select for smooth scrolling & keyboard letter-jump
+  if (field.name === 'timezone') {
+    return (
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(field.name, e.target.value)}
+          className={`${baseInputClass} w-full h-9 rounded-md px-3 pr-8 text-sm appearance-none cursor-pointer`}
+        >
+          <option value="">Select timezone</option>
+          {field.options?.map((opt) => (
+            <option key={opt} value={opt} className="bg-[#1a2418] text-[#e4eee1]">
+              {opt}
+            </option>
+          ))}
+        </select>
+        <span className="material-icons absolute right-2 top-1/2 -translate-y-1/2 text-[#9cb092] text-sm pointer-events-none">
+          expand_more
+        </span>
+      </div>
+    );
+  }
+
   // Date field — use modern calendar popover
   if (field.type === 'date') {
     return (
@@ -309,26 +337,53 @@ function renderField(
     );
   }
 
-  // Venue field — use autocomplete
+  // Venue field — plain text input (Google autocomplete available if API key is configured)
   if (field.name === 'venue') {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+    const hasValidKey = apiKey && apiKey !== 'paste_your_key_here';
+    if (hasValidKey) {
+      return (
+        <VenueAutocomplete
+          value={value}
+          onChange={(val) => onChange(field.name, val)}
+          hasError={hasError}
+        />
+      );
+    }
+    // Fallback: plain input — lets user type any location
     return (
-      <VenueAutocomplete
-        value={value}
-        onChange={(val) => onChange(field.name, val)}
-        hasError={hasError}
-      />
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 material-icons text-[#9cb092] text-lg pointer-events-none">
+          location_on
+        </span>
+        <Input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(field.name, e.target.value)}
+          placeholder="Enter venue or address"
+          className={`${baseInputClass} pl-10`}
+        />
+      </div>
     );
   }
 
   switch (field.type) {
     case 'textarea':
       return (
-        <Textarea
-          value={value}
-          onChange={(e) => onChange(field.name, e.target.value)}
-          placeholder={field.placeholder}
-          className={`${baseInputClass} min-h-[100px]`}
-        />
+        <div className="space-y-1">
+          <Textarea
+            value={value}
+            onChange={(e) => {
+              if (e.target.value.length <= 200) onChange(field.name, e.target.value);
+            }}
+            placeholder={field.placeholder}
+            className={`${baseInputClass} min-h-[80px]`}
+            maxLength={200}
+          />
+          <p className="text-[9px] font-display text-[#b2c3b1]/40 text-right">
+            {value.length}/200 characters
+          </p>
+        </div>
       );
     case 'select':
       return (
@@ -367,41 +422,56 @@ export default function EventDetailsForm({
   const containerRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
   const [hasSubEvents, setHasSubEvents] = useState(
-    () => SUB_EVENTS.some((se) => formData[`sub_${se.id}_enabled`] === 'true')
-  );
-  const [enabledSubEvents, setEnabledSubEvents] = useState<Record<string, boolean>>(
-    () => Object.fromEntries(SUB_EVENTS.map((se) => [se.id, formData[`sub_${se.id}_enabled`] === 'true']))
+    () => !!formData['sub_events_count']
   );
 
-  const eventInfo = eventTypes.find((e) => e.id === eventType);
-  const specificFields = eventSpecificFields[eventType];
+  // Dynamic sub-events: stored as sub_0_name, sub_0_date, etc.
+  const getSubEventCount = () => parseInt(formData['sub_events_count'] || '0');
 
-  const toggleSubEvent = (id: string) => {
-    const newVal = !enabledSubEvents[id];
-    setEnabledSubEvents((prev) => ({ ...prev, [id]: newVal }));
-    onChange(`sub_${id}_enabled`, newVal ? 'true' : '');
-    if (!newVal) {
-      // Clear sub-event fields when disabled
-      onChange(`sub_${id}_date`, '');
-      onChange(`sub_${id}_time`, '');
-      onChange(`sub_${id}_venue`, '');
+  const addSubEvent = () => {
+    const count = getSubEventCount();
+    onChange('sub_events_count', String(count + 1));
+  };
+
+  const removeSubEvent = (index: number) => {
+    const count = getSubEventCount();
+    // Shift all events after this one down
+    for (let i = index; i < count - 1; i++) {
+      onChange(`sub_${i}_name`, formData[`sub_${i + 1}_name`] || '');
+      onChange(`sub_${i}_date`, formData[`sub_${i + 1}_date`] || '');
+      onChange(`sub_${i}_time`, formData[`sub_${i + 1}_time`] || '');
+      onChange(`sub_${i}_timezone`, formData[`sub_${i + 1}_timezone`] || '');
+      onChange(`sub_${i}_venue`, formData[`sub_${i + 1}_venue`] || '');
     }
+    // Clear the last one
+    onChange(`sub_${count - 1}_name`, '');
+    onChange(`sub_${count - 1}_date`, '');
+    onChange(`sub_${count - 1}_time`, '');
+    onChange(`sub_${count - 1}_timezone`, '');
+    onChange(`sub_${count - 1}_venue`, '');
+    onChange('sub_events_count', String(count - 1));
   };
 
   const toggleHasSubEvents = () => {
     const newVal = !hasSubEvents;
     setHasSubEvents(newVal);
     if (!newVal) {
-      // Clear all sub-event data
-      SUB_EVENTS.forEach((se) => {
-        setEnabledSubEvents((prev) => ({ ...prev, [se.id]: false }));
-        onChange(`sub_${se.id}_enabled`, '');
-        onChange(`sub_${se.id}_date`, '');
-        onChange(`sub_${se.id}_time`, '');
-        onChange(`sub_${se.id}_venue`, '');
-      });
+      const count = getSubEventCount();
+      for (let i = 0; i < count; i++) {
+        onChange(`sub_${i}_name`, '');
+        onChange(`sub_${i}_date`, '');
+        onChange(`sub_${i}_time`, '');
+        onChange(`sub_${i}_timezone`, '');
+        onChange(`sub_${i}_venue`, '');
+      }
+      onChange('sub_events_count', '');
+    } else if (!formData['sub_events_count']) {
+      onChange('sub_events_count', '1');
     }
   };
+
+  const eventInfo = eventTypes.find((e) => e.id === eventType);
+  const specificFields = eventSpecificFields[eventType];
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -429,74 +499,19 @@ export default function EventDetailsForm({
   return (
     <div ref={containerRef}>
       {/* Heading */}
-      <div ref={headingRef} className="flex flex-col items-center mb-8 mt-4">
-        <h1 className="text-3xl md:text-5xl font-serif-exp italic text-center mb-4 relative z-10">
+      <div ref={headingRef} className="flex flex-col items-center mb-4 mt-2">
+        <h1 className="text-2xl md:text-4xl font-serif-exp italic text-center mb-2 relative z-10">
           Bring your celebration to life <br />
           <span className="text-[#9cb092] not-italic font-agatho">with the details.</span>
         </h1>
-        <div className="w-[1px] h-8 bg-[#9cb092]/40 mt-4" />
+        <div className="w-[1px] h-4 bg-[#9cb092]/40 mt-2" />
       </div>
 
-      <div className="max-w-2xl mx-auto space-y-8">
-        {/* Event-specific fields first */}
-        <div className="glass-panel rounded-none p-8">
-          <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-8 pb-3 border-b border-white/10 flex items-center gap-3">
-            <span className="material-icons text-[#9cb092] text-lg">{eventInfo?.icon}</span>
-            {eventInfo?.label} Details
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {specificFields.map((field) => (
-              <div
-                key={field.name}
-                className={`form-field space-y-2 ${
-                  field.type === 'textarea' ? 'md:col-span-2' : ''
-                }`}
-              >
-                <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
-                  {field.label}
-                  {field.required && <span className="text-[#9cb092] ml-1">*</span>}
-                </Label>
-                {renderField(field, formData[field.name] || '', onChange, !!errors[field.name])}
-                {errors[field.name] && (
-                  <p className="text-red-400/80 text-[10px] font-display tracking-wide">This field is required</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Common fields */}
-        <div className="glass-panel rounded-none p-8">
-          <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-8 pb-3 border-b border-white/10 flex items-center gap-3">
-            <span className="material-icons text-[#9cb092] text-lg">event</span>
-            Event Information
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {commonFields.map((field) => (
-              <div
-                key={field.name}
-                className={`form-field space-y-2 ${
-                  field.type === 'textarea' ? 'md:col-span-2' : ''
-                }`}
-              >
-                <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
-                  {field.label}
-                  {field.required && <span className="text-[#9cb092] ml-1">*</span>}
-                </Label>
-                {renderField(field, formData[field.name] || '', onChange, !!errors[field.name])}
-                {errors[field.name] && (
-                  <p className="text-red-400/80 text-[10px] font-display tracking-wide">This field is required</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Sub-events toggle — only for marriage */}
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Multiple Events — at the top for wedding */}
         {eventType === 'marriage' && (
-          <div className="glass-panel rounded-none p-8">
-            {/* Toggle */}
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
+          <div className="glass-panel rounded-none p-6">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
               <h3 className="font-serif-exp text-lg text-[#e4eee1] italic flex items-center gap-3">
                 <span className="material-icons text-[#9cb092] text-lg">celebration</span>
                 Multiple Events
@@ -517,59 +532,49 @@ export default function EventDetailsForm({
 
             {!hasSubEvents && (
               <p className="font-display text-[11px] text-[#b2c3b1]/50 leading-relaxed">
-                Toggle this on if your celebration includes multiple events like Mehendi, Haldi, or Sangeet.
+                Toggle this on if your celebration includes multiple events (e.g. Ceremony, Reception, Rehearsal Dinner, etc.)
               </p>
             )}
 
             {hasSubEvents && (
               <div className="space-y-6">
-                {/* Sub-event checkboxes */}
-                <div className="flex flex-wrap gap-3">
-                  {SUB_EVENTS.map((se) => (
-                    <button
-                      key={se.id}
-                      onClick={() => toggleSubEvent(se.id)}
-                      className={`flex items-center gap-2 px-4 py-2.5 border transition-all duration-300 ${
-                        enabledSubEvents[se.id]
-                          ? 'border-[#9cb092] bg-[#9cb092]/10 text-[#9cb092]'
-                          : 'border-white/10 bg-white/[0.03] text-[#b2c3b1]/60 hover:border-white/25'
-                      }`}
-                    >
-                      <span className={`w-4 h-4 border rounded-sm flex items-center justify-center transition-all ${
-                        enabledSubEvents[se.id]
-                          ? 'bg-[#9cb092] border-[#9cb092] text-[#111914]'
-                          : 'border-white/30'
-                      }`}>
-                        {enabledSubEvents[se.id] && (
-                          <span className="material-icons text-xs">check</span>
-                        )}
-                      </span>
-                      <span className="material-icons text-sm">{se.icon}</span>
-                      <span className="font-display text-[10px] tracking-[0.15em] uppercase">
-                        {se.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Fields for each enabled sub-event */}
-                {SUB_EVENTS.filter((se) => enabledSubEvents[se.id]).map((se) => (
+                {Array.from({ length: getSubEventCount() }, (_, i) => (
                   <div
-                    key={se.id}
+                    key={i}
                     className="p-5 border border-white/5 bg-white/[0.02] space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
                   >
-                    <h4 className="font-serif-exp text-base text-[#e4eee1] italic flex items-center gap-2">
-                      <span className="material-icons text-[#9cb092] text-base">{se.icon}</span>
-                      {se.label}
-                    </h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-serif-exp text-base text-[#e4eee1] italic flex items-center gap-2">
+                        <span className="material-icons text-[#9cb092] text-base">event</span>
+                        Event {i + 1}
+                      </h4>
+                      <button
+                        onClick={() => removeSubEvent(i)}
+                        className="text-[#b2c3b1]/30 hover:text-red-400/70 transition-colors"
+                      >
+                        <span className="material-icons text-sm">close</span>
+                      </button>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
+                        Event Name <span className="text-[#9cb092]">*</span>
+                      </Label>
+                      <Input
+                        type="text"
+                        value={formData[`sub_${i}_name`] || ''}
+                        onChange={(e) => onChange(`sub_${i}_name`, e.target.value)}
+                        placeholder="e.g. Ceremony, Reception, Rehearsal Dinner..."
+                        className="bg-white/[0.06] backdrop-blur-sm border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30"
+                      />
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
                           Date
                         </Label>
                         <DatePicker
-                          value={formData[`sub_${se.id}_date`] || ''}
-                          onChange={(val) => onChange(`sub_${se.id}_date`, val)}
+                          value={formData[`sub_${i}_date`] || ''}
+                          onChange={(val) => onChange(`sub_${i}_date`, val)}
                           hasError={false}
                         />
                       </div>
@@ -578,8 +583,8 @@ export default function EventDetailsForm({
                           Time
                         </Label>
                         <TimePicker
-                          value={formData[`sub_${se.id}_time`] || ''}
-                          onChange={(val) => onChange(`sub_${se.id}_time`, val)}
+                          value={formData[`sub_${i}_time`] || ''}
+                          onChange={(val) => onChange(`sub_${i}_time`, val)}
                           hasError={false}
                         />
                       </div>
@@ -588,18 +593,72 @@ export default function EventDetailsForm({
                           Venue
                         </Label>
                         <VenueAutocomplete
-                          value={formData[`sub_${se.id}_venue`] || ''}
-                          onChange={(val) => onChange(`sub_${se.id}_venue`, val)}
+                          value={formData[`sub_${i}_venue`] || ''}
+                          onChange={(val) => onChange(`sub_${i}_venue`, val)}
                           hasError={false}
                         />
                       </div>
                     </div>
                   </div>
                 ))}
+
+                <button
+                  onClick={addSubEvent}
+                  className="w-full py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
+                >
+                  <span className="material-icons text-sm">add</span>
+                  Add Another Event
+                </button>
               </div>
             )}
           </div>
         )}
+
+        {/* Event-specific fields */}
+        <div className="glass-panel rounded-none p-6">
+          <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-5 pb-2 border-b border-white/10 flex items-center gap-3">
+            <span className="material-icons text-[#9cb092] text-lg">{eventInfo?.icon}</span>
+            Event Information
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Event-specific fields */}
+            {specificFields.map((field) => (
+              <div
+                key={field.name}
+                className={`form-field space-y-2 ${
+                  field.type === 'textarea' ? 'md:col-span-2' : ''
+                }`}
+              >
+                <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
+                  {field.label}
+                  {field.required && <span className="text-[#9cb092] ml-1">*</span>}
+                </Label>
+                {renderField(field, formData[field.name] || '', onChange, !!errors[field.name])}
+                {errors[field.name] && (
+                  <p className="text-red-400/80 text-[10px] font-display tracking-wide">This field is required</p>
+                )}
+              </div>
+            ))}
+            {/* Common fields */}
+            {commonFields.map((field) => (
+              <div
+                key={field.name}
+                className={`form-field space-y-2 ${
+                  field.type === 'textarea' ? 'md:col-span-2' : ''
+                }`}
+              >
+                <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
+                  {field.label}
+                  {field.required && <span className="text-[#9cb092] ml-1">*</span>}
+                </Label>
+                {renderField(field, formData[field.name] || '', onChange, !!errors[field.name])}
+                {errors[field.name] && (
+                  <p className="text-red-400/80 text-[10px] font-display tracking-wide">This field is required</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

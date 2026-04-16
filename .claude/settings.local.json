@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(tsx?|jsx?\\)$\")",
+      "Bash(wc -l \"D:\\\\Sana Hp Laptop Data\\\\D Drive Data\\\\agency\\\\ocasio signinsignup\\\\cosy-landing-haven-main/src/components/ui\"/*)",
+      "Bash(npm install:*)",
+      "Bash(npm ls:*)",
+      "Bash(timeout 20)"
+    ]
+  }
+}

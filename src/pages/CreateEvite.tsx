@@ -138,48 +138,84 @@ export default function CreateEvite() {
 
       <Navigation />
 
-      {/* Progress Indicator */}
-      <div className="relative z-10 pt-24 pb-4 px-6">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          {STEPS.map((s, i) => (
-            <div key={s.label} className="flex items-center">
-              <div className="flex flex-col items-center">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 border ${
-                    i <= step
-                      ? 'bg-[#9cb092]/90 text-[#111914] border-[#9cb092] shadow-lg shadow-[#9cb092]/20'
-                      : 'bg-white/5 text-[#b2c3b1]/40 border-white/10'
-                  }`}
+      {/* Layout: vertical steps left + content right */}
+      <div className="relative z-10 pt-16 px-3 md:px-4 flex flex-col md:flex-row flex-grow">
+        {/* Vertical Step Indicator — left sidebar (md+ only) */}
+        {!confirmed && (
+          <div className="hidden md:flex flex-col items-center pt-4 pl-1 pr-3 flex-shrink-0 sticky top-16 self-start h-fit">
+            {STEPS.map((s, i) => (
+              <div key={s.label} className="flex flex-col items-center">
+                <button
+                  className="flex flex-col items-center group select-none"
+                  onClick={() => { if (i <= step) setStep(i); }}
+                  disabled={i > step}
                 >
-                  {i < step ? (
-                    <span className="material-icons text-sm">check</span>
-                  ) : (
-                    <span className="material-icons text-sm">{s.icon}</span>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 border ${
+                      i <= step
+                        ? 'bg-[#9cb092]/90 text-[#111914] border-[#9cb092] shadow-md cursor-pointer group-hover:scale-110'
+                        : 'bg-white/5 text-[#b2c3b1]/40 border-white/10 cursor-not-allowed'
+                    }`}
+                  >
+                    {i < step ? (
+                      <span className="material-icons text-sm">check</span>
+                    ) : (
+                      <span className="material-icons text-sm">{s.icon}</span>
+                    )}
+                  </div>
+                  <span
+                    className={`font-display text-[7px] tracking-[0.12em] uppercase mt-0.5 transition-colors duration-300 whitespace-nowrap ${
+                      i <= step ? 'text-[#9cb092]' : 'text-[#b2c3b1]/30'
+                    }`}
+                  >
+                    {s.label}
+                  </span>
+                </button>
+                {i < STEPS.length - 1 && (
+                  <div className={`w-px h-4 transition-colors duration-300 ${i < step ? 'bg-[#9cb092]/60' : 'bg-white/10'}`} />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Main column: mobile steps + content */}
+        <div className="flex-grow flex flex-col min-w-0">
+          {/* Mobile horizontal steps (small screens only) */}
+          {!confirmed && (
+            <div className="md:hidden flex items-center justify-center gap-1 mb-3">
+              {STEPS.map((s, i) => (
+                <div key={s.label} className="flex items-center">
+                  <button
+                    className="group select-none"
+                    onClick={() => { if (i <= step) setStep(i); }}
+                    disabled={i > step}
+                  >
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 border ${
+                        i <= step
+                          ? 'bg-[#9cb092]/90 text-[#111914] border-[#9cb092] cursor-pointer'
+                          : 'bg-white/5 text-[#b2c3b1]/40 border-white/10 cursor-not-allowed'
+                      }`}
+                    >
+                      {i < step ? (
+                        <span className="material-icons text-[10px]">check</span>
+                      ) : (
+                        <span className="material-icons text-[10px]">{s.icon}</span>
+                      )}
+                    </div>
+                  </button>
+                  {i < STEPS.length - 1 && (
+                    <div className={`w-3 sm:w-6 h-px mx-0.5 ${i < step ? 'bg-[#9cb092]/60' : 'bg-white/10'}`} />
                   )}
                 </div>
-                <span
-                  className={`font-display text-[9px] tracking-[0.2em] uppercase mt-2 transition-colors duration-300 ${
-                    i <= step ? 'text-[#9cb092]' : 'text-[#b2c3b1]/30'
-                  }`}
-                >
-                  {s.label}
-                </span>
-              </div>
-              {i < STEPS.length - 1 && (
-                <div
-                  className={`w-8 sm:w-16 h-px mx-1.5 sm:mx-3 transition-colors duration-500 ${
-                    i < step ? 'bg-[#9cb092]/60' : 'bg-white/10'
-                  }`}
-                />
-              )}
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          )}
 
-      {/* Step Content */}
-      <main className="relative z-10 flex-grow px-6 pb-32">
-        <div className="container mx-auto">
+          {/* Step Content */}
+          <main className="flex-grow pb-10 min-w-0">
+          <div className="container mx-auto">
           {confirmed ? (
             /* Thank You Screen */
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
@@ -254,12 +290,14 @@ export default function CreateEvite() {
             </>
           )}
         </div>
-      </main>
+        </main>
+        </div>
+      </div>
 
       {/* Bottom Navigation Bar — hidden on confirmed screen and payment step */}
       {!confirmed && step !== 5 && (
         <div className="sticky bottom-0 z-40 border-t border-white/10">
-          <div className="bg-[#111914]/80 backdrop-blur-md px-6 py-4">
+          <div className="bg-[#111914]/80 backdrop-blur-md px-4 py-2.5">
             <div className="max-w-4xl mx-auto flex items-center justify-between">
               <button
                 onClick={step === 0 ? () => navigate('/') : handleBack}

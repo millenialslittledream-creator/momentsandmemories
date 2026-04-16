@@ -75,15 +75,15 @@ export default function GuestDetails({
   return (
     <div ref={containerRef}>
       {/* Heading */}
-      <div ref={headingRef} className="flex flex-col items-center mb-6 mt-4">
-        <h1 className="text-3xl md:text-5xl font-serif-exp italic text-center mb-3 relative z-10">
+      <div ref={headingRef} className="flex flex-col items-center mb-4 mt-2">
+        <h1 className="text-2xl md:text-4xl font-serif-exp italic text-center mb-2 relative z-10">
           Who's on the <br />
           <span className="text-[#9cb092] not-italic font-agatho">guest list?</span>
         </h1>
-        <div className="w-[1px] h-6 bg-[#9cb092]/40 mt-3" />
+        <div className="w-[1px] h-4 bg-[#9cb092]/40 mt-2" />
       </div>
 
-      <div className="max-w-2xl mx-auto space-y-8">
+      <div className="max-w-2xl mx-auto space-y-6">
         {/* Delivery Preference */}
         <div className="guest-section glass-panel rounded-none p-8">
           <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-6 pb-3 border-b border-white/10 flex items-center gap-3">
@@ -202,14 +202,94 @@ export default function GuestDetails({
             ))}
           </div>
 
-          {/* Add Guest Button */}
-          <button
-            onClick={addGuest}
-            className="mt-6 w-full py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
-          >
-            <span className="material-icons text-sm">add</span>
-            Add Another Guest
-          </button>
+          {/* Add Guest Buttons */}
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button
+              onClick={addGuest}
+              className="py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
+            >
+              <span className="material-icons text-sm">add</span>
+              Add Guest
+            </button>
+
+            {/* Upload Excel/CSV */}
+            <label className="py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2 cursor-pointer">
+              <span className="material-icons text-sm">upload_file</span>
+              Upload Excel / CSV
+              <input
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = (evt) => {
+                    const text = evt.target?.result as string;
+                    if (!text) return;
+                    const lines = text.split('\n').filter((l) => l.trim());
+                    // Skip header row if it looks like one
+                    const startIdx = lines[0]?.toLowerCase().includes('name') ? 1 : 0;
+                    const newGuests: Guest[] = [];
+                    for (let i = startIdx; i < lines.length; i++) {
+                      const cols = lines[i].split(/[,\t]/).map((c) => c.trim().replace(/^"|"$/g, ''));
+                      if (cols[0]) {
+                        newGuests.push({
+                          id: `guest-${++guestIdCounter}`,
+                          name: cols[0] || '',
+                          email: cols[1] || '',
+                          phone: cols[2] || '',
+                        });
+                      }
+                    }
+                    if (newGuests.length > 0) {
+                      // Replace the initial empty guest or append
+                      const existing = guests.filter((g) => g.name.trim());
+                      onGuestsChange([...existing, ...newGuests]);
+                    }
+                  };
+                  reader.readAsText(file);
+                  e.target.value = '';
+                }}
+              />
+            </label>
+
+            {/* Select from Phone Contacts */}
+            <button
+              onClick={async () => {
+                try {
+                  if ('contacts' in navigator && (navigator as any).contacts) {
+                    const contacts = await (navigator as any).contacts.select(
+                      ['name', 'email', 'tel'],
+                      { multiple: true }
+                    );
+                    const newGuests: Guest[] = contacts.map((c: any) => ({
+                      id: `guest-${++guestIdCounter}`,
+                      name: c.name?.[0] || '',
+                      email: c.email?.[0] || '',
+                      phone: c.tel?.[0] || '',
+                    }));
+                    if (newGuests.length > 0) {
+                      const existing = guests.filter((g) => g.name.trim());
+                      onGuestsChange([...existing, ...newGuests]);
+                    }
+                  } else {
+                    alert('Contact picker is only available on mobile devices (Android Chrome). Please use the Excel upload option on desktop.');
+                  }
+                } catch {
+                  // User cancelled or not supported
+                }
+              }}
+              className="py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
+            >
+              <span className="material-icons text-sm">contacts</span>
+              Phone Contacts
+            </button>
+          </div>
+
+          <p className="mt-3 font-display text-[9px] text-[#b2c3b1]/40 leading-relaxed">
+            CSV/Excel format: Name, Email, Phone (one guest per row). Header row is optional.
+          </p>
         </div>
       </div>
     </div>

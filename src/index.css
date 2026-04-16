@@ -83,6 +83,20 @@
   }
   body {
     @apply bg-background-dark text-[#1a2418] font-display overflow-x-hidden;
+    cursor: default;
+  }
+  /* Prevent text cursor on non-editable elements */
+  h1, h2, h3, h4, h5, h6, p, span, div, label {
+    cursor: default;
+  }
+  button, a, [role="button"] {
+    cursor: pointer;
+  }
+  input, textarea, select, [contenteditable="true"] {
+    cursor: text;
+  }
+  select {
+    cursor: pointer;
   }
 }
 
