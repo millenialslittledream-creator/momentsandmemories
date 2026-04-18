@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
-# from middleware.logging import LoggingMiddleware  # uncommented in Task 4
+from middleware.logging import LoggingMiddleware
 
 app = FastAPI(title="Moments & Memories API", version="1.0.0")
 
@@ -12,7 +12,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# app.add_middleware(LoggingMiddleware)  # uncommented in Task 4
+app.add_middleware(LoggingMiddleware)
 
 
 @app.get("/health")
