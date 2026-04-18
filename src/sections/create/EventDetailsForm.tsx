@@ -28,6 +28,7 @@ interface EventDetailsFormProps {
   formData: Record<string, string>;
   onChange: (name: string, value: string) => void;
   errors: Record<string, boolean>;
+  onAutoAdvance?: () => void;
 }
 
 /* ── Time Picker (text inputs with local state — validates on blur) ── */
@@ -418,12 +419,56 @@ export default function EventDetailsForm({
   formData,
   onChange,
   errors,
+  onAutoAdvance,
 }: EventDetailsFormProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
   const [hasSubEvents, setHasSubEvents] = useState(
     () => !!formData['sub_events_count']
   );
+
+  // ── Auto-advance once all required fields are filled ───────
+  // Debounces changes so users have ~1s of typing grace after the last
+  // keystroke. Skips the very first effect run so that navigating back
+  // to this step (with the form already complete) doesn't boot them
+  // straight forward again — we only advance after an actual edit.
+  const mountedRef = useRef(false);
+  const advanceTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const requiredFields = [
+      ...eventSpecificFields[eventType],
+      ...commonFields,
+    ].filter((f) => f.required);
+
+    const allFilled = requiredFields.every((f) => formData[f.name]?.trim());
+
+    // Skip the first effect run on mount — avoid auto-advance if the
+    // user returned to this step with a pre-filled form.
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+
+    if (!onAutoAdvance) return;
+
+    if (allFilled) {
+      if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = window.setTimeout(() => {
+        onAutoAdvance();
+      }, 1000);
+    } else if (advanceTimerRef.current) {
+      window.clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
+  }, [formData, eventType, onAutoAdvance]);
+
+  // Clean up pending timer on unmount
+  useEffect(() => {
+    return () => {
+      if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
+    };
+  }, []);
 
   // Dynamic sub-events: stored as sub_0_name, sub_0_date, etc.
   const getSubEventCount = () => parseInt(formData['sub_events_count'] || '0');

@@ -118,7 +118,6 @@ export const commonFields: EventField[] = [
   ], required: true },
   { name: 'venue', label: 'Venue / Location', type: 'text', placeholder: 'Where is the event?', required: true },
   { name: 'rsvpContact', label: 'RSVP Contact (Phone or Email)', type: 'text', placeholder: 'How should guests RSVP?', required: true },
-  { name: 'customMessage', label: 'Custom Message', type: 'textarea', placeholder: 'Add a personal note (optional)', required: false },
 ];
 
 export const eventSpecificFields: Record<EventType, EventField[]> = {

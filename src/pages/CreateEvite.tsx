@@ -124,6 +124,16 @@ export default function CreateEvite() {
     setStep(1);
   }, []);
 
+  // Auto-advance from step 1 once every required field is filled.
+  // Runs the same validation as the old "Next" button so we don't
+  // leap forward on a form that's technically complete but errored.
+  const handleDetailsAutoAdvance = useCallback(() => {
+    if (validateStep2()) {
+      setStep(2);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventType, formData]);
+
   return (
     <div ref={pageRef} className="relative min-h-screen bg-[#EADDD7] text-[#e4eee1] overflow-x-hidden flex flex-col">
       <div ref={topAnchorRef} className="absolute top-0 left-0 w-0 h-0" aria-hidden="true" />
@@ -255,6 +265,7 @@ export default function CreateEvite() {
                   formData={formData}
                   onChange={handleFieldChange}
                   errors={errors}
+                  onAutoAdvance={handleDetailsAutoAdvance}
                 />
               )}
               {step === 2 && eventType && (
@@ -294,8 +305,9 @@ export default function CreateEvite() {
         </div>
       </div>
 
-      {/* Bottom Navigation Bar — hidden on confirmed screen and payment step */}
-      {!confirmed && step !== 5 && (
+      {/* Bottom Navigation Bar — hidden on confirmed screen, steps 0 & 1
+          (both auto-advance on completion), and payment step */}
+      {!confirmed && step !== 0 && step !== 1 && step !== 5 && (
         <div className="sticky bottom-0 z-40 border-t border-white/10">
           <div className="bg-[#111914]/80 backdrop-blur-md px-4 py-2.5">
             <div className="max-w-4xl mx-auto flex items-center justify-between">
