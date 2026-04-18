@@ -14,22 +14,26 @@ export default function EventTypeSelector({ selected, onSelect, onAutoAdvance }:
 
   useEffect(() => {
     const ctx = gsap.context(() => {
+      // Heading eases in gently before the cards start to appear.
       gsap.fromTo(
         headingRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.4, ease: 'power3.out' }
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out' }
       );
+      // Cards float up with a noticeable stagger so each event name
+      // lands one after another instead of all at once — gives the
+      // "popping up" reveal time to breathe.
       gsap.fromTo(
         '.event-type-card',
-        { opacity: 0, y: 30, scale: 0.97 },
+        { opacity: 0, y: 40, scale: 0.94 },
         {
           opacity: 1,
           y: 0,
           scale: 1,
-          duration: 0.3,
-          stagger: 0.04,
+          duration: 0.85,
+          stagger: 0.14,
           ease: 'power3.out',
-          delay: 0.1,
+          delay: 0.35,
         }
       );
     }, containerRef);
