@@ -1,5 +1,13 @@
 import pytest
 from unittest.mock import MagicMock, patch
+import database
+
+
+@pytest.fixture(autouse=True)
+def reset_db_singleton():
+    database._client = None
+    yield
+    database._client = None
 
 
 @pytest.fixture
