@@ -7,6 +7,7 @@ from users.router import router as users_router
 from events.router import router as events_router
 from qr.router import router as qr_router
 from shop.router import router as shop_router
+from notifications.router import router as notifications_router
 
 app = FastAPI(title="Moments & Memories API", version="1.0.0")
 
@@ -24,6 +25,7 @@ app.include_router(users_router)
 app.include_router(events_router)
 app.include_router(qr_router)
 app.include_router(shop_router)
+app.include_router(notifications_router)
 
 
 @app.get("/health")
