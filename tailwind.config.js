@@ -49,7 +49,7 @@ module.exports = {
         "serif-exp": ["Playfair Display", "serif"],
         ragika: ["Ragika", "serif"],
         ciguatera: ["Ciguatera", "serif"],
-        agatho: ["Agatho", "serif"],
+        agatho: ["Cormorant Garamond", "Playfair Display", "serif"],
       },
       borderRadius: {
         xl: "calc(var(--radius) + 4px)",

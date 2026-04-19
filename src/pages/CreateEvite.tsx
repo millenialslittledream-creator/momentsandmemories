@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 import gsap from 'gsap';
 import Navigation from '@/sections/Navigation';
 import EventTypeSelector from '@/sections/create/EventTypeSelector';
@@ -47,25 +48,107 @@ export default function CreateEvite() {
     delivery_preference: 'email' | 'phone' | 'both';
     updated_at: string;
   }>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load draft once on mount
+  const VALID_EVENT_TYPES = Object.keys(eventSpecificFields) as EventType[];
+  const LS_KEY = 'mm_draft_backup';
+
+  // Build the current draft payload
+  const buildDraftPayload = useCallback(() => ({
+    step,
+    event_type: eventType,
+    form_data: formData,
+    selected_template: selectedTemplate,
+    guests,
+    delivery_preference: deliveryPreference,
+  }), [step, eventType, formData, selectedTemplate, guests, deliveryPreference]);
+
+  // Immediate local backup on every change (survives crashes/offline)
+  useEffect(() => {
+    if (!draftChecked || pendingDraft || step === 0) return;
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ ...buildDraftPayload(), updated_at: new Date().toISOString() })); } catch {}
+  }, [step, eventType, formData, selectedTemplate, guests, deliveryPreference, draftChecked, pendingDraft, buildDraftPayload]);
+
+  // Load draft on mount — API first, localStorage fallback
   useEffect(() => {
     api.getDraft()
-      .then((draft) => { if (draft && draft.step > 0) setPendingDraft(draft); })
-      .catch(() => {})
+      .then((draft) => {
+        if (draft && draft.step > 0) { setPendingDraft(draft); return; }
+        // Fallback: check localStorage backup
+        try {
+          const local = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+          if (local && local.step > 0) setPendingDraft(local);
+        } catch {}
+      })
+      .catch(() => {
+        // API failed — try localStorage backup
+        try {
+          const local = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+          if (local && local.step > 0) setPendingDraft(local);
+        } catch {}
+      })
       .finally(() => setDraftChecked(true));
   }, []);
 
-  // Auto-save draft (debounced 2s) whenever any create-state changes
+  // Debounced API save (2s after last change)
   useEffect(() => {
     if (!draftChecked || pendingDraft || step === 0) return;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(() => {
-      api.saveDraft({ step, event_type: eventType, form_data: formData, selected_template: selectedTemplate, guests, delivery_preference: deliveryPreference }).catch(() => {});
+    setSaveStatus('saving');
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        await api.saveDraft(buildDraftPayload());
+        setSaveStatus('saved');
+        if (saveStatusTimeoutRef.current) clearTimeout(saveStatusTimeoutRef.current);
+        saveStatusTimeoutRef.current = setTimeout(() => setSaveStatus('idle'), 2500);
+      } catch {
+        setSaveStatus('error');
+        if (saveStatusTimeoutRef.current) clearTimeout(saveStatusTimeoutRef.current);
+        saveStatusTimeoutRef.current = setTimeout(() => setSaveStatus('idle'), 3000);
+      }
     }, 2000);
     return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
-  }, [step, eventType, formData, selectedTemplate, guests, deliveryPreference, draftChecked, pendingDraft]);
+  }, [step, eventType, formData, selectedTemplate, guests, deliveryPreference, draftChecked, pendingDraft, buildDraftPayload]);
+
+  // Save immediately when tab hides or user navigates away (keepalive ensures delivery)
+  useEffect(() => {
+    if (!draftChecked) return;
+    const saveNow = () => {
+      if (step === 0 || confirmed) return;
+      const payload = buildDraftPayload();
+      try { localStorage.setItem(LS_KEY, JSON.stringify({ ...payload, updated_at: new Date().toISOString() })); } catch {}
+      const token = (window as any).__mm_token;
+      if (token) {
+        const API_URL = import.meta.env.VITE_API_URL || '';
+        fetch(`${API_URL}/api/drafts/my`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(payload),
+          keepalive: true,
+        }).catch(() => {});
+      }
+    };
+    const onVisibilityChange = () => { if (document.visibilityState === 'hidden') saveNow(); };
+    window.addEventListener('beforeunload', saveNow);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('beforeunload', saveNow);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [draftChecked, step, confirmed, buildDraftPayload]);
+
+  // Cache token on window for keepalive saves
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      (window as any).__mm_token = session?.access_token ?? null;
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
+      (window as any).__mm_token = s?.access_token ?? null;
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -168,6 +251,7 @@ export default function CreateEvite() {
       }
 
       api.deleteDraft().catch(() => {});
+      try { localStorage.removeItem('mm_draft_backup'); } catch {}
       setConfirmed(true);
     } catch (e) {
       console.error('Failed to save event:', e);
@@ -204,12 +288,19 @@ export default function CreateEvite() {
           <div className="flex gap-3">
             <button
               onClick={() => {
-                if (pendingDraft.event_type) setEventType(pendingDraft.event_type as EventType);
-                setFormData(pendingDraft.form_data);
+                // Validate event_type is still a valid option
+                const validType = pendingDraft.event_type && VALID_EVENT_TYPES.includes(pendingDraft.event_type as EventType)
+                  ? pendingDraft.event_type as EventType : null;
+                if (validType) setEventType(validType);
+                setFormData(pendingDraft.form_data || {});
                 if (pendingDraft.selected_template) setSelectedTemplate(pendingDraft.selected_template);
-                if (pendingDraft.guests?.length) setGuests(pendingDraft.guests);
-                setDeliveryPreference(pendingDraft.delivery_preference);
-                setStep(pendingDraft.step);
+                // Ensure at least one guest after restore
+                const restoredGuests = pendingDraft.guests?.length ? pendingDraft.guests : [createGuest()];
+                setGuests(restoredGuests);
+                setDeliveryPreference(pendingDraft.delivery_preference || 'email');
+                // Clamp step to valid range; if event_type missing, go to step 0
+                const clampedStep = Math.min(Math.max(pendingDraft.step, 0), 5);
+                setStep(validType ? clampedStep : 0);
                 setPendingDraft(null);
               }}
               className="flex-1 py-3 bg-[#9cb092] text-[#0d1a10] font-display text-[10px] tracking-[0.2em] uppercase hover:bg-[#b2c3b1] transition-colors"
@@ -217,7 +308,7 @@ export default function CreateEvite() {
               Continue
             </button>
             <button
-              onClick={() => { api.deleteDraft().catch(() => {}); setPendingDraft(null); }}
+              onClick={() => { api.deleteDraft().catch(() => {}); try { localStorage.removeItem('mm_draft_backup'); } catch {} setPendingDraft(null); }}
               className="flex-1 py-3 border border-white/15 text-[#b2c3b1]/60 font-display text-[10px] tracking-[0.2em] uppercase hover:border-white/30 transition-colors"
             >
               Start Fresh
@@ -238,6 +329,20 @@ export default function CreateEvite() {
       <div className="fixed inset-0 z-[1] bg-[#111914]/70 pointer-events-none" />
 
       <Navigation />
+
+      {/* Auto-save indicator */}
+      {!confirmed && step > 0 && saveStatus !== 'idle' && (
+        <div className={`fixed top-20 right-4 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-display tracking-[0.15em] uppercase transition-all ${
+          saveStatus === 'saving' ? 'bg-white/5 text-[#b2c3b1]/40' :
+          saveStatus === 'saved' ? 'bg-[#9cb092]/15 text-[#9cb092]' :
+          'bg-red-900/20 text-red-400/70'
+        }`}>
+          {saveStatus === 'saving' && <span className="w-2 h-2 rounded-full border border-current border-t-transparent animate-spin" />}
+          {saveStatus === 'saved' && <span className="material-icons text-[10px]">check</span>}
+          {saveStatus === 'error' && <span className="material-icons text-[10px]">cloud_off</span>}
+          {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved' : 'Not saved'}
+        </div>
+      )}
 
       {/* Layout: vertical steps left + content right */}
       <div className="relative z-10 pt-16 px-3 md:px-4 flex flex-col md:flex-row flex-grow">
