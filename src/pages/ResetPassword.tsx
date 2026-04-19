@@ -57,7 +57,7 @@ const ResetPassword = () => {
             <span className="block text-xs tracking-[0.2em] font-bold opacity-70 group-hover:opacity-100 transition-opacity uppercase">Back to Login</span>
           </Link>
           <div className="pointer-events-auto text-right">
-            <span className="block text-2xl font-serif-exp italic text-primary">moments & memories</span>
+            <span className="block text-2xl font-serif-exp text-primary">moments & memories</span>
           </div>
         </nav>
 

@@ -5,7 +5,12 @@
       "Bash(wc -l \"D:\\\\Sana Hp Laptop Data\\\\D Drive Data\\\\agency\\\\ocasio signinsignup\\\\cosy-landing-haven-main/src/components/ui\"/*)",
       "Bash(npm install:*)",
       "Bash(npm ls:*)",
-      "Bash(timeout 20)"
+      "Bash(timeout 20)",
+      "Bash(cp -r \"templates/baby shower\" public/templates/)",
+      "Bash(cp -r \"templates/birthday\" public/templates/)",
+      "Bash(cp -r \"templates/bride to be\" public/templates/)",
+      "Bash(cp -r \"templates/gender reveal\" public/templates/)",
+      "Bash(cp -r \"templates/wedding\" public/templates/)"
     ]
   }
 }

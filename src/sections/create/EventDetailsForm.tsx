@@ -282,6 +282,79 @@ function VenueAutocomplete({
   );
 }
 
+/* ── Timezone Select — compact inline version ─────────────── */
+const TIMEZONE_OPTIONS = [
+  'UTC-10 — Hawaii (HST)',
+  'UTC-9 — Alaska (AKST)',
+  'UTC-8 — Pacific (PST)',
+  'UTC-7 — Mountain (MST)',
+  'UTC-7 — Arizona, no DST',
+  'UTC-6 — Central (CST)',
+  'UTC-5 — Eastern (EST)',
+  'UTC-5 — Colombia / Peru',
+  'UTC-4 — Atlantic (AST)',
+  'UTC-3:30 — Newfoundland (NST)',
+  'UTC-3 — Brazil (BRT)',
+  'UTC-3 — Argentina (ART)',
+  'UTC+0 — London (GMT)',
+  'UTC+1 — Central Europe (CET)',
+  'UTC+2 — Eastern Europe (EET)',
+  'UTC+3 — Moscow (MSK)',
+  'UTC+1 — West Africa (WAT)',
+  'UTC+2 — South Africa (SAST)',
+  'UTC+3 — East Africa (EAT)',
+  'UTC+3 — Arabia / Riyadh',
+  'UTC+3:30 — Iran (IRST)',
+  'UTC+4 — Gulf / Dubai (GST)',
+  'UTC+4:30 — Afghanistan (AFT)',
+  'UTC+5 — Pakistan (PKT)',
+  'UTC+5:30 — India (IST)',
+  'UTC+5:45 — Nepal (NPT)',
+  'UTC+6 — Bangladesh (BST)',
+  'UTC+6:30 — Myanmar (MMT)',
+  'UTC+7 — Indochina (ICT)',
+  'UTC+8 — Singapore (SGT)',
+  'UTC+8 — China (CST)',
+  'UTC+8 — W. Australia (AWST)',
+  'UTC+9 — Japan (JST)',
+  'UTC+9 — Korea (KST)',
+  'UTC+9:30 — C. Australia (ACST)',
+  'UTC+10 — E. Australia (AEST)',
+  'UTC+12 — New Zealand (NZST)',
+];
+
+function TimezoneSelect({
+  value,
+  onChange,
+  hasError,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  hasError?: boolean;
+}) {
+  return (
+    <div className="relative flex-1 min-w-0">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`bg-white/[0.06] backdrop-blur-sm border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display text-sm h-9 rounded-md w-full pl-3 pr-7 appearance-none cursor-pointer outline-none transition-colors ${
+          hasError ? 'border-red-400/60 ring-1 ring-red-400/20' : ''
+        }`}
+      >
+        <option value="">Timezone</option>
+        {TIMEZONE_OPTIONS.map((opt) => (
+          <option key={opt} value={opt} className="bg-[#1a2418] text-[#e4eee1]">
+            {opt}
+          </option>
+        ))}
+      </select>
+      <span className="material-icons absolute right-1.5 top-1/2 -translate-y-1/2 text-[#9cb092] pointer-events-none" style={{ fontSize: '14px' }}>
+        expand_more
+      </span>
+    </div>
+  );
+}
+
 /* ── Field Renderer ────────────────────────────────────────── */
 function renderField(
   field: EventField,
@@ -419,7 +492,6 @@ export default function EventDetailsForm({
   formData,
   onChange,
   errors,
-  onAutoAdvance,
 }: EventDetailsFormProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
@@ -427,48 +499,6 @@ export default function EventDetailsForm({
     () => !!formData['sub_events_count']
   );
 
-  // ── Auto-advance once all required fields are filled ───────
-  // Debounces changes so users have ~1s of typing grace after the last
-  // keystroke. Skips the very first effect run so that navigating back
-  // to this step (with the form already complete) doesn't boot them
-  // straight forward again — we only advance after an actual edit.
-  const mountedRef = useRef(false);
-  const advanceTimerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    const requiredFields = [
-      ...eventSpecificFields[eventType],
-      ...commonFields,
-    ].filter((f) => f.required);
-
-    const allFilled = requiredFields.every((f) => formData[f.name]?.trim());
-
-    // Skip the first effect run on mount — avoid auto-advance if the
-    // user returned to this step with a pre-filled form.
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      return;
-    }
-
-    if (!onAutoAdvance) return;
-
-    if (allFilled) {
-      if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
-      advanceTimerRef.current = window.setTimeout(() => {
-        onAutoAdvance();
-      }, 1000);
-    } else if (advanceTimerRef.current) {
-      window.clearTimeout(advanceTimerRef.current);
-      advanceTimerRef.current = null;
-    }
-  }, [formData, eventType, onAutoAdvance]);
-
-  // Clean up pending timer on unmount
-  useEffect(() => {
-    return () => {
-      if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
-    };
-  }, []);
 
   // Dynamic sub-events: stored as sub_0_name, sub_0_date, etc.
   const getSubEventCount = () => parseInt(formData['sub_events_count'] || '0');
@@ -544,10 +574,10 @@ export default function EventDetailsForm({
   return (
     <div ref={containerRef}>
       {/* Heading */}
-      <div ref={headingRef} className="flex flex-col items-center mb-4 mt-2">
-        <h1 className="text-2xl md:text-4xl font-serif-exp italic text-center mb-2 relative z-10">
+      <div ref={headingRef} className="flex flex-col items-center mb-6 mt-0">
+        <h1 className="text-2xl md:text-4xl font-serif-exp text-center mb-2 relative z-10">
           Bring your celebration to life <br />
-          <span className="text-[#9cb092] not-italic font-agatho">with the details.</span>
+          <span className="text-[#9cb092] font-agatho">with the details.</span>
         </h1>
         <div className="w-[1px] h-4 bg-[#9cb092]/40 mt-2" />
       </div>
@@ -557,7 +587,7 @@ export default function EventDetailsForm({
         {eventType === 'marriage' && (
           <div className="glass-panel rounded-none p-6">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
-              <h3 className="font-serif-exp text-lg text-[#e4eee1] italic flex items-center gap-3">
+              <h3 className="font-serif-exp text-lg text-[#e4eee1] flex items-center gap-3">
                 <span className="material-icons text-[#9cb092] text-lg">celebration</span>
                 Multiple Events
               </h3>
@@ -589,7 +619,7 @@ export default function EventDetailsForm({
                     className="p-5 border border-white/5 bg-white/[0.02] space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
                   >
                     <div className="flex items-center justify-between">
-                      <h4 className="font-serif-exp text-base text-[#e4eee1] italic flex items-center gap-2">
+                      <h4 className="font-serif-exp text-base text-[#e4eee1] flex items-center gap-2">
                         <span className="material-icons text-[#9cb092] text-base">event</span>
                         Event {i + 1}
                       </h4>
@@ -633,6 +663,16 @@ export default function EventDetailsForm({
                           hasError={false}
                         />
                       </div>
+                      {/* Timezone spans full width, sits directly below date+time row */}
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
+                          Timezone
+                        </Label>
+                        <TimezoneSelect
+                          value={formData[`sub_${i}_timezone`] || ''}
+                          onChange={(val) => onChange(`sub_${i}_timezone`, val)}
+                        />
+                      </div>
                       <div className="space-y-1.5 md:col-span-2">
                         <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
                           Venue
@@ -661,7 +701,7 @@ export default function EventDetailsForm({
 
         {/* Event-specific fields */}
         <div className="glass-panel rounded-none p-6">
-          <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-5 pb-2 border-b border-white/10 flex items-center gap-3">
+          <h3 className="font-serif-exp text-lg text-[#e4eee1] mb-5 pb-2 border-b border-white/10 flex items-center gap-3">
             <span className="material-icons text-[#9cb092] text-lg">{eventInfo?.icon}</span>
             Event Information
           </h3>
@@ -684,24 +724,48 @@ export default function EventDetailsForm({
                 )}
               </div>
             ))}
-            {/* Common fields */}
-            {commonFields.map((field) => (
-              <div
-                key={field.name}
-                className={`form-field space-y-2 ${
-                  field.type === 'textarea' ? 'md:col-span-2' : ''
-                }`}
-              >
-                <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
-                  {field.label}
-                  {field.required && <span className="text-[#9cb092] ml-1">*</span>}
-                </Label>
-                {renderField(field, formData[field.name] || '', onChange, !!errors[field.name])}
-                {errors[field.name] && (
-                  <p className="text-red-400/80 text-[10px] font-display tracking-wide">This field is required</p>
-                )}
-              </div>
-            ))}
+            {/* Common fields — timezone is inlined with eventTime, not standalone */}
+            {commonFields.map((field) => {
+              if (field.name === 'timezone') return null; // rendered inline with time
+
+              const isTime = field.name === 'eventTime';
+
+              return (
+                <div
+                  key={field.name}
+                  className={`form-field space-y-2 ${
+                    field.type === 'textarea' ? 'md:col-span-2' : ''
+                  }`}
+                >
+                  <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
+                    {field.label}
+                    {field.required && <span className="text-[#9cb092] ml-1">*</span>}
+                  </Label>
+
+                  {isTime ? (
+                    /* TimePicker stacked above compact TimezoneSelect — stays in its grid cell */
+                    <div className="space-y-2">
+                      <TimePicker
+                        value={formData[field.name] || ''}
+                        onChange={(val) => onChange(field.name, val)}
+                        hasError={!!errors[field.name]}
+                      />
+                      <TimezoneSelect
+                        value={formData['timezone'] || ''}
+                        onChange={(val) => onChange('timezone', val)}
+                        hasError={!!errors['timezone']}
+                      />
+                    </div>
+                  ) : (
+                    renderField(field, formData[field.name] || '', onChange, !!errors[field.name])
+                  )}
+
+                  {(errors[field.name] || (isTime && errors['timezone'])) && (
+                    <p className="text-red-400/80 text-[10px] font-display tracking-wide">This field is required</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

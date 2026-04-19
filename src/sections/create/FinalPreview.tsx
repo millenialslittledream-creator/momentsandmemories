@@ -30,10 +30,17 @@ export default function FinalPreview({
 
   const eventInfo = eventTypes.find((e) => e.id === eventType);
   const template = eviteTemplates.find((t) => t.id === selectedTemplate);
+  // Support custom uploaded designs
+  const customImageUrl = selectedTemplate?.startsWith('custom_')
+    ? selectedTemplate.slice('custom_'.length)
+    : null;
+  const previewImage = template?.previewImage ?? customImageUrl ?? '';
+
   const allFields = [...eventSpecificFields[eventType], ...commonFields];
 
   const displayName =
     formData.celebrantName ||
+    formData.eventName ||
     formData.brideName ||
     formData.parentNames ||
     formData.hostName ||
@@ -69,7 +76,7 @@ export default function FinalPreview({
     return () => ctx.revert();
   }, []);
 
-  if (!template) return null;
+  if (!template && !customImageUrl) return null;
 
   const startEditing = (fieldName: string) => {
     setEditingField(fieldName);
@@ -90,36 +97,40 @@ export default function FinalPreview({
   };
 
   const inputClass =
-    'bg-white/[0.06] backdrop-blur-sm border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 text-sm';
+    'bg-white/[0.06] backdrop-blur-sm border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 text-xs';
 
   return (
     <div ref={containerRef}>
       {/* Heading */}
-      <div ref={headingRef} className="flex flex-col items-center mb-4 mt-2">
-        <h1 className="text-2xl md:text-4xl font-serif-exp italic text-center mb-2 relative z-10">
+      <div ref={headingRef} className="flex flex-col items-center mb-3 mt-0">
+        <h1 className="text-lg md:text-2xl font-serif-exp text-center mb-1 relative z-10">
           Here's your celebration, <br />
-          <span className="text-[#9cb092] not-italic font-agatho">brought to life.</span>
+          <span className="text-[#9cb092] font-agatho">brought to life.</span>
         </h1>
-        <div className="w-[1px] h-4 bg-[#9cb092]/40 mt-2" />
+        <div className="w-[1px] h-3 bg-[#9cb092]/40 mt-1.5" />
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 max-w-5xl mx-auto">
-        {/* Evite Card Preview — compact to fit viewport */}
-        <div className="final-card lg:w-[280px] flex-shrink-0 mx-auto lg:mx-0">
+      {/* Layout — card left, compact details right */}
+      <div className="flex flex-col lg:flex-row gap-5 max-w-2xl mx-auto items-start">
+
+        {/* Evite Card Preview — sized to fit viewport without scroll */}
+        <div className="final-card max-w-[240px] w-full lg:w-[200px] xl:w-[220px] flex-shrink-0 mx-auto lg:mx-0">
           <div className="overflow-hidden border border-white/15 shadow-2xl shadow-[#9cb092]/5">
             <div className="relative aspect-[3/4]">
               <img
-                src={template.previewImage}
-                alt={template.name}
+                src={previewImage}
+                alt={template?.name ?? 'Custom design'}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-5">
                 <p className="font-display text-[8px] tracking-[0.25em] uppercase text-white/50 mb-1">
                   You're invited to
                 </p>
-                <h4 className="font-serif-exp text-xl text-white italic leading-tight">
+                <h4 className="font-serif-exp text-xl text-white leading-tight">
                   {eventInfo?.label === 'Wedding'
                     ? `${formData.brideName || 'Bride'} & ${formData.groomName || 'Groom'}`
+                    : eventType === 'custom'
+                    ? formData.eventName || displayName || 'Your Event'
                     : `${displayName}'s ${eventInfo?.label}`}
                 </h4>
                 <div className="space-y-1 mt-3">
@@ -145,7 +156,7 @@ export default function FinalPreview({
                   )}
                 </div>
                 {formData.customMessage && (
-                  <p className="font-serif-exp text-xs text-white/60 italic mt-3 border-t border-white/10 pt-2">
+                  <p className="font-serif-exp text-xs text-white/60 mt-3 border-t border-white/10 pt-2">
                     "{formData.customMessage}"
                   </p>
                 )}
@@ -154,93 +165,91 @@ export default function FinalPreview({
           </div>
         </div>
 
-        {/* Event Details Summary — editable */}
-        <div className="final-details flex-1">
-          <div className="sticky top-28">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display text-[10px] tracking-[0.25em] uppercase text-[#b2c3b1]">
-                Event Details
-              </h3>
-              <p className="font-display text-[9px] tracking-[0.15em] text-[#9cb092]/60 uppercase flex items-center gap-1">
-                <span className="material-icons text-xs">edit</span>
-                Click any field to edit
-              </p>
-            </div>
-            <div className="space-y-2">
-              {allFields.map((field) => {
-                const value = formData[field.name];
-                if (!value && editingField !== field.name) return null;
-                const isEditing = editingField === field.name;
+        {/* Event Details Summary — compact, no sticky/scroll */}
+        <div className="final-details flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-2.5">
+            <h3 className="font-display text-[9px] tracking-[0.25em] uppercase text-[#b2c3b1]">
+              Event Details
+            </h3>
+            <p className="font-display text-[8px] tracking-[0.12em] text-[#9cb092]/60 uppercase flex items-center gap-1">
+              <span className="material-icons text-[10px]">edit</span>
+              Tap to edit
+            </p>
+          </div>
 
-                return (
-                  <div key={field.name} className="border-b border-white/5 pb-2">
-                    <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#b2c3b1]/50 mb-1">
-                      {field.label}
-                    </p>
-                    {isEditing ? (
-                      <div className="flex flex-col gap-2">
-                        {field.type === 'textarea' ? (
-                          <Textarea
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            className={`${inputClass} min-h-[60px]`}
-                            autoFocus
-                          />
-                        ) : (
-                          <Input
-                            type="text"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            className={inputClass}
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') saveEdit();
-                              if (e.key === 'Escape') cancelEdit();
-                            }}
-                          />
-                        )}
-                        <div className="flex gap-2">
-                          <button
-                            onClick={saveEdit}
-                            className="font-display text-[9px] tracking-[0.15em] uppercase text-[#9cb092] hover:text-[#adc4a3] flex items-center gap-1 transition-colors"
-                          >
-                            <span className="material-icons text-xs">check</span>
-                            Save
-                          </button>
-                          <button
-                            onClick={cancelEdit}
-                            className="font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]/50 hover:text-[#b2c3b1] flex items-center gap-1 transition-colors"
-                          >
-                            <span className="material-icons text-xs">close</span>
-                            Cancel
-                          </button>
-                        </div>
+          <div className="space-y-1.5">
+            {allFields.map((field) => {
+              const value = formData[field.name];
+              if (!value && editingField !== field.name) return null;
+              const isEditing = editingField === field.name;
+
+              return (
+                <div key={field.name} className="border-b border-white/5 pb-1.5">
+                  <p className="font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/45 mb-0.5">
+                    {field.label}
+                  </p>
+                  {isEditing ? (
+                    <div className="flex flex-col gap-1.5">
+                      {field.type === 'textarea' ? (
+                        <Textarea
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className={`${inputClass} min-h-[50px]`}
+                          autoFocus
+                        />
+                      ) : (
+                        <Input
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className={inputClass}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveEdit();
+                            if (e.key === 'Escape') cancelEdit();
+                          }}
+                        />
+                      )}
+                      <div className="flex gap-3">
+                        <button
+                          onClick={saveEdit}
+                          className="font-display text-[8px] tracking-[0.12em] uppercase text-[#9cb092] hover:text-[#adc4a3] flex items-center gap-1 transition-colors"
+                        >
+                          <span className="material-icons text-[10px]">check</span>
+                          Save
+                        </button>
+                        <button
+                          onClick={cancelEdit}
+                          className="font-display text-[8px] tracking-[0.12em] uppercase text-[#b2c3b1]/50 hover:text-[#b2c3b1] flex items-center gap-1 transition-colors"
+                        >
+                          <span className="material-icons text-[10px]">close</span>
+                          Cancel
+                        </button>
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => startEditing(field.name)}
-                        className="w-full text-left group/edit flex items-center justify-between"
-                      >
-                        <p className="font-serif-exp text-sm text-[#e4eee1] italic">
-                          {field.type === 'date'
-                            ? new Date(value + 'T00:00:00').toLocaleDateString('en-US', {
-                                weekday: 'long',
-                                month: 'long',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })
-                            : value}
-                        </p>
-                        <span className="material-icons text-[#9cb092]/0 group-hover/edit:text-[#9cb092]/60 text-xs transition-all">
-                          edit
-                        </span>
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => startEditing(field.name)}
+                      className="w-full text-left group/edit flex items-center justify-between gap-2"
+                    >
+                      <p className="font-serif-exp text-xs text-[#e4eee1] leading-snug">
+                        {field.type === 'date'
+                          ? new Date(value + 'T00:00:00').toLocaleDateString('en-US', {
+                              weekday: 'long',
+                              month: 'long',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })
+                          : value}
+                      </p>
+                      <span className="material-icons text-[#9cb092]/0 group-hover/edit:text-[#9cb092]/60 text-[10px] transition-all flex-shrink-0">
+                        edit
+                      </span>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

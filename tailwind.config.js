@@ -44,8 +44,9 @@ module.exports = {
         "fluid-dark": "#B0BBA8",
       },
       fontFamily: {
-        display: ["Space Grotesk", "sans-serif"],
-        "serif-exp": ["Bodoni Moda", "Playfair Display", "serif"],
+        sans: ["Inter", "sans-serif"],
+        display: ["Inter", "sans-serif"],
+        "serif-exp": ["Playfair Display", "serif"],
         ragika: ["Ragika", "serif"],
         ciguatera: ["Ciguatera", "serif"],
         agatho: ["Agatho", "serif"],

@@ -1,4 +1,4 @@
-export type EventType = 'birthday' | 'marriage' | 'babyshower' | 'bridetobe' | 'genderreveal';
+export type EventType = 'birthday' | 'marriage' | 'babyshower' | 'bridetobe' | 'genderreveal' | 'custom';
 
 export interface EventField {
   name: string;
@@ -53,6 +53,13 @@ export const eventTypes: EventTypeInfo[] = [
     icon: 'auto_awesome',
     color: '#b5c7e3',
   },
+  {
+    id: 'custom',
+    label: 'Custom Event',
+    description: 'Create a personalised invite for any occasion',
+    icon: 'stars',
+    color: '#9cb092',
+  },
 ];
 
 export const commonFields: EventField[] = [
@@ -60,64 +67,53 @@ export const commonFields: EventField[] = [
   { name: 'eventDate', label: 'Event Date', type: 'date', required: true },
   { name: 'eventTime', label: 'Event Time', type: 'time', required: true },
   { name: 'timezone', label: 'Timezone', type: 'select', options: [
-    // ── United States ──
-    'US - Eastern (ET) New York, Washington DC',
-    'US - Central (CT) Chicago, Houston, Dallas',
-    'US - Mountain (MT) Denver, Salt Lake City',
-    'US - Arizona (MT no DST) Phoenix',
-    'US - Pacific (PT) Los Angeles, San Francisco',
-    'US - Alaska (AKT) Anchorage, Fairbanks',
-    'US - Hawaii (HT) Honolulu, Maui',
-    'US - Atlantic (AST) Puerto Rico, US Virgin Islands',
-    'US - Samoa (SST) Pago Pago',
-    'US - Chamorro (ChST) Guam, Saipan',
-    // ── Americas ──
-    '(UTC-05:00) Toronto, Montreal',
-    '(UTC-06:00) Mexico City, Guadalajara',
-    '(UTC-04:00) Halifax, Santo Domingo, Caracas',
-    '(UTC-03:30) Newfoundland',
-    '(UTC-03:00) Buenos Aires, São Paulo, Santiago',
-    '(UTC-05:00) Bogota, Lima, Quito',
-    // ── Europe ──
-    '(UTC+00:00) London, Dublin, Lisbon',
-    '(UTC+01:00) Paris, Berlin, Rome, Madrid',
-    '(UTC+02:00) Athens, Helsinki, Bucharest',
-    '(UTC+03:00) Moscow, Istanbul, Minsk',
-    // ── Africa ──
-    '(UTC+00:00) Accra, Dakar',
-    '(UTC+01:00) Lagos, Algiers, Tunis',
-    '(UTC+02:00) Cairo, Johannesburg, Harare',
-    '(UTC+03:00) Nairobi, Addis Ababa, Dar es Salaam',
-    // ── Middle East ──
-    '(UTC+03:00) Riyadh, Kuwait, Baghdad',
-    '(UTC+03:30) Tehran',
-    '(UTC+04:00) Dubai, Abu Dhabi, Muscat',
-    '(UTC+04:30) Kabul',
-    // ── South Asia ──
-    '(UTC+05:00) Karachi, Tashkent',
-    '(UTC+05:30) Mumbai, New Delhi, Colombo',
-    '(UTC+05:45) Kathmandu',
-    '(UTC+06:00) Dhaka, Almaty',
-    '(UTC+06:30) Yangon',
-    // ── East & Southeast Asia ──
-    '(UTC+07:00) Bangkok, Jakarta, Ho Chi Minh City',
-    '(UTC+08:00) Singapore, Beijing, Hong Kong, Taipei',
-    '(UTC+09:00) Tokyo, Seoul',
-    // ── Oceania ──
-    '(UTC+08:00) Perth',
-    '(UTC+09:30) Adelaide, Darwin',
-    '(UTC+10:00) Sydney, Melbourne, Brisbane',
-    '(UTC+12:00) Auckland, Fiji',
-    '(UTC+13:00) Apia, Tongatapu',
-    // ── Other ──
-    '(UTC-12:00) Baker Island',
-    '(UTC-11:00) Niue, Midway',
-    '(UTC-02:00) South Georgia',
-    '(UTC-01:00) Azores, Cape Verde',
-    '(UTC+14:00) Line Islands',
+    // Americas
+    'UTC-10 — Hawaii (HST)',
+    'UTC-9 — Alaska (AKST)',
+    'UTC-8 — Pacific (PST)',
+    'UTC-7 — Mountain (MST)',
+    'UTC-7 — Arizona, no DST',
+    'UTC-6 — Central (CST)',
+    'UTC-5 — Eastern (EST)',
+    'UTC-5 — Colombia / Peru',
+    'UTC-4 — Atlantic (AST)',
+    'UTC-3:30 — Newfoundland (NST)',
+    'UTC-3 — Brazil (BRT)',
+    'UTC-3 — Argentina (ART)',
+    // Europe
+    'UTC+0 — London (GMT)',
+    'UTC+1 — Central Europe (CET)',
+    'UTC+2 — Eastern Europe (EET)',
+    'UTC+3 — Moscow (MSK)',
+    // Africa
+    'UTC+1 — West Africa (WAT)',
+    'UTC+2 — South Africa (SAST)',
+    'UTC+3 — East Africa (EAT)',
+    // Middle East
+    'UTC+3 — Arabia / Riyadh',
+    'UTC+3:30 — Iran (IRST)',
+    'UTC+4 — Gulf / Dubai (GST)',
+    'UTC+4:30 — Afghanistan (AFT)',
+    // South Asia
+    'UTC+5 — Pakistan (PKT)',
+    'UTC+5:30 — India (IST)',
+    'UTC+5:45 — Nepal (NPT)',
+    'UTC+6 — Bangladesh (BST)',
+    'UTC+6:30 — Myanmar (MMT)',
+    // Asia & Pacific
+    'UTC+7 — Indochina (ICT)',
+    'UTC+8 — Singapore (SGT)',
+    'UTC+8 — China (CST)',
+    'UTC+8 — W. Australia (AWST)',
+    'UTC+9 — Japan (JST)',
+    'UTC+9 — Korea (KST)',
+    'UTC+9:30 — C. Australia (ACST)',
+    'UTC+10 — E. Australia (AEST)',
+    'UTC+12 — New Zealand (NZST)',
   ], required: true },
   { name: 'venue', label: 'Venue / Location', type: 'text', placeholder: 'Where is the event?', required: true },
   { name: 'rsvpContact', label: 'RSVP Contact (Phone or Email)', type: 'text', placeholder: 'How should guests RSVP?', required: true },
+  { name: 'customMessage', label: 'Custom Message', type: 'textarea', placeholder: 'Add a personal note (optional)', required: false },
 ];
 
 export const eventSpecificFields: Record<EventType, EventField[]> = {
@@ -141,6 +137,9 @@ export const eventSpecificFields: Record<EventType, EventField[]> = {
   ],
   genderreveal: [
     { name: 'parentNames', label: "Parent(s) Name", type: 'text', placeholder: "Parent(s) name", required: true },
-    { name: 'revealHint', label: 'Reveal Method', type: 'select', options: ['Balloons', 'Cake', 'Confetti', 'Smoke Cannon', 'Surprise'], required: false },
+  ],
+  custom: [
+    { name: 'eventName', label: 'Event Name', type: 'text', placeholder: 'e.g. Anniversary, Graduation, Reunion…', required: true },
+    { name: 'celebrantName', label: 'Guest of Honour', type: 'text', placeholder: 'Who is the celebration for? (optional)', required: false },
   ],
 };

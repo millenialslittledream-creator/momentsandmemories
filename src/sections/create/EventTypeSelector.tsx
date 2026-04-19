@@ -14,26 +14,22 @@ export default function EventTypeSelector({ selected, onSelect, onAutoAdvance }:
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Heading eases in gently before the cards start to appear.
       gsap.fromTo(
         headingRef.current,
-        { opacity: 0, y: 24 },
-        { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out' }
+        { opacity: 0, y: 22 },
+        { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
       );
-      // Cards float up with a noticeable stagger so each event name
-      // lands one after another instead of all at once — gives the
-      // "popping up" reveal time to breathe.
       gsap.fromTo(
         '.event-type-card',
-        { opacity: 0, y: 40, scale: 0.94 },
+        { opacity: 0, y: 36, scale: 0.95 },
         {
           opacity: 1,
           y: 0,
           scale: 1,
-          duration: 0.85,
-          stagger: 0.14,
+          duration: 0.65,
+          stagger: 0.1,
           ease: 'power3.out',
-          delay: 0.35,
+          delay: 0.25,
         }
       );
     }, containerRef);
@@ -43,10 +39,10 @@ export default function EventTypeSelector({ selected, onSelect, onAutoAdvance }:
   return (
     <div ref={containerRef}>
       {/* Heading */}
-      <div ref={headingRef} className="flex flex-col items-center mb-4 mt-2">
-        <h1 className="text-2xl md:text-4xl font-serif-exp italic text-center mb-2 relative z-10">
+      <div ref={headingRef} className="flex flex-col items-center mb-6 mt-0">
+        <h1 className="text-2xl md:text-4xl font-serif-exp text-center mb-2 relative z-10">
           What special moment are we <br />
-          <span className="text-[#9cb092] not-italic font-agatho">bringing to life today?</span>
+          <span className="text-[#9cb092] font-agatho">bringing to life today?</span>
         </h1>
         <p className="text-[10px] md:text-xs font-display tracking-[0.25em] text-[#b2c3b1] uppercase">
           Choose your occasion
@@ -89,7 +85,7 @@ export default function EventTypeSelector({ selected, onSelect, onAutoAdvance }:
                 </span>
 
                 {/* Label */}
-                <h3 className="font-serif-exp text-base text-[#2a3328] mb-1 italic">{event.label}</h3>
+                <h3 className="font-serif-exp text-base text-[#2a3328] mb-1">{event.label}</h3>
                 <p className="font-display text-[9px] tracking-[0.12em] uppercase leading-relaxed text-[#5a6358] line-clamp-2">
                   {event.description}
                 </p>

@@ -176,9 +176,14 @@ export default function CreateEvite() {
 
       {/* Layout: vertical steps left + content right */}
       <div className="relative z-10 pt-16 px-3 md:px-4 flex flex-col md:flex-row flex-grow">
-        {/* Vertical Step Indicator — left sidebar (md+ only) */}
+        {/* Spacer — preserves layout width for the fixed sidebar */}
         {!confirmed && (
-          <div className="hidden md:flex flex-col items-center pt-4 pl-1 pr-3 flex-shrink-0 sticky top-16 self-start h-fit">
+          <div className="hidden md:block flex-shrink-0 w-16" aria-hidden="true" />
+        )}
+
+        {/* Vertical Step Indicator — fixed, always vertically centred */}
+        {!confirmed && (
+          <div className="hidden md:flex flex-col items-center pl-1 pr-2 fixed left-2 top-1/2 -translate-y-1/2 z-20">
             {STEPS.map((s, i) => (
               <div key={s.label} className="flex flex-col items-center">
                 <button
@@ -250,7 +255,7 @@ export default function CreateEvite() {
           )}
 
           {/* Step Content */}
-          <main className="flex-grow pb-10 min-w-0">
+          <main className="flex-grow pt-8 md:pt-12 pb-10 min-w-0">
           <div className="container mx-auto">
           {confirmed ? (
             /* Thank You Screen */
@@ -258,8 +263,8 @@ export default function CreateEvite() {
               <div className="w-20 h-20 rounded-full bg-[#9cb092]/20 border border-[#9cb092]/40 flex items-center justify-center mb-8">
                 <span className="material-icons text-[#9cb092] text-4xl">check</span>
               </div>
-              <h1 className="text-4xl md:text-6xl font-serif-exp italic mb-6">
-                Thank <span className="text-[#9cb092] not-italic font-agatho">You</span>
+              <h1 className="text-4xl md:text-6xl font-serif-exp mb-6">
+                Thank <span className="text-[#9cb092] font-agatho">You</span>
               </h1>
               <p className="text-sm md:text-base font-display tracking-[0.15em] text-[#b2c3b1] max-w-md mb-3">
                 Your evite has been created and sent successfully.
@@ -331,42 +336,36 @@ export default function CreateEvite() {
         </div>
       </div>
 
-      {/* Bottom Navigation Bar — hidden on confirmed screen, steps 0 & 1
-          (both auto-advance on completion), and payment step */}
-      {!confirmed && step !== 0 && step !== 1 && step !== 5 && (
-        <div className="sticky bottom-0 z-40 border-t border-white/10">
-          <div className="bg-[#111914]/80 backdrop-blur-md px-4 py-2.5">
-            <div className="max-w-4xl mx-auto flex items-center justify-between">
-              <button
-                onClick={step === 0 ? () => navigate('/') : handleBack}
-                className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/60 hover:text-[#9cb092] transition-colors flex items-center gap-2"
-              >
-                <span className="material-icons text-sm">arrow_back</span>
-                {step === 0 ? 'Home' : 'Back'}
-              </button>
+      {/* Side Arrow Navigation — fixed, pulled in from screen edges towards the form */}
+      {!confirmed && step !== 0 && step !== 5 && (
+        <>
+          {/* ← Back */}
+          <button
+            onClick={handleBack}
+            className={`fixed z-50 w-10 h-10 md:w-12 md:h-12 rounded-full border border-white/15 bg-[#111914]/60 backdrop-blur-sm hover:bg-[#9cb092]/15 hover:border-[#9cb092]/50 flex items-center justify-center transition-all duration-200 group shadow-lg ${
+              step === 3 ? 'bottom-6 left-6' : 'top-1/2 -translate-y-1/2'
+            }`}
+            style={step !== 3 ? { left: 'max(80px, calc(50vw - 380px))' } : undefined}
+          >
+            <span className="material-icons text-[#b2c3b1]/55 group-hover:text-[#9cb092] transition-colors" style={{ fontSize: '20px' }}>
+              arrow_back
+            </span>
+          </button>
 
-              <div className="noise-btn-container">
-                <div className="noise-btn-bg" />
-                <div className="noise-texture" />
-                <button
-                  onClick={handleNext}
-                  disabled={
-                    (step === 0 && !eventType) ||
-                    (step === 2 && !selectedTemplate)
-                  }
-                  className={`btn-inner px-10 py-3 font-display text-[10px] tracking-[0.2em] uppercase flex items-center gap-2 transition-all ${
-                    (step === 0 && !eventType) || (step === 2 && !selectedTemplate)
-                      ? 'bg-white/5 text-white/20 cursor-not-allowed'
-                      : 'bg-[#3d4a35] text-white hover:bg-[#4d5a44] shadow-lg'
-                  }`}
-                >
-                  {step === 2 ? 'Preview' : 'Next'}
-                  <span className="material-icons text-sm">arrow_forward</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+          {/* → Next */}
+          <button
+            onClick={handleNext}
+            disabled={step === 2 && !selectedTemplate}
+            className={`fixed z-50 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-200 shadow-lg ${
+              step === 2 && !selectedTemplate
+                ? 'bg-white/5 border border-white/10 text-white/20 cursor-not-allowed'
+                : 'bg-[#9cb092]/90 hover:bg-[#9cb092] text-[#111914] border border-[#9cb092]/50 hover:shadow-[#9cb092]/30'
+            } ${step === 3 ? 'bottom-6 right-6' : 'top-1/2 -translate-y-1/2'}`}
+            style={step !== 3 ? { right: 'max(12px, calc(50vw - 444px))' } : undefined}
+          >
+            <span className="material-icons" style={{ fontSize: '20px' }}>arrow_forward</span>
+          </button>
+        </>
       )}
     </div>
   );

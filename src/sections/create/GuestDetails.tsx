@@ -24,6 +24,8 @@ function createGuest(): Guest {
   return { id: `guest-${++guestIdCounter}`, name: '', email: '', phone: '' };
 }
 
+type GuestInputMethod = 'manual' | 'qr' | 'excel';
+
 export default function GuestDetails({
   guests,
   onGuestsChange,
@@ -32,9 +34,13 @@ export default function GuestDetails({
 }: GuestDetailsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
+<<<<<<< HEAD
   const [qrSession, setQrSession] = useState<{ token: string; qr_code_base64: string } | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrError, setQrError] = useState('');
+=======
+  const [inputMethod, setInputMethod] = useState<GuestInputMethod | null>(null);
+>>>>>>> 3b4e0d0 (ui changes)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -51,6 +57,17 @@ export default function GuestDetails({
     }, containerRef);
     return () => ctx.revert();
   }, []);
+
+  // Animate the method panel whenever inputMethod changes
+  useEffect(() => {
+    if (inputMethod) {
+      gsap.fromTo(
+        '.method-panel',
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out' }
+      );
+    }
+  }, [inputMethod]);
 
   const addGuest = () => {
     onGuestsChange([...guests, createGuest()]);
@@ -150,19 +167,116 @@ export default function GuestDetails({
     );
   };
 
+<<<<<<< HEAD
   const prefOptions: { value: 'email' | 'phone' | 'both'; label: string; icon: string }[] = [
+=======
+  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const text = evt.target?.result as string;
+      if (!text) return;
+      const lines = text.split('\n').filter((l) => l.trim());
+      // Skip header row if it looks like one
+      const startIdx = lines[0]?.toLowerCase().includes('name') ? 1 : 0;
+      const newGuests: Guest[] = [];
+      for (let i = startIdx; i < lines.length; i++) {
+        const cols = lines[i]
+          .split(/[,\t]/)
+          .map((c) => c.trim().replace(/^"|"$/g, ''));
+        if (cols[0]) {
+          newGuests.push({
+            id: `guest-${++guestIdCounter}`,
+            name: cols[0] || '',
+            email: cols[1] || '',
+            phone: cols[2] || '',
+          });
+        }
+      }
+      if (newGuests.length > 0) {
+        const existing = guests.filter((g) => g.name.trim());
+        onGuestsChange([...existing, ...newGuests]);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handlePhoneContacts = async () => {
+    try {
+      if ('contacts' in navigator && (navigator as any).contacts) {
+        const contacts = await (navigator as any).contacts.select(
+          ['name', 'email', 'tel'],
+          { multiple: true }
+        );
+        const newGuests: Guest[] = contacts.map((c: any) => ({
+          id: `guest-${++guestIdCounter}`,
+          name: c.name?.[0] || '',
+          email: c.email?.[0] || '',
+          phone: c.tel?.[0] || '',
+        }));
+        if (newGuests.length > 0) {
+          const existing = guests.filter((g) => g.name.trim());
+          onGuestsChange([...existing, ...newGuests]);
+        }
+      } else {
+        alert(
+          'Contact picker is only available on mobile devices (Android Chrome). Please use the Excel upload option on desktop.'
+        );
+      }
+    } catch {
+      // User cancelled or not supported
+    }
+  };
+
+  const inputClass =
+    'bg-white/[0.06] backdrop-blur-sm border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30';
+
+  const prefOptions: {
+    value: 'email' | 'phone' | 'both';
+    label: string;
+    icon: string;
+  }[] = [
+>>>>>>> 3b4e0d0 (ui changes)
     { value: 'email', label: 'Email', icon: 'email' },
     { value: 'phone', label: 'Phone / SMS', icon: 'smartphone' },
     { value: 'both', label: 'Both', icon: 'mark_email_read' },
   ];
 
+  const methodOptions: {
+    value: GuestInputMethod;
+    label: string;
+    icon: string;
+    description: string;
+  }[] = [
+    {
+      value: 'manual',
+      label: 'Add Guests Manually',
+      icon: 'edit_note',
+      description: 'Type guest names, emails, and phone numbers one by one',
+    },
+    {
+      value: 'qr',
+      label: 'Upload from Mobile',
+      icon: 'qr_code_2',
+      description: 'Scan a QR code with your phone to import contacts',
+    },
+    {
+      value: 'excel',
+      label: 'Upload Excel File',
+      icon: 'upload_file',
+      description: 'Import guests from a .csv or .xlsx spreadsheet',
+    },
+  ];
+
   return (
     <div ref={containerRef}>
       {/* Heading */}
-      <div ref={headingRef} className="flex flex-col items-center mb-4 mt-2">
-        <h1 className="text-2xl md:text-4xl font-serif-exp italic text-center mb-2 relative z-10">
+      <div ref={headingRef} className="flex flex-col items-center mb-6 mt-0">
+        <h1 className="text-2xl md:text-4xl font-serif-exp text-center mb-2 relative z-10">
           Who's on the <br />
-          <span className="text-[#9cb092] not-italic font-agatho">guest list?</span>
+          <span className="text-[#9cb092] font-agatho">guest list?</span>
         </h1>
         <div className="w-[1px] h-4 bg-[#9cb092]/40 mt-2" />
       </div>
@@ -170,7 +284,7 @@ export default function GuestDetails({
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Delivery Preference */}
         <div className="guest-section glass-panel rounded-none p-8">
-          <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-6 pb-3 border-b border-white/10 flex items-center gap-3">
+          <h3 className="font-serif-exp text-lg text-[#e4eee1] mb-6 pb-3 border-b border-white/10 flex items-center gap-3">
             <span className="material-icons text-[#9cb092] text-lg">send</span>
             How should we deliver the evite?
           </h3>
@@ -202,8 +316,9 @@ export default function GuestDetails({
           </div>
         </div>
 
-        {/* Guest List */}
+        {/* Guest Input Method Selector */}
         <div className="guest-section glass-panel rounded-none p-8">
+<<<<<<< HEAD
           <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
             <h3 className="font-serif-exp text-lg text-[#e4eee1] italic flex items-center gap-3">
               <span className="material-icons text-[#9cb092] text-lg">group</span>
@@ -361,7 +476,281 @@ export default function GuestDetails({
           <p className="mt-2 font-display text-[9px] text-[#b2c3b1]/40 leading-relaxed">
             CSV/Excel format: Name, Email, Phone (one guest per row). Header row is optional.
           </p>
+=======
+          <h3 className="font-serif-exp text-lg text-[#e4eee1] mb-6 pb-3 border-b border-white/10 flex items-center gap-3">
+            <span className="material-icons text-[#9cb092] text-lg">group_add</span>
+            How would you like to provide the guest list?
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {methodOptions.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() =>
+                  setInputMethod(inputMethod === opt.value ? null : opt.value)
+                }
+                className={`group relative overflow-hidden text-left p-5 border transition-all duration-300 ${
+                  inputMethod === opt.value
+                    ? 'border-[#9cb092] bg-[#9cb092]/10 shadow-lg shadow-[#9cb092]/10'
+                    : 'border-white/10 bg-white/[0.03] hover:border-white/25'
+                }`}
+              >
+                <span
+                  className={`material-icons text-2xl mb-3 block transition-colors ${
+                    inputMethod === opt.value
+                      ? 'text-[#9cb092]'
+                      : 'text-[#b2c3b1]/50'
+                  }`}
+                >
+                  {opt.icon}
+                </span>
+                <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#e4eee1] mb-1">
+                  {opt.label}
+                </p>
+                <p className="font-display text-[9px] text-[#b2c3b1]/50 leading-relaxed">
+                  {opt.description}
+                </p>
+                {inputMethod === opt.value && (
+                  <span className="absolute top-3 right-3 material-icons text-[#9cb092] text-base">
+                    check_circle
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+>>>>>>> 3b4e0d0 (ui changes)
         </div>
+
+        {/* ── Method Panel: Manual Entry ── */}
+        {inputMethod === 'manual' && (
+          <div className="method-panel glass-panel rounded-none p-8">
+            <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
+              <h3 className="font-serif-exp text-lg text-[#e4eee1] flex items-center gap-3">
+                <span className="material-icons text-[#9cb092] text-lg">group</span>
+                Guest List
+              </h3>
+              <span className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/50">
+                {guests.length} {guests.length === 1 ? 'guest' : 'guests'}
+              </span>
+            </div>
+
+            <div className="space-y-6">
+              {guests.map((guest, index) => (
+                <div
+                  key={guest.id}
+                  className="relative p-5 border border-white/5 bg-white/[0.02]"
+                >
+                  {/* Guest number & remove */}
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]">
+                      Guest {index + 1}
+                    </span>
+                    {guests.length > 1 && (
+                      <button
+                        onClick={() => removeGuest(guest.id)}
+                        className="text-[#b2c3b1]/30 hover:text-red-400/70 transition-colors"
+                      >
+                        <span className="material-icons text-sm">close</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Name — always shown */}
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
+                        Name <span className="text-[#9cb092]">*</span>
+                      </Label>
+                      <Input
+                        type="text"
+                        value={guest.name}
+                        onChange={(e) =>
+                          updateGuest(guest.id, 'name', e.target.value)
+                        }
+                        placeholder="Guest name"
+                        className={inputClass}
+                      />
+                    </div>
+
+                    {/* Email — shown for email or both */}
+                    {(deliveryPreference === 'email' ||
+                      deliveryPreference === 'both') && (
+                      <div className="space-y-1.5">
+                        <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
+                          Email <span className="text-[#9cb092]">*</span>
+                        </Label>
+                        <Input
+                          type="email"
+                          value={guest.email}
+                          onChange={(e) =>
+                            updateGuest(guest.id, 'email', e.target.value)
+                          }
+                          placeholder="guest@email.com"
+                          className={inputClass}
+                        />
+                      </div>
+                    )}
+
+                    {/* Phone — shown for phone or both */}
+                    {(deliveryPreference === 'phone' ||
+                      deliveryPreference === 'both') && (
+                      <div className="space-y-1.5">
+                        <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
+                          Phone <span className="text-[#9cb092]">*</span>
+                        </Label>
+                        <Input
+                          type="tel"
+                          value={guest.phone}
+                          onChange={(e) =>
+                            updateGuest(guest.id, 'phone', e.target.value)
+                          }
+                          placeholder="+1 (555) 000-0000"
+                          className={inputClass}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Add Guest + Phone Contacts row */}
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={addGuest}
+                className="py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
+              >
+                <span className="material-icons text-sm">add</span>
+                Add Guest
+              </button>
+
+              <button
+                onClick={handlePhoneContacts}
+                className="py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
+              >
+                <span className="material-icons text-sm">contacts</span>
+                Import from Phone
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Method Panel: QR Code ── */}
+        {inputMethod === 'qr' && (
+          <div className="method-panel glass-panel rounded-none p-8">
+            <h3 className="font-serif-exp text-lg text-[#e4eee1] mb-6 pb-3 border-b border-white/10 flex items-center gap-3">
+              <span className="material-icons text-[#9cb092] text-lg">
+                qr_code_2
+              </span>
+              Scan to Import Contacts
+            </h3>
+
+            <div className="flex flex-col items-center gap-6 py-4">
+              {/* QR placeholder box */}
+              <div className="w-52 h-52 flex flex-col items-center justify-center border-2 border-dashed border-[#9cb092]/40 bg-white/[0.03]">
+                <span className="material-icons text-[#9cb092]/50 text-[5rem] leading-none">
+                  qr_code_2
+                </span>
+              </div>
+
+              <div className="text-center space-y-2 max-w-sm">
+                <p className="font-display text-sm text-[#e4eee1] tracking-wide">
+                  Scan this QR code with your phone to import contacts
+                </p>
+                <p className="font-display text-[10px] text-[#b2c3b1]/45 leading-relaxed">
+                  QR functionality coming soon — for now use Excel upload or
+                  manual entry
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Method Panel: Excel / CSV Upload ── */}
+        {inputMethod === 'excel' && (
+          <div className="method-panel glass-panel rounded-none p-8">
+            <h3 className="font-serif-exp text-lg text-[#e4eee1] mb-6 pb-3 border-b border-white/10 flex items-center gap-3">
+              <span className="material-icons text-[#9cb092] text-lg">
+                table_chart
+              </span>
+              Upload Guest Spreadsheet
+            </h3>
+
+            <div className="flex flex-col items-center gap-6 py-4">
+              <label className="w-full max-w-sm py-10 border-2 border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all flex flex-col items-center justify-center gap-3 cursor-pointer">
+                <span className="material-icons text-[#9cb092]/70 text-4xl">
+                  upload_file
+                </span>
+                <span className="font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092]">
+                  Choose .csv or .xlsx file
+                </span>
+                <input
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  className="hidden"
+                  onChange={handleCsvUpload}
+                />
+              </label>
+
+              <p className="font-display text-[9px] text-[#b2c3b1]/40 leading-relaxed text-center max-w-sm">
+                CSV/Excel format: Name, Email, Phone (one guest per row). Header
+                row is optional.
+              </p>
+
+              {guests.filter((g) => g.name.trim()).length > 0 && (
+                <div className="w-full mt-2">
+                  <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#9cb092] mb-3">
+                    {guests.filter((g) => g.name.trim()).length} guest
+                    {guests.filter((g) => g.name.trim()).length === 1
+                      ? ''
+                      : 's'}{' '}
+                    imported
+                  </p>
+                  <div className="space-y-2">
+                    {guests
+                      .filter((g) => g.name.trim())
+                      .map((guest, index) => (
+                        <div
+                          key={guest.id}
+                          className="flex items-center justify-between px-4 py-2.5 border border-white/5 bg-white/[0.02]"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="font-display text-[9px] tracking-widest text-[#9cb092]/60 w-5 text-right">
+                              {index + 1}
+                            </span>
+                            <div>
+                              <p className="font-display text-xs text-[#e4eee1]">
+                                {guest.name}
+                              </p>
+                              {guest.email && (
+                                <p className="font-display text-[9px] text-[#b2c3b1]/50">
+                                  {guest.email}
+                                </p>
+                              )}
+                              {guest.phone && (
+                                <p className="font-display text-[9px] text-[#b2c3b1]/50">
+                                  {guest.phone}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {guests.filter((g) => g.name.trim()).length > 1 && (
+                            <button
+                              onClick={() => removeGuest(guest.id)}
+                              className="text-[#b2c3b1]/30 hover:text-red-400/70 transition-colors ml-4"
+                            >
+                              <span className="material-icons text-sm">
+                                close
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {qrSession && (

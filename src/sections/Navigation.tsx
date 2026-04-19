@@ -77,7 +77,7 @@ export default function Navigation() {
       >
         {/* Left Side - Logo (always visible) */}
         <button onClick={() => handleNavClick('hero', '/')} className="transition-all duration-500 cursor-pointer select-none">
-          <span className="font-serif-exp italic text-xl tracking-wide">moments & memories</span>
+          <span className="font-serif-exp text-xl tracking-wide">moments & memories</span>
         </button>
 
         {/* Right Side - Nav Links */}

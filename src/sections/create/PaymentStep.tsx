@@ -47,10 +47,10 @@ export default function PaymentStep({ guestCount, onConfirm }: PaymentStepProps)
   return (
     <div ref={containerRef}>
       {/* Heading */}
-      <div ref={headingRef} className="flex flex-col items-center mb-4 mt-2">
-        <h1 className="text-2xl md:text-4xl font-serif-exp italic text-center mb-2 relative z-10">
+      <div ref={headingRef} className="flex flex-col items-center mb-6 mt-0">
+        <h1 className="text-2xl md:text-4xl font-serif-exp text-center mb-2 relative z-10">
           Almost there, <br />
-          <span className="text-[#9cb092] not-italic font-agatho">let's wrap it up.</span>
+          <span className="text-[#9cb092] font-agatho">let's wrap it up.</span>
         </h1>
         <div className="w-[1px] h-4 bg-[#9cb092]/40 mt-2" />
       </div>
@@ -58,7 +58,7 @@ export default function PaymentStep({ guestCount, onConfirm }: PaymentStepProps)
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Order Summary */}
         <div className="payment-section glass-panel rounded-none p-8">
-          <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-6 pb-3 border-b border-white/10 flex items-center gap-3">
+          <h3 className="font-serif-exp text-lg text-[#e4eee1] mb-6 pb-3 border-b border-white/10 flex items-center gap-3">
             <span className="material-icons text-[#9cb092] text-lg">receipt_long</span>
             Order Summary
           </h3>
@@ -75,7 +75,7 @@ export default function PaymentStep({ guestCount, onConfirm }: PaymentStepProps)
               <span className="font-display text-[11px] tracking-[0.15em] uppercase text-[#9cb092] font-semibold">
                 Total
               </span>
-              <span className="font-serif-exp text-xl text-[#9cb092] italic">
+              <span className="font-serif-exp text-xl text-[#9cb092]">
                 ${total.toFixed(2)}
               </span>
             </div>
@@ -84,7 +84,7 @@ export default function PaymentStep({ guestCount, onConfirm }: PaymentStepProps)
 
         {/* Payment Method */}
         <div className="payment-section glass-panel rounded-none p-8">
-          <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-6 pb-3 border-b border-white/10 flex items-center gap-3">
+          <h3 className="font-serif-exp text-lg text-[#e4eee1] mb-6 pb-3 border-b border-white/10 flex items-center gap-3">
             <span className="material-icons text-[#9cb092] text-lg">payment</span>
             Payment Method
           </h3>
@@ -193,7 +193,7 @@ export default function PaymentStep({ guestCount, onConfirm }: PaymentStepProps)
 
         {/* Billing Address */}
         <div className="payment-section glass-panel rounded-none p-8">
-          <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-6 pb-3 border-b border-white/10 flex items-center gap-3">
+          <h3 className="font-serif-exp text-lg text-[#e4eee1] mb-6 pb-3 border-b border-white/10 flex items-center gap-3">
             <span className="material-icons text-[#9cb092] text-lg">home</span>
             Billing Address
           </h3>
