@@ -63,8 +63,13 @@ export default function GuestDetails({
   };
 
   const handleQRImport = async () => {
-    setQrLoading(true);
     setQrError('');
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+    if (!authSession) {
+      setQrError('You must be signed in to use QR import. Please sign in first.');
+      return;
+    }
+    setQrLoading(true);
     try {
       const session = await api.createQRSession();
       setQrSession({ token: session.session_token, qr_code_base64: session.qr_code_base64 });
@@ -343,7 +348,10 @@ export default function GuestDetails({
             </button>
           </div>
 
-          <p className="mt-3 font-display text-[9px] text-[#b2c3b1]/40 leading-relaxed">
+          {qrError && (
+            <p className="mt-3 font-display text-[9px] text-red-400/80 leading-relaxed">{qrError}</p>
+          )}
+          <p className="mt-2 font-display text-[9px] text-[#b2c3b1]/40 leading-relaxed">
             CSV/Excel format: Name, Email, Phone (one guest per row). Header row is optional.
           </p>
         </div>
