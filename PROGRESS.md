@@ -280,8 +280,44 @@ Footer (black, scrubbed entrance)
 - `backend/migrations/` — 9 SQL migration files
 - `backend/tests/` — full test suite (45 tests)
 
-**Next steps**:
-- Run Supabase migrations in Supabase dashboard
-- Deploy backend to Railway/Render
-- Integrate frontend with backend API
-- Wire Supabase Realtime for QR contact import in React frontend
+**Next steps**: ~~Run migrations~~ ✓ | ~~Deploy backend~~ ✓ | ~~Wire Realtime QR~~ ✓
+
+---
+
+## [2026-04-19] - QR Flow Fixes & Mobile Polish
+**Status**: Completed
+
+**What was done**:
+- Fixed 403 on QR session (HTTPBearer auto_error=False)
+- Fixed 401 even when logged in (Supabase uses ES256 — switched to db.auth.get_user)
+- Fixed Realtime WebSocket failing (anon key had trailing newline — added .trim())
+- Fixed QR contacts never arriving (api_base was missing /api prefix)
+- Fixed Next button silently blocked (validateGuests relaxed)
+- Restyled mobile QR page to match website (dark green theme)
+- Added session status check on page load (expired / already-used screens)
+- Added iOS vCard upload flow (POST /api/qr/import/{token}/vcf + vCard parser)
+- Added public GET /api/qr/status/{token} endpoint
+- Fixed Android edge cases: empty selection, multi-value contacts, network errors
+
+**Files changed**:
+- `backend/middleware/auth.py`, `backend/qr/router.py`, `backend/qr/service.py`
+- `backend/qr/templates/contact_import.html`
+- `src/lib/supabase.ts`, `src/sections/create/GuestDetails.tsx`, `src/pages/CreateEvite.tsx`
+
+---
+
+## [2026-04-19] - Draft Saving, Dashboard & Auth Gate — PLANNED
+**Status**: Plan written, not yet implemented
+
+**Plan**: `docs/superpowers/plans/2026-04-19-draft-dashboard-auth-gate.md`
+
+**What will be built**:
+1. **Auth gate** — ProtectedRoute redirects unauthenticated users from /create to /signin?redirect=/create; after login they land at destination
+2. **Draft auto-save** — CreateEvite debounce-saves all state to new `event_drafts` Supabase table (2s after any change)
+3. **Continue prompt** — On return to /create, fetches draft and shows "Continue your evite?" modal with [Continue] / [Start Fresh]
+4. **Dashboard** — /dashboard page: stats bar, active draft card, events list with status badges
+5. **Nav link** — Dashboard appears in navigation when logged in
+
+**New files**: `backend/migrations/010_create_event_drafts.sql`, `backend/drafts/` module, `src/components/ProtectedRoute.tsx`, `src/pages/Dashboard.tsx`
+
+**Next steps**: Run Task 1–8 from the plan above
