@@ -3,7 +3,7 @@ starlette==0.38.6
 uvicorn[standard]==0.30.0
 supabase==2.9.1
 python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
+bcrypt==5.0.0
 pydantic-settings==2.13.1
 pydantic[email]==2.13.2
 qrcode[pil]==7.4.2
