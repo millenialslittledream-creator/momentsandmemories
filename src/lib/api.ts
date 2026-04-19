@@ -51,4 +51,46 @@ export const api = {
       '/shop/orders',
       { method: 'POST', body: JSON.stringify({ items, shipping_address }) }
     ),
+
+  getDraft: () =>
+    apiFetch<{
+      id: string;
+      step: number;
+      event_type: string | null;
+      form_data: Record<string, string>;
+      selected_template: string | null;
+      guests: Array<{ id: string; name: string; email: string; phone: string }>;
+      delivery_preference: 'email' | 'phone' | 'both';
+      updated_at: string;
+    } | null>('/drafts/my'),
+
+  saveDraft: (data: {
+    step: number;
+    event_type: string | null;
+    form_data: Record<string, string>;
+    selected_template: string | null;
+    guests: Array<{ id: string; name: string; email: string; phone: string }>;
+    delivery_preference: string;
+  }) =>
+    apiFetch<unknown>('/drafts/my', { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteDraft: async () => {
+    const token = await getToken();
+    return fetch(`${API_URL}/drafts/my`, {
+      method: 'DELETE',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }).catch(() => {});
+  },
+
+  getMyEvents: () =>
+    apiFetch<Array<{
+      id: string;
+      title: string;
+      event_date: string;
+      event_time: string | null;
+      location: string | null;
+      status: string;
+      template_id: string | null;
+      created_at: string;
+    }>>('/events'),
 };

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import PageTransition from "@/components/PageTransition";
@@ -7,6 +7,8 @@ import GoogleIcon from "@/components/GoogleIcon";
 
 const SignIn = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,7 +39,7 @@ const SignIn = () => {
 
       if (data.user) {
         toast.success("Welcome back!");
-        navigate("/");
+        navigate(redirectTo, { replace: true });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "An unexpected error occurred";

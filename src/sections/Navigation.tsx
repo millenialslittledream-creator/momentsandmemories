@@ -95,6 +95,14 @@ export default function Navigation() {
               {item.label}
             </button>
           ))}
+          {user && (
+            <button
+              onClick={() => handleNavClick('', '/dashboard')}
+              className="text-[10px] md:text-[11px] font-display tracking-[0.2em] uppercase hover:opacity-70 transition-opacity whitespace-nowrap"
+            >
+              Dashboard
+            </button>
+          )}
           {user ? (
             <button
               onClick={async () => { await signOut(); navigate('/'); }}

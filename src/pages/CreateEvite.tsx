@@ -37,6 +37,35 @@ export default function CreateEvite() {
   const [confirmed, setConfirmed] = useState(false);
   const [guests, setGuests] = useState<Guest[]>([createGuest()]);
   const [deliveryPreference, setDeliveryPreference] = useState<'email' | 'phone' | 'both'>('email');
+  const [draftChecked, setDraftChecked] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState<null | {
+    step: number;
+    event_type: string | null;
+    form_data: Record<string, string>;
+    selected_template: string | null;
+    guests: Array<{ id: string; name: string; email: string; phone: string }>;
+    delivery_preference: 'email' | 'phone' | 'both';
+    updated_at: string;
+  }>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load draft once on mount
+  useEffect(() => {
+    api.getDraft()
+      .then((draft) => { if (draft && draft.step > 0) setPendingDraft(draft); })
+      .catch(() => {})
+      .finally(() => setDraftChecked(true));
+  }, []);
+
+  // Auto-save draft (debounced 2s) whenever any create-state changes
+  useEffect(() => {
+    if (!draftChecked || pendingDraft || step === 0) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      api.saveDraft({ step, event_type: eventType, form_data: formData, selected_template: selectedTemplate, guests, delivery_preference: deliveryPreference }).catch(() => {});
+    }, 2000);
+    return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
+  }, [step, eventType, formData, selectedTemplate, guests, deliveryPreference, draftChecked, pendingDraft]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -138,6 +167,7 @@ export default function CreateEvite() {
         await api.addInvitees(event.id, invitees);
       }
 
+      api.deleteDraft().catch(() => {});
       setConfirmed(true);
     } catch (e) {
       console.error('Failed to save event:', e);
@@ -161,6 +191,41 @@ export default function CreateEvite() {
   }, [eventType, formData]);
 
   return (
+    <>
+    {pendingDraft && (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div className="bg-[#1a2418] border border-[#9cb092]/30 p-8 max-w-sm w-full text-center">
+          <span className="material-icons text-[#9cb092] text-3xl mb-4 block">edit_note</span>
+          <h3 className="font-serif-exp text-xl text-[#e4eee1] italic mb-3">Continue your evite?</h3>
+          <p className="font-display text-[10px] tracking-[0.15em] text-[#b2c3b1]/60 uppercase mb-6 leading-relaxed">
+            You left off at step {pendingDraft.step + 1}{pendingDraft.event_type ? ` — ${pendingDraft.event_type}` : ''}<br />
+            Last saved {new Date(pendingDraft.updated_at).toLocaleDateString()}
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                if (pendingDraft.event_type) setEventType(pendingDraft.event_type as EventType);
+                setFormData(pendingDraft.form_data);
+                if (pendingDraft.selected_template) setSelectedTemplate(pendingDraft.selected_template);
+                if (pendingDraft.guests?.length) setGuests(pendingDraft.guests);
+                setDeliveryPreference(pendingDraft.delivery_preference);
+                setStep(pendingDraft.step);
+                setPendingDraft(null);
+              }}
+              className="flex-1 py-3 bg-[#9cb092] text-[#0d1a10] font-display text-[10px] tracking-[0.2em] uppercase hover:bg-[#b2c3b1] transition-colors"
+            >
+              Continue
+            </button>
+            <button
+              onClick={() => { api.deleteDraft().catch(() => {}); setPendingDraft(null); }}
+              className="flex-1 py-3 border border-white/15 text-[#b2c3b1]/60 font-display text-[10px] tracking-[0.2em] uppercase hover:border-white/30 transition-colors"
+            >
+              Start Fresh
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     <div ref={pageRef} className="relative min-h-screen bg-[#EADDD7] text-[#e4eee1] overflow-x-hidden flex flex-col">
       <div ref={topAnchorRef} className="absolute top-0 left-0 w-0 h-0" aria-hidden="true" />
       {/* Texture background */}
@@ -368,5 +433,6 @@ export default function CreateEvite() {
         </>
       )}
     </div>
+    </>
   );
 }
