@@ -1,4 +1,5 @@
 import io
+import re
 import base64
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -75,3 +76,60 @@ def submit_contacts(token: str, contacts: list) -> dict:
 
     _log("qr", "qr.contacts_received", metadata={"token": token, "count": len(contacts)})
     return {"status": "completed", "count": len(contacts)}
+
+
+def get_session_status_public(token: str) -> dict:
+    """Public variant — returns only safe fields (no user_id)."""
+    db = database.get_db()
+    result = db.table("qr_contact_sessions").select("status,expires_at").eq("session_token", token).execute()
+    if not result.data:
+        raise ValueError("Session not found")
+    session = result.data[0]
+    # Auto-mark expired sessions
+    expires_str = session["expires_at"]
+    if expires_str.endswith("Z"):
+        expires_str = expires_str[:-1] + "+00:00"
+    if datetime.now(timezone.utc) > datetime.fromisoformat(expires_str):
+        session["status"] = "expired"
+    return {"status": session["status"], "expires_at": session["expires_at"]}
+
+
+def _parse_vcard(text: str) -> list[dict]:
+    contacts = []
+    for card in re.split(r"END:VCARD", text, flags=re.IGNORECASE):
+        card = card.strip()
+        if not card:
+            continue
+        name = ""
+        emails: list[str] = []
+        phones: list[str] = []
+        for line in card.splitlines():
+            line = line.strip()
+            key, _, value = line.partition(":")
+            key_upper = key.upper().split(";")[0]
+            if key_upper == "FN":
+                name = value.strip()
+            elif key_upper in ("EMAIL", "EMAIL"):
+                if value.strip():
+                    emails.append(value.strip())
+            elif key_upper == "TEL":
+                if value.strip():
+                    phones.append(value.strip())
+            elif key_upper == "N" and not name:
+                parts = value.split(";")
+                name = " ".join(p for p in reversed(parts[:2]) if p).strip()
+        if name or emails or phones:
+            contacts.append({
+                "name": name,
+                "email": emails[0] if emails else "",
+                "phone": phones[0] if phones else "",
+            })
+    return contacts
+
+
+def submit_vcf(token: str, vcf_bytes: bytes) -> dict:
+    text = vcf_bytes.decode("utf-8", errors="replace")
+    contacts = _parse_vcard(text)
+    if not contacts:
+        raise ValueError("No contacts found in vCard file")
+    return submit_contacts(token, contacts)

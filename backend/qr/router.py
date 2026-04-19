@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
@@ -35,10 +35,28 @@ def mobile_import_page(token: str, request: Request):
     )
 
 
+@router.get("/status/{token}")
+def session_status_public(token: str):
+    """Public endpoint — mobile page checks this to show expired/completed state."""
+    try:
+        return service.get_session_status_public(token)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @router.post("/contacts/{token}")
 def submit_contacts(token: str, data: ContactsSubmitRequest):
     try:
         contacts = [c.model_dump(exclude_none=True) for c in data.contacts]
         return service.submit_contacts(token, contacts)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/import/{token}/vcf")
+async def submit_vcf(token: str, file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+        return service.submit_vcf(token, contents)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -44,7 +44,7 @@
             font-style: italic;
             color: #9cb092;
         }
-        p {
+        p.sub {
             font-size: 13px;
             color: rgba(178,195,177,0.6);
             margin-bottom: 32px;
@@ -69,14 +69,21 @@
         }
         #selectBtn:hover { background: #b2c3b1; }
         #selectBtn:disabled { opacity: 0.4; cursor: not-allowed; }
-        #fallbackBtn {
+        #vcfBtn {
             background: transparent;
             border: 1px solid rgba(156,176,146,0.3);
             color: #9cb092;
             margin-top: 10px;
+        }
+        #vcfBtn:hover { border-color: #9cb092; }
+        #fallbackBtn {
+            background: transparent;
+            border: 1px solid rgba(156,176,146,0.15);
+            color: rgba(156,176,146,0.5);
+            margin-top: 10px;
             display: none;
         }
-        #fallbackBtn:hover { border-color: #9cb092; }
+        #fallbackBtn:hover { border-color: rgba(156,176,146,0.4); color: #9cb092; }
         #status {
             margin-top: 20px;
             font-size: 12px;
@@ -85,6 +92,7 @@
             display: none;
             letter-spacing: 0.05em;
             text-align: left;
+            line-height: 1.6;
         }
         .status-success {
             background: rgba(156,176,146,0.15);
@@ -98,6 +106,24 @@
             color: #fca5a5;
             display: block !important;
         }
+        .status-warn {
+            background: rgba(251,191,36,0.08);
+            border: 1px solid rgba(251,191,36,0.2);
+            color: #fcd34d;
+            display: block !important;
+        }
+        /* State screens */
+        #loadingState, #expiredState, #completedState { display: none; }
+        #expiredState .icon, #completedState .icon {
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+        #expiredState p, #completedState p {
+            font-size: 14px;
+            color: rgba(178,195,177,0.6);
+            line-height: 1.7;
+        }
+        /* Manual form */
         #manualForm { margin-top: 24px; text-align: left; display: none; }
         #manualForm label {
             display: block;
@@ -135,32 +161,147 @@
             margin-top: 4px;
         }
         #submitManual:hover { background: #b2c3b1; }
+        /* vCard section */
+        #vcfSection { display: none; margin-top: 24px; text-align: left; }
+        #vcfSection p {
+            font-size: 12px;
+            color: rgba(178,195,177,0.5);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+        #vcfSection ol {
+            font-size: 12px;
+            color: rgba(178,195,177,0.5);
+            line-height: 1.9;
+            padding-left: 18px;
+            margin-bottom: 20px;
+        }
+        #vcfFile {
+            display: none;
+        }
+        #vcfLabel {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border-radius: 2px;
+            border: 1px dashed rgba(156,176,146,0.3);
+            background: rgba(255,255,255,0.02);
+            color: #9cb092;
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+        #vcfLabel:hover { border-color: #9cb092; }
+        #vcfName {
+            font-size: 11px;
+            color: rgba(178,195,177,0.4);
+            margin-bottom: 12px;
+            display: none;
+        }
+        #submitVcf {
+            background: #9cb092;
+            color: #0d1a10;
+            width: 100%;
+            padding: 14px;
+            border-radius: 2px;
+            border: none;
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: none;
+        }
+        #submitVcf:hover { background: #b2c3b1; }
         .divider {
             border: none;
             border-top: 1px solid rgba(156,176,146,0.1);
             margin: 28px 0;
         }
+        #spinner {
+            width: 24px; height: 24px;
+            border: 2px solid rgba(156,176,146,0.2);
+            border-top-color: #9cb092;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <div class="card">
         <p class="logo">Moments &amp; Memories</p>
-        <h1>Share your <em>contacts</em></h1>
-        <p>Select the people you'd like to invite. They'll appear instantly on the host's screen.</p>
-        <button id="selectBtn">Choose Contacts</button>
-        <button id="fallbackBtn">Enter Manually Instead</button>
-        <div id="manualForm">
-            <hr class="divider">
-            <label>Name</label>
-            <input type="text" id="manualName" placeholder="Full name">
-            <label>Email</label>
-            <input type="email" id="manualEmail" placeholder="email@example.com">
-            <label>Phone (optional)</label>
-            <input type="tel" id="manualPhone" placeholder="+1 555 000 0000">
-            <button id="submitManual">Add Contact</button>
+
+        <!-- Loading state -->
+        <div id="loadingState">
+            <div id="spinner"></div>
+            <p class="sub">Checking session…</p>
         </div>
-        <div id="status"></div>
+
+        <!-- Expired state -->
+        <div id="expiredState">
+            <div class="icon">⏱</div>
+            <h1>Session <em>expired</em></h1>
+            <p class="sub">This QR code has expired. Ask the host to generate a new one.</p>
+        </div>
+
+        <!-- Completed state -->
+        <div id="completedState">
+            <div class="icon">✓</div>
+            <h1>Already <em>sent</em></h1>
+            <p class="sub">Contacts were already submitted for this session. Ask the host to generate a new QR code if you need to add more.</p>
+        </div>
+
+        <!-- Main action state -->
+        <div id="mainState" style="display:none">
+            <h1>Share your <em>contacts</em></h1>
+            <p class="sub">Select the people you'd like to invite. They'll appear instantly on the host's screen.</p>
+
+            <!-- Android: Contact Picker API -->
+            <button id="selectBtn">Choose Contacts</button>
+
+            <!-- iOS: vCard upload -->
+            <button id="vcfBtn">Upload from iPhone</button>
+
+            <!-- Fallback: manual entry -->
+            <button id="fallbackBtn">Enter Manually</button>
+
+            <!-- vCard upload section -->
+            <div id="vcfSection">
+                <hr class="divider">
+                <p>Export contacts from your iPhone, then upload the .vcf file here.</p>
+                <ol>
+                    <li>Open <strong>Contacts</strong> app</li>
+                    <li>Tap a contact → scroll down → <strong>Share Contact</strong></li>
+                    <li>Choose <strong>AirDrop / Files / Mail</strong> to save the .vcf</li>
+                    <li>Upload the file below</li>
+                </ol>
+                <label id="vcfLabel" for="vcfFile">Tap to choose .vcf file</label>
+                <input type="file" id="vcfFile" accept=".vcf,text/vcard,text/x-vcard">
+                <p id="vcfName"></p>
+                <button id="submitVcf">Upload Contacts</button>
+            </div>
+
+            <!-- Manual entry section -->
+            <div id="manualForm">
+                <hr class="divider">
+                <label>Name</label>
+                <input type="text" id="manualName" placeholder="Full name">
+                <label>Email</label>
+                <input type="email" id="manualEmail" placeholder="email@example.com">
+                <label>Phone (optional)</label>
+                <input type="tel" id="manualPhone" placeholder="+1 555 000 0000">
+                <button id="submitManual">Add Contact</button>
+            </div>
+
+            <div id="status"></div>
+        </div>
     </div>
+
     <script>
         const token = '{{ token }}';
         const apiBase = '{{ api_base }}';
@@ -168,47 +309,165 @@
         function showStatus(msg, type) {
             const el = document.getElementById('status');
             el.textContent = msg;
-            el.className = type === 'success' ? 'status-success' : 'status-error';
+            el.className = type === 'success' ? 'status-success' : type === 'warn' ? 'status-warn' : 'status-error';
         }
 
         async function sendContacts(contacts) {
-            return fetch(`${apiBase}/qr/contacts/${token}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contacts }),
+            // Normalise: ensure every contact has at least name/email/phone keys
+            const normalised = contacts.map(c => ({
+                name: c.name || '',
+                email: c.email || '',
+                phone: c.phone || '',
+            })).filter(c => c.name || c.email || c.phone);
+
+            if (!normalised.length) {
+                showStatus('No valid contacts found.', 'error');
+                return false;
+            }
+
+            try {
+                const resp = await fetch(`${apiBase}/qr/contacts/${token}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contacts: normalised }),
+                });
+                if (resp.ok) return true;
+                const err = await resp.json().catch(() => ({}));
+                showStatus(err.detail || 'Something went wrong. Please try again.', 'error');
+                return false;
+            } catch {
+                showStatus('Network error. Check your connection and try again.', 'error');
+                return false;
+            }
+        }
+
+        function lockButtons() {
+            ['selectBtn', 'vcfBtn', 'fallbackBtn', 'submitManual', 'submitVcf'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.disabled = true;
             });
         }
 
+        // ── Check session status on page load ──────────────────────────────
+        async function checkSession() {
+            document.getElementById('loadingState').style.display = 'block';
+            try {
+                const resp = await fetch(`${apiBase}/qr/status/${token}`);
+                if (!resp.ok) {
+                    showExpired();
+                    return;
+                }
+                const data = await resp.json();
+                if (data.status === 'expired') { showExpired(); return; }
+                if (data.status === 'completed') { showCompleted(); return; }
+                showMain();
+            } catch {
+                // Network failure — show main anyway and let the submit handle errors
+                showMain();
+            }
+        }
+
+        function showExpired() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('expiredState').style.display = 'block';
+        }
+        function showCompleted() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('completedState').style.display = 'block';
+        }
+        function showMain() {
+            document.getElementById('loadingState').style.display = 'none';
+            const main = document.getElementById('mainState');
+            main.style.display = 'block';
+            // Hide Contact Picker button on iOS (not supported)
+            const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+            if (isIOS || !('contacts' in navigator)) {
+                document.getElementById('selectBtn').style.display = 'none';
+            }
+        }
+
+        checkSession();
+
+        // ── Android: Contact Picker ─────────────────────────────────────────
         document.getElementById('selectBtn').addEventListener('click', async () => {
             if ('contacts' in navigator && 'ContactsManager' in window) {
                 try {
-                    const selected = await navigator.contacts.select(['name', 'email', 'tel'], { multiple: true });
-                    const contacts = selected.map(c => ({
-                        name: c.name?.[0] || '',
-                        email: c.email?.[0] || '',
-                        phone: c.tel?.[0] || '',
-                    }));
-                    const resp = await sendContacts(contacts);
-                    if (resp.ok) {
-                        showStatus('Contacts sent — check the host\'s screen.', 'success');
-                        document.getElementById('selectBtn').disabled = true;
-                    } else {
-                        showStatus('Something went wrong. Please try again.', 'error');
+                    const selected = await navigator.contacts.select(
+                        ['name', 'email', 'tel'],
+                        { multiple: true }
+                    );
+                    if (!selected.length) {
+                        showStatus('No contacts selected.', 'warn');
+                        return;
                     }
-                } catch {
-                    showStatus('Could not access contacts. Use manual entry below.', 'error');
+                    // Expand multi-value contacts: one entry per email or take first
+                    const contacts = selected.map(c => ({
+                        name: (c.name && c.name[0]) || '',
+                        email: (c.email && c.email[0]) || '',
+                        phone: (c.tel && c.tel[0]) || '',
+                    }));
+                    const ok = await sendContacts(contacts);
+                    if (ok) {
+                        showStatus(`${contacts.length} contact${contacts.length !== 1 ? 's' : ''} sent — check the host's screen.`, 'success');
+                        lockButtons();
+                    }
+                } catch (e) {
+                    // User dismissed or permission denied
+                    showStatus('Could not access contacts. Try manual entry below.', 'error');
                     document.getElementById('fallbackBtn').style.display = 'block';
                 }
             } else {
                 document.getElementById('selectBtn').style.display = 'none';
-                document.getElementById('fallbackBtn').style.display = 'none';
-                document.getElementById('manualForm').style.display = 'block';
-                showStatus('Contact picker not supported on this browser. Use manual entry below.', 'error');
+                showStatus('Contact picker not available on this browser. Use the options below.', 'warn');
+                document.getElementById('fallbackBtn').style.display = 'block';
             }
         });
 
+        // ── iOS: vCard upload ──────────────────────────────────────────────
+        document.getElementById('vcfBtn').addEventListener('click', () => {
+            document.getElementById('vcfSection').style.display = 'block';
+            document.getElementById('vcfBtn').style.display = 'none';
+        });
+
+        document.getElementById('vcfFile').addEventListener('change', function () {
+            const file = this.files[0];
+            if (file) {
+                document.getElementById('vcfName').textContent = file.name;
+                document.getElementById('vcfName').style.display = 'block';
+                document.getElementById('submitVcf').style.display = 'block';
+            }
+        });
+
+        document.getElementById('submitVcf').addEventListener('click', async () => {
+            const file = document.getElementById('vcfFile').files[0];
+            if (!file) { showStatus('Please choose a .vcf file first.', 'error'); return; }
+            document.getElementById('submitVcf').disabled = true;
+            try {
+                const form = new FormData();
+                form.append('file', file);
+                const resp = await fetch(`${apiBase}/qr/import/${token}/vcf`, {
+                    method: 'POST',
+                    body: form,
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    showStatus(`${data.count} contact${data.count !== 1 ? 's' : ''} sent — check the host's screen.`, 'success');
+                    lockButtons();
+                } else {
+                    const err = await resp.json().catch(() => ({}));
+                    showStatus(err.detail || 'Upload failed. Please try again.', 'error');
+                    document.getElementById('submitVcf').disabled = false;
+                }
+            } catch {
+                showStatus('Network error. Check your connection and try again.', 'error');
+                document.getElementById('submitVcf').disabled = false;
+            }
+        });
+
+        // ── Manual entry ───────────────────────────────────────────────────
         document.getElementById('fallbackBtn').addEventListener('click', () => {
             document.getElementById('manualForm').style.display = 'block';
+            document.getElementById('fallbackBtn').style.display = 'none';
         });
 
         document.getElementById('submitManual').addEventListener('click', async () => {
@@ -219,12 +478,13 @@
                 showStatus('Enter at least a name or email.', 'error');
                 return;
             }
-            const resp = await sendContacts([{ name, email, phone }]);
-            if (resp.ok) {
+            document.getElementById('submitManual').disabled = true;
+            const ok = await sendContacts([{ name, email, phone }]);
+            if (ok) {
                 showStatus('Contact sent — check the host\'s screen.', 'success');
-                document.getElementById('submitManual').disabled = true;
+                lockButtons();
             } else {
-                showStatus('Something went wrong. Please try again.', 'error');
+                document.getElementById('submitManual').disabled = false;
             }
         });
     </script>
