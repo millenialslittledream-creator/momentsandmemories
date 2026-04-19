@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
@@ -150,9 +149,6 @@ export default function GuestDetails({
       guests.map((g) => (g.id === id ? { ...g, [field]: value } : g))
     );
   };
-
-  const inputClass =
-    'bg-white/[0.06] backdrop-blur-sm border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30';
 
   const prefOptions: { value: 'email' | 'phone' | 'both'; label: string; icon: string }[] = [
     { value: 'email', label: 'Email', icon: 'email' },
