@@ -17,7 +17,7 @@ app.add_middleware(
     allow_origins=[settings.frontend_url, "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*", "X-Admin-Secret"],
 )
 app.add_middleware(LoggingMiddleware)
 
@@ -32,4 +32,4 @@ app.include_router(analytics_router)
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "version": "1.0.0"}
