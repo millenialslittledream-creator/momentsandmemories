@@ -11,7 +11,7 @@ def send_notification(data: SendNotificationRequest, current_user: dict = Depend
     try:
         return service.send_notification(data)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Notification failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Notification failed. Please try again later.")
 
 
 @router.get("/whatsapp-link")

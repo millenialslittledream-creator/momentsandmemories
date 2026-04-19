@@ -64,6 +64,8 @@ def send_notification(data: SendNotificationRequest) -> dict:
             )
         elif data.type == "whatsapp":
             pass  # WhatsApp is a deep link — no server call needed
+        else:
+            raise ValueError(f"Unsupported notification type: {data.type!r}")
 
         _mark_sent(notif_id)
         _log("notifications", "notification.sent", user_id=data.user_id,
