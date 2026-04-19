@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from middleware.auth import get_current_user
 from notifications.schemas import SendNotificationRequest
 from notifications import service
@@ -20,5 +20,9 @@ def whatsapp_link(message: str, current_user: dict = Depends(get_current_user)):
 
 
 @router.get("")
-def list_notifications(current_user: dict = Depends(get_current_user)):
-    return service.list_notifications(current_user["sub"])
+def list_notifications(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    current_user: dict = Depends(get_current_user),
+):
+    return service.list_notifications(current_user["sub"], limit=limit, offset=offset)

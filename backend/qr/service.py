@@ -21,6 +21,12 @@ def _make_qr(url: str) -> str:
 
 def create_qr_session(user_id: str, event_id: str | None = None) -> dict:
     db = database.get_db()
+
+    # Lazy cleanup: purge stale sessions for this user before creating a new one
+    db.table("qr_contact_sessions").delete().eq("user_id", user_id).lt(
+        "expires_at", datetime.now(timezone.utc).isoformat()
+    ).execute()
+
     token = secrets.token_urlsafe(24)
     expires_at = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
 
@@ -90,6 +96,8 @@ def get_session_status_public(token: str) -> dict:
     if expires_str.endswith("Z"):
         expires_str = expires_str[:-1] + "+00:00"
     if datetime.now(timezone.utc) > datetime.fromisoformat(expires_str):
+        if session["status"] == "pending":
+            db.table("qr_contact_sessions").update({"status": "expired"}).eq("session_token", token).execute()
         session["status"] = "expired"
     return {"status": session["status"], "expires_at": session["expires_at"]}
 

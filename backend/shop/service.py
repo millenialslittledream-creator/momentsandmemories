@@ -59,9 +59,16 @@ def create_order(user_id: str, data: CreateOrderRequest) -> dict:
     db.table("order_items").insert(order_items_rows).execute()
 
     for req_item in data.items:
-        db.table("shop_items").update({
-            "stock": items_map[req_item.shop_item_id]["stock"] - req_item.quantity
-        }).eq("id", req_item.shop_item_id).execute()
+        new_stock = items_map[req_item.shop_item_id]["stock"] - req_item.quantity
+        updated = (
+            db.table("shop_items")
+            .update({"stock": new_stock})
+            .eq("id", req_item.shop_item_id)
+            .gte("stock", req_item.quantity)  # atomic guard: reject if already decremented by concurrent request
+            .execute()
+        )
+        if not updated.data:
+            raise ValueError(f"Item {items_map[req_item.shop_item_id].get('name', req_item.shop_item_id)} is no longer in stock")
 
     _log("shop", "order.created", user_id=user_id, metadata={"order_id": order["id"], "total": total})
     return order

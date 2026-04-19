@@ -15,9 +15,17 @@ def create_event(user_id: str, data: CreateEventRequest) -> dict:
     return event
 
 
-def list_events(user_id: str) -> list:
+def list_events(user_id: str, limit: int = 50, offset: int = 0) -> list:
     db = database.get_db()
-    return db.table("events").select("*").eq("user_id", user_id).order("created_at", desc=True).execute().data
+    return (
+        db.table("events")
+        .select("*")
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .limit(limit)
+        .offset(offset)
+        .execute().data
+    )
 
 
 def get_event(user_id: str, event_id: str) -> dict:

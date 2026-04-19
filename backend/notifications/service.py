@@ -84,6 +84,14 @@ def get_whatsapp_link(message: str) -> str:
     return f"https://wa.me/?text={encoded}"
 
 
-def list_notifications(user_id: str) -> list:
+def list_notifications(user_id: str, limit: int = 50, offset: int = 0) -> list:
     db = database.get_db()
-    return db.table("notifications").select("*").eq("user_id", user_id).order("created_at", desc=True).execute().data
+    return (
+        db.table("notifications")
+        .select("*")
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .limit(limit)
+        .offset(offset)
+        .execute().data
+    )
