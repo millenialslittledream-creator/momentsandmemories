@@ -28,7 +28,7 @@ def poll_session(token: str, current_user: dict = Depends(get_current_user)):
 
 @router.get("/import/{token}", response_class=HTMLResponse)
 def mobile_import_page(token: str, request: Request):
-    api_base = str(request.base_url).rstrip("/")
+    api_base = str(request.base_url).rstrip("/") + "/api"
     return templates.TemplateResponse(
         "contact_import.html",
         {"request": request, "token": token, "api_base": api_base},
