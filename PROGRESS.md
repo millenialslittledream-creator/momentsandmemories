@@ -1,4 +1,4 @@
-# Occasio - Progress & Design Context
+# Moments & Memories - Progress & Design Context
 
 ## [2026-03-04] - Full Codebase Analysis & Design Research
 **Status**: Completed
@@ -228,3 +228,60 @@ Footer (black, scrubbed entrance)
 - `tailwind.config.js` — Theme colors, fonts, keyframes, animations
 - `src/index.css` — CSS variables, font-faces, custom classes, keyframes, liquid-bg animation
 - `src/App.css` — Glass morphism, parallax, button effects
+
+---
+
+## [2026-04-19] - Full Backend Design
+**Status**: Design Complete, Implementation Starting
+
+**What was done**:
+- Explored existing Supabase — found 7 tables (6 belong to separate Costco scanner project, only `users` is reused)
+- Designed full FastAPI + Supabase backend with domain modules
+- Created spec: `docs/superpowers/specs/2026-04-19-backend-design.md`
+
+**Architecture**:
+- FastAPI (Python) with domain modules: auth, events, qr, shop, users, notifications, analytics
+- Supabase PostgreSQL for storage + Realtime for QR contact sync
+- Every step logs to `logs` table via middleware
+
+**New tables to create**:
+`events`, `event_invitees`, `qr_contact_sessions`, `shop_items`, `orders`, `order_items`, `notifications`, `logs`
+
+**Key features**:
+1. Event/evite CRUD with invitee management
+2. QR Contact Import: laptop shows QR → phone scans → Web Contact Picker API → contacts sync via Supabase Realtime
+3. Gift shop with orders
+4. Notifications: email (SendGrid), SMS (Twilio), WhatsApp deep links, Instagram copy
+5. Admin-only analytics dashboard
+6. Full logging on every API step
+
+**Files changed**:
+- `docs/superpowers/specs/2026-04-19-backend-design.md` (created)
+- `PROGRESS.md` (updated)
+
+**Next steps**:
+- Scaffold `backend/` FastAPI project
+- Create Supabase migrations for all new tables
+- Implement modules in order: auth → events → qr → shop → notifications → analytics
+
+## [2026-04-19] - Backend Implementation Complete
+**Status**: Completed
+
+**What was done**:
+- Built full FastAPI backend (Tasks 1-13) with domain modules: auth, users, events, qr, shop, notifications, analytics
+- 45 tests passing, all modules covered
+- Supabase migrations: 9 SQL files for all new tables
+- QR contact import flow: session → QR image → mobile HTML with Web Contact Picker API → Supabase Realtime
+- Logging middleware auto-logs every request + business events to `logs` table
+- Admin-only analytics dashboard protected by X-Admin-Secret header
+
+**Files created**:
+- `backend/` — full FastAPI project (main.py, config.py, database.py, middleware/, auth/, users/, events/, qr/, shop/, notifications/, analytics/)
+- `backend/migrations/` — 9 SQL migration files
+- `backend/tests/` — full test suite (45 tests)
+
+**Next steps**:
+- Run Supabase migrations in Supabase dashboard
+- Deploy backend to Railway/Render
+- Integrate frontend with backend API
+- Wire Supabase Realtime for QR contact import in React frontend
