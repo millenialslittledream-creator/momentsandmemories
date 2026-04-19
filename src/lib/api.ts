@@ -31,7 +31,7 @@ export const api = {
     apiFetch<unknown>(`/events/${eventId}/invitees`, { method: 'POST', body: JSON.stringify(invitees) }),
 
   createQRSession: (eventId?: string) =>
-    apiFetch<{ session_token: string; qr_image: string; expires_at: string }>(
+    apiFetch<{ session_token: string; qr_code_base64: string; expires_in_seconds: number }>(
       '/qr/session',
       { method: 'POST', body: JSON.stringify({ event_id: eventId ?? null }) }
     ),

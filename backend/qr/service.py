@@ -32,8 +32,8 @@ def create_qr_session(user_id: str, event_id: str | None = None) -> dict:
         "expires_at": expires_at,
     }).execute()
 
-    api_base = settings.frontend_url.rstrip("/")
-    import_url = f"{api_base}/qr/import/{token}"
+    base = (settings.backend_url or settings.frontend_url).rstrip("/")
+    import_url = f"{base}/api/qr/import/{token}"
     qr_b64 = _make_qr(import_url)
 
     _log("qr", "qr.session_started", user_id=user_id, metadata={"token": token})

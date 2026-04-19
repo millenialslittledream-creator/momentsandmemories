@@ -33,7 +33,7 @@ export default function GuestDetails({
 }: GuestDetailsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
-  const [qrSession, setQrSession] = useState<{ token: string; image: string } | null>(null);
+  const [qrSession, setQrSession] = useState<{ token: string; qr_code_base64: string } | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrError, setQrError] = useState('');
 
@@ -67,7 +67,7 @@ export default function GuestDetails({
     setQrError('');
     try {
       const session = await api.createQRSession();
-      setQrSession({ token: session.session_token, image: session.qr_image });
+      setQrSession({ token: session.session_token, qr_code_base64: session.qr_code_base64 });
 
       const channel = supabase
         .channel(`qr-${session.session_token}`)
@@ -357,7 +357,7 @@ export default function GuestDetails({
               Open this QR on your phone → pick contacts → they appear here automatically
             </p>
             <img
-              src={`data:image/png;base64,${qrSession.image}`}
+              src={`data:image/png;base64,${qrSession.qr_code_base64}`}
               alt="QR Code"
               className="w-48 h-48 mx-auto mb-6 border border-white/10"
             />
