@@ -218,74 +218,49 @@ export default function GuestDetails({
             </span>
           </div>
 
-          <div className="space-y-6">
+          {/* Compact scrollable guest rows */}
+          <div className="max-h-80 overflow-y-auto space-y-1 mb-4 pr-1">
             {guests.map((guest, index) => (
               <div
                 key={guest.id}
-                className="relative p-5 border border-white/5 bg-white/[0.02]"
+                className="flex items-center gap-3 px-3 py-2.5 border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-colors group"
               >
-                {/* Guest number & remove */}
-                <div className="flex items-center justify-between mb-4">
-                  <span className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]">
-                    Guest {index + 1}
-                  </span>
-                  {guests.length > 1 && (
-                    <button
-                      onClick={() => removeGuest(guest.id)}
-                      className="text-[#b2c3b1]/30 hover:text-red-400/70 transition-colors"
-                    >
-                      <span className="material-icons text-sm">close</span>
-                    </button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Name — always shown */}
-                  <div className="space-y-1.5 md:col-span-2">
-                    <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
-                      Name <span className="text-[#9cb092]">*</span>
-                    </Label>
-                    <Input
-                      type="text"
-                      value={guest.name}
-                      onChange={(e) => updateGuest(guest.id, 'name', e.target.value)}
-                      placeholder="Guest name"
-                      className={inputClass}
-                    />
-                  </div>
-
-                  {/* Email — shown for email or both */}
+                <span className="w-6 h-6 rounded-full bg-[#9cb092]/20 text-[#9cb092] font-display text-[9px] flex items-center justify-center flex-shrink-0">
+                  {index + 1}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <Input
+                    type="text"
+                    value={guest.name}
+                    onChange={(e) => updateGuest(guest.id, 'name', e.target.value)}
+                    placeholder="Name"
+                    className="bg-transparent border-none focus:border-none shadow-none p-0 h-auto text-[#e4eee1] text-sm font-display placeholder:text-[#b2c3b1]/30 focus-visible:ring-0"
+                  />
                   {(deliveryPreference === 'email' || deliveryPreference === 'both') && (
-                    <div className="space-y-1.5">
-                      <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
-                        Email <span className="text-[#9cb092]">*</span>
-                      </Label>
-                      <Input
-                        type="email"
-                        value={guest.email}
-                        onChange={(e) => updateGuest(guest.id, 'email', e.target.value)}
-                        placeholder="guest@email.com"
-                        className={inputClass}
-                      />
-                    </div>
+                    <Input
+                      type="email"
+                      value={guest.email}
+                      onChange={(e) => updateGuest(guest.id, 'email', e.target.value)}
+                      placeholder="email"
+                      className="bg-transparent border-none shadow-none p-0 h-auto text-[#b2c3b1]/60 text-[11px] font-display placeholder:text-[#b2c3b1]/20 focus-visible:ring-0 mt-0.5"
+                    />
                   )}
-
-                  {/* Phone — shown for phone or both */}
                   {(deliveryPreference === 'phone' || deliveryPreference === 'both') && (
-                    <div className="space-y-1.5">
-                      <Label className="text-[#b2c3b1] font-display text-[10px] tracking-[0.15em] uppercase">
-                        Phone <span className="text-[#9cb092]">*</span>
-                      </Label>
-                      <Input
-                        type="tel"
-                        value={guest.phone}
-                        onChange={(e) => updateGuest(guest.id, 'phone', e.target.value)}
-                        placeholder="+1 (555) 000-0000"
-                        className={inputClass}
-                      />
-                    </div>
+                    <Input
+                      type="tel"
+                      value={guest.phone}
+                      onChange={(e) => updateGuest(guest.id, 'phone', e.target.value)}
+                      placeholder="phone"
+                      className="bg-transparent border-none shadow-none p-0 h-auto text-[#b2c3b1]/60 text-[11px] font-display placeholder:text-[#b2c3b1]/20 focus-visible:ring-0 mt-0.5"
+                    />
                   )}
                 </div>
+                <button
+                  onClick={() => removeGuest(guest.id)}
+                  className="opacity-0 group-hover:opacity-100 text-[#b2c3b1]/30 hover:text-red-400/70 transition-all flex-shrink-0"
+                >
+                  <span className="material-icons text-sm">close</span>
+                </button>
               </div>
             ))}
           </div>

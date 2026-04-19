@@ -89,12 +89,7 @@ export default function CreateEvite() {
   };
 
   const validateGuests = (): boolean => {
-    return guests.every((g) => {
-      if (!g.name.trim()) return false;
-      if ((deliveryPreference === 'email' || deliveryPreference === 'both') && !g.email.trim()) return false;
-      if ((deliveryPreference === 'phone' || deliveryPreference === 'both') && !g.phone.trim()) return false;
-      return true;
-    });
+    return guests.some((g) => g.name.trim());
   };
 
   const handleNext = () => {
