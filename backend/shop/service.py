@@ -58,6 +58,11 @@ def create_order(user_id: str, data: CreateOrderRequest) -> dict:
     ]
     db.table("order_items").insert(order_items_rows).execute()
 
+    for req_item in data.items:
+        db.table("shop_items").update({
+            "stock": items_map[req_item.shop_item_id]["stock"] - req_item.quantity
+        }).eq("id", req_item.shop_item_id).execute()
+
     _log("shop", "order.created", user_id=user_id, metadata={"order_id": order["id"], "total": total})
     return order
 
@@ -82,4 +87,6 @@ def update_order_status(order_id: str, status: str) -> dict:
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }).eq("id", order_id).execute()
     _log("shop", "order.status_changed", metadata={"order_id": order_id, "status": status})
+    if not result.data:
+        raise ValueError("Order not found")
     return result.data[0]

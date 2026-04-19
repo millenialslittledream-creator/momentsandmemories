@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Literal, Optional, List
 
 
 class OrderItemIn(BaseModel):
@@ -13,4 +13,4 @@ class CreateOrderRequest(BaseModel):
 
 
 class UpdateOrderStatusRequest(BaseModel):
-    status: str
+    status: Literal["pending", "processing", "shipped", "delivered", "cancelled"]

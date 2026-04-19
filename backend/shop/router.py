@@ -47,4 +47,7 @@ def update_order_status(
     data: UpdateOrderStatusRequest,
     _: None = Depends(require_admin),
 ):
-    return service.update_order_status(order_id, data.status)
+    try:
+        return service.update_order_status(order_id, data.status)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
