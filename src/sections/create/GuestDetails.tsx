@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
@@ -34,13 +35,10 @@ export default function GuestDetails({
 }: GuestDetailsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
-<<<<<<< HEAD
+  const [inputMethod, setInputMethod] = useState<GuestInputMethod | null>(null);
   const [qrSession, setQrSession] = useState<{ token: string; qr_code_base64: string } | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrError, setQrError] = useState('');
-=======
-  const [inputMethod, setInputMethod] = useState<GuestInputMethod | null>(null);
->>>>>>> 3b4e0d0 (ui changes)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -167,9 +165,6 @@ export default function GuestDetails({
     );
   };
 
-<<<<<<< HEAD
-  const prefOptions: { value: 'email' | 'phone' | 'both'; label: string; icon: string }[] = [
-=======
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -238,7 +233,6 @@ export default function GuestDetails({
     label: string;
     icon: string;
   }[] = [
->>>>>>> 3b4e0d0 (ui changes)
     { value: 'email', label: 'Email', icon: 'email' },
     { value: 'phone', label: 'Phone / SMS', icon: 'smartphone' },
     { value: 'both', label: 'Both', icon: 'mark_email_read' },
@@ -318,165 +312,6 @@ export default function GuestDetails({
 
         {/* Guest Input Method Selector */}
         <div className="guest-section glass-panel rounded-none p-8">
-<<<<<<< HEAD
-          <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
-            <h3 className="font-serif-exp text-lg text-[#e4eee1] italic flex items-center gap-3">
-              <span className="material-icons text-[#9cb092] text-lg">group</span>
-              Guest List
-            </h3>
-            <span className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/50">
-              {guests.length} {guests.length === 1 ? 'guest' : 'guests'}
-            </span>
-          </div>
-
-          {/* Compact scrollable guest rows */}
-          <div className="max-h-80 overflow-y-auto space-y-1 mb-4 pr-1">
-            {guests.map((guest, index) => (
-              <div
-                key={guest.id}
-                className="flex items-center gap-3 px-3 py-2.5 border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-colors group"
-              >
-                <span className="w-6 h-6 rounded-full bg-[#9cb092]/20 text-[#9cb092] font-display text-[9px] flex items-center justify-center flex-shrink-0">
-                  {index + 1}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <Input
-                    type="text"
-                    value={guest.name}
-                    onChange={(e) => updateGuest(guest.id, 'name', e.target.value)}
-                    placeholder="Name"
-                    className="bg-transparent border-none focus:border-none shadow-none p-0 h-auto text-[#e4eee1] text-sm font-display placeholder:text-[#b2c3b1]/30 focus-visible:ring-0"
-                  />
-                  {(deliveryPreference === 'email' || deliveryPreference === 'both') && (
-                    <Input
-                      type="email"
-                      value={guest.email}
-                      onChange={(e) => updateGuest(guest.id, 'email', e.target.value)}
-                      placeholder="email"
-                      className="bg-transparent border-none shadow-none p-0 h-auto text-[#b2c3b1]/60 text-[11px] font-display placeholder:text-[#b2c3b1]/20 focus-visible:ring-0 mt-0.5"
-                    />
-                  )}
-                  {(deliveryPreference === 'phone' || deliveryPreference === 'both') && (
-                    <Input
-                      type="tel"
-                      value={guest.phone}
-                      onChange={(e) => updateGuest(guest.id, 'phone', e.target.value)}
-                      placeholder="phone"
-                      className="bg-transparent border-none shadow-none p-0 h-auto text-[#b2c3b1]/60 text-[11px] font-display placeholder:text-[#b2c3b1]/20 focus-visible:ring-0 mt-0.5"
-                    />
-                  )}
-                </div>
-                <button
-                  onClick={() => removeGuest(guest.id)}
-                  className="opacity-0 group-hover:opacity-100 text-[#b2c3b1]/30 hover:text-red-400/70 transition-all flex-shrink-0"
-                >
-                  <span className="material-icons text-sm">close</span>
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Add Guest Buttons */}
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <button
-              onClick={addGuest}
-              className="py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
-            >
-              <span className="material-icons text-sm">add</span>
-              Add Guest
-            </button>
-
-            {/* Upload Excel/CSV */}
-            <label className="py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2 cursor-pointer">
-              <span className="material-icons text-sm">upload_file</span>
-              Upload Excel / CSV
-              <input
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  const reader = new FileReader();
-                  reader.onload = (evt) => {
-                    const text = evt.target?.result as string;
-                    if (!text) return;
-                    const lines = text.split('\n').filter((l) => l.trim());
-                    // Skip header row if it looks like one
-                    const startIdx = lines[0]?.toLowerCase().includes('name') ? 1 : 0;
-                    const newGuests: Guest[] = [];
-                    for (let i = startIdx; i < lines.length; i++) {
-                      const cols = lines[i].split(/[,\t]/).map((c) => c.trim().replace(/^"|"$/g, ''));
-                      if (cols[0]) {
-                        newGuests.push({
-                          id: `guest-${++guestIdCounter}`,
-                          name: cols[0] || '',
-                          email: cols[1] || '',
-                          phone: cols[2] || '',
-                        });
-                      }
-                    }
-                    if (newGuests.length > 0) {
-                      // Replace the initial empty guest or append
-                      const existing = guests.filter((g) => g.name.trim());
-                      onGuestsChange([...existing, ...newGuests]);
-                    }
-                  };
-                  reader.readAsText(file);
-                  e.target.value = '';
-                }}
-              />
-            </label>
-
-            <button
-              onClick={handleQRImport}
-              disabled={qrLoading}
-              className="py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              <span className="material-icons text-sm">qr_code_scanner</span>
-              {qrLoading ? 'Starting...' : 'QR Import'}
-            </button>
-
-            {/* Select from Phone Contacts */}
-            <button
-              onClick={async () => {
-                try {
-                  if ('contacts' in navigator && (navigator as any).contacts) {
-                    const contacts = await (navigator as any).contacts.select(
-                      ['name', 'email', 'tel'],
-                      { multiple: true }
-                    );
-                    const newGuests: Guest[] = contacts.map((c: any) => ({
-                      id: `guest-${++guestIdCounter}`,
-                      name: c.name?.[0] || '',
-                      email: c.email?.[0] || '',
-                      phone: c.tel?.[0] || '',
-                    }));
-                    if (newGuests.length > 0) {
-                      const existing = guests.filter((g) => g.name.trim());
-                      onGuestsChange([...existing, ...newGuests]);
-                    }
-                  } else {
-                    alert('Contact picker is only available on mobile devices (Android Chrome). Please use the Excel upload option on desktop.');
-                  }
-                } catch {
-                  // User cancelled or not supported
-                }
-              }}
-              className="py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
-            >
-              <span className="material-icons text-sm">contacts</span>
-              Phone Contacts
-            </button>
-          </div>
-
-          {qrError && (
-            <p className="mt-3 font-display text-[9px] text-red-400/80 leading-relaxed">{qrError}</p>
-          )}
-          <p className="mt-2 font-display text-[9px] text-[#b2c3b1]/40 leading-relaxed">
-            CSV/Excel format: Name, Email, Phone (one guest per row). Header row is optional.
-          </p>
-=======
           <h3 className="font-serif-exp text-lg text-[#e4eee1] mb-6 pb-3 border-b border-white/10 flex items-center gap-3">
             <span className="material-icons text-[#9cb092] text-lg">group_add</span>
             How would you like to provide the guest list?
@@ -517,7 +352,6 @@ export default function GuestDetails({
               </button>
             ))}
           </div>
->>>>>>> 3b4e0d0 (ui changes)
         </div>
 
         {/* ── Method Panel: Manual Entry ── */}
@@ -657,9 +491,24 @@ export default function GuestDetails({
                   Scan this QR code with your phone to import contacts
                 </p>
                 <p className="font-display text-[10px] text-[#b2c3b1]/45 leading-relaxed">
-                  QR functionality coming soon — for now use Excel upload or
-                  manual entry
+                  Generate a secure QR session, then open it on your phone to
+                  pick contacts.
                 </p>
+                <button
+                  onClick={handleQRImport}
+                  disabled={qrLoading}
+                  className="mt-3 w-full max-w-xs mx-auto py-3 border border-dashed border-[#9cb092]/40 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="material-icons text-sm">
+                    {qrLoading ? 'hourglass_top' : 'qr_code_scanner'}
+                  </span>
+                  {qrLoading ? 'Generating...' : 'Generate QR Code'}
+                </button>
+                {qrError && (
+                  <p className="font-display text-[9px] text-red-400/80 leading-relaxed mt-2">
+                    {qrError}
+                  </p>
+                )}
               </div>
             </div>
           </div>
