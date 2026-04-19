@@ -62,6 +62,17 @@ export default function GuestDetails({
     onGuestsChange(guests.filter((g) => g.id !== id));
   };
 
+  const applyContacts = (contacts: Array<{ name: string; email?: string; phone?: string }>, existingGuests: Guest[]) => {
+    const newGuests = contacts.map((c) => ({
+      id: `guest-${++guestIdCounter}`,
+      name: c.name || '',
+      email: c.email || '',
+      phone: c.phone || '',
+    }));
+    const existing = existingGuests.filter((g) => g.name.trim());
+    onGuestsChange([...existing, ...newGuests]);
+  };
+
   const handleQRImport = async () => {
     setQrError('');
     const { data: { session: authSession } } = await supabase.auth.getSession();
@@ -74,6 +85,18 @@ export default function GuestDetails({
       const session = await api.createQRSession();
       setQrSession({ token: session.session_token, qr_code_base64: session.qr_code_base64 });
 
+      let resolved = false;
+
+      const resolve = (contacts: Array<{ name: string; email?: string; phone?: string }>) => {
+        if (resolved) return;
+        resolved = true;
+        applyContacts(contacts, guests);
+        supabase.removeChannel(channel);
+        clearInterval(pollInterval);
+        setQrSession(null);
+      };
+
+      // Realtime subscription
       const channel = supabase
         .channel(`qr-${session.session_token}`)
         .on(
@@ -85,23 +108,36 @@ export default function GuestDetails({
             filter: `session_token=eq.${session.session_token}`,
           },
           (payload: { new: { status: string; contacts_json: Array<{ name: string; email?: string; phone?: string }> } }) => {
-            if (payload.new.status === 'completed') {
-              const newGuests = payload.new.contacts_json.map((c) => ({
-                id: `guest-${++guestIdCounter}`,
-                name: c.name || '',
-                email: c.email || '',
-                phone: c.phone || '',
-              }));
-              if (newGuests.length > 0) {
-                const existing = guests.filter((g) => g.name.trim());
-                onGuestsChange([...existing, ...newGuests]);
-              }
-              supabase.removeChannel(channel);
-              setQrSession(null);
+            if (payload.new.status === 'completed' && payload.new.contacts_json?.length) {
+              resolve(payload.new.contacts_json);
             }
           }
         )
         .subscribe();
+
+      // Polling fallback every 3s in case Realtime WebSocket fails
+      const pollInterval = setInterval(async () => {
+        try {
+          const status = await api.pollQRSession(session.session_token) as { status: string; contacts_json?: Array<{ name: string; email?: string; phone?: string }> };
+          if (status.status === 'completed' && status.contacts_json?.length) {
+            resolve(status.contacts_json);
+          }
+        } catch {
+          // ignore poll errors
+        }
+      }, 3000);
+
+      // Auto-expire after 15 min
+      setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          clearInterval(pollInterval);
+          supabase.removeChannel(channel);
+          setQrSession(null);
+          setQrError('QR session expired. Please try again.');
+        }
+      }, 15 * 60 * 1000);
+
     } catch {
       setQrError('Could not start QR session. Make sure you are signed in.');
     } finally {
