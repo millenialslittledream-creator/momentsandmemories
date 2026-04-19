@@ -6,33 +6,157 @@
     <title>Import Contacts — Moments & Memories</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, sans-serif; background: #0f050a; color: #f8f6f7; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
-        .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 32px 24px; max-width: 380px; width: 100%; text-align: center; }
-        h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: #e61980; }
-        p { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 28px; line-height: 1.6; }
-        button { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
-        #selectBtn { background: #e61980; color: white; }
-        #selectBtn:disabled { opacity: 0.5; cursor: not-allowed; }
-        #fallbackBtn { background: rgba(255,255,255,0.1); color: white; margin-top: 12px; display: none; }
-        #status { margin-top: 20px; font-size: 14px; padding: 12px; border-radius: 10px; display: none; }
-        .status-success { background: rgba(34,197,94,0.2); color: #86efac; display: block !important; }
-        .status-error { background: rgba(239,68,68,0.2); color: #fca5a5; display: block !important; }
-        #manualForm { margin-top: 20px; text-align: left; display: none; }
-        #manualForm input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white; margin-bottom: 10px; font-size: 14px; }
-        #manualForm input::placeholder { color: rgba(255,255,255,0.4); }
-        #submitManual { background: #e61980; color: white; width: 100%; padding: 12px; border-radius: 8px; border: none; font-size: 15px; cursor: pointer; margin-top: 4px; }
+        body {
+            font-family: -apple-system, 'Helvetica Neue', sans-serif;
+            background: #0d1a10;
+            color: #e4eee1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(156,176,146,0.2);
+            border-radius: 4px;
+            padding: 40px 28px;
+            max-width: 380px;
+            width: 100%;
+            text-align: center;
+        }
+        .logo {
+            font-size: 11px;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: #9cb092;
+            margin-bottom: 32px;
+            opacity: 0.7;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+            color: #e4eee1;
+        }
+        h1 em {
+            font-style: italic;
+            color: #9cb092;
+        }
+        p {
+            font-size: 13px;
+            color: rgba(178,195,177,0.6);
+            margin-bottom: 32px;
+            line-height: 1.7;
+            letter-spacing: 0.02em;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            border-radius: 2px;
+            border: none;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #selectBtn {
+            background: #9cb092;
+            color: #0d1a10;
+        }
+        #selectBtn:hover { background: #b2c3b1; }
+        #selectBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+        #fallbackBtn {
+            background: transparent;
+            border: 1px solid rgba(156,176,146,0.3);
+            color: #9cb092;
+            margin-top: 10px;
+            display: none;
+        }
+        #fallbackBtn:hover { border-color: #9cb092; }
+        #status {
+            margin-top: 20px;
+            font-size: 12px;
+            padding: 12px 16px;
+            border-radius: 2px;
+            display: none;
+            letter-spacing: 0.05em;
+            text-align: left;
+        }
+        .status-success {
+            background: rgba(156,176,146,0.15);
+            border: 1px solid rgba(156,176,146,0.3);
+            color: #9cb092;
+            display: block !important;
+        }
+        .status-error {
+            background: rgba(239,100,100,0.1);
+            border: 1px solid rgba(239,100,100,0.2);
+            color: #fca5a5;
+            display: block !important;
+        }
+        #manualForm { margin-top: 24px; text-align: left; display: none; }
+        #manualForm label {
+            display: block;
+            font-size: 9px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: rgba(178,195,177,0.5);
+            margin-bottom: 6px;
+        }
+        #manualForm input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 2px;
+            border: 1px solid rgba(156,176,146,0.2);
+            background: rgba(255,255,255,0.03);
+            color: #e4eee1;
+            margin-bottom: 16px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #manualForm input:focus { border-color: rgba(156,176,146,0.5); }
+        #manualForm input::placeholder { color: rgba(178,195,177,0.25); }
+        #submitManual {
+            background: #9cb092;
+            color: #0d1a10;
+            width: 100%;
+            padding: 14px;
+            border-radius: 2px;
+            border: none;
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+        #submitManual:hover { background: #b2c3b1; }
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(156,176,146,0.1);
+            margin: 28px 0;
+        }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>Import Contacts</h1>
-        <p>Select contacts from your phone to add as invitees to your event.</p>
+        <p class="logo">Moments &amp; Memories</p>
+        <h1>Share your <em>contacts</em></h1>
+        <p>Select the people you'd like to invite. They'll appear instantly on the host's screen.</p>
         <button id="selectBtn">Choose Contacts</button>
         <button id="fallbackBtn">Enter Manually Instead</button>
         <div id="manualForm">
-            <input type="text" id="manualName" placeholder="Name">
-            <input type="email" id="manualEmail" placeholder="Email">
-            <input type="tel" id="manualPhone" placeholder="Phone (optional)">
+            <hr class="divider">
+            <label>Name</label>
+            <input type="text" id="manualName" placeholder="Full name">
+            <label>Email</label>
+            <input type="email" id="manualEmail" placeholder="email@example.com">
+            <label>Phone (optional)</label>
+            <input type="tel" id="manualPhone" placeholder="+1 555 000 0000">
             <button id="submitManual">Add Contact</button>
         </div>
         <div id="status"></div>
@@ -66,13 +190,13 @@
                     }));
                     const resp = await sendContacts(contacts);
                     if (resp.ok) {
-                        showStatus('Contacts sent! Check your laptop.', 'success');
+                        showStatus('Contacts sent — check the host\'s screen.', 'success');
                         document.getElementById('selectBtn').disabled = true;
                     } else {
-                        showStatus('Something went wrong. Try again.', 'error');
+                        showStatus('Something went wrong. Please try again.', 'error');
                     }
-                } catch (err) {
-                    showStatus('Could not access contacts. Use manual entry.', 'error');
+                } catch {
+                    showStatus('Could not access contacts. Use manual entry below.', 'error');
                     document.getElementById('fallbackBtn').style.display = 'block';
                 }
             } else {
@@ -97,10 +221,10 @@
             }
             const resp = await sendContacts([{ name, email, phone }]);
             if (resp.ok) {
-                showStatus('Contact sent! Check your laptop.', 'success');
+                showStatus('Contact sent — check the host\'s screen.', 'success');
                 document.getElementById('submitManual').disabled = true;
             } else {
-                showStatus('Something went wrong. Try again.', 'error');
+                showStatus('Something went wrong. Please try again.', 'error');
             }
         });
     </script>
