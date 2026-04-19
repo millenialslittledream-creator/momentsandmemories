@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { api } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 
 export interface Guest {
   id: string;
@@ -31,6 +33,9 @@ export default function GuestDetails({
 }: GuestDetailsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
+  const [qrSession, setQrSession] = useState<{ token: string; image: string } | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState('');
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -55,6 +60,48 @@ export default function GuestDetails({
   const removeGuest = (id: string) => {
     if (guests.length <= 1) return;
     onGuestsChange(guests.filter((g) => g.id !== id));
+  };
+
+  const handleQRImport = async () => {
+    setQrLoading(true);
+    setQrError('');
+    try {
+      const session = await api.createQRSession();
+      setQrSession({ token: session.session_token, image: session.qr_image });
+
+      const channel = supabase
+        .channel(`qr-${session.session_token}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'qr_contact_sessions',
+            filter: `session_token=eq.${session.session_token}`,
+          },
+          (payload: { new: { status: string; contacts_json: Array<{ name: string; email?: string; phone?: string }> } }) => {
+            if (payload.new.status === 'completed') {
+              const newGuests = payload.new.contacts_json.map((c) => ({
+                id: `guest-${++guestIdCounter}`,
+                name: c.name || '',
+                email: c.email || '',
+                phone: c.phone || '',
+              }));
+              if (newGuests.length > 0) {
+                const existing = guests.filter((g) => g.name.trim());
+                onGuestsChange([...existing, ...newGuests]);
+              }
+              supabase.removeChannel(channel);
+              setQrSession(null);
+            }
+          }
+        )
+        .subscribe();
+    } catch {
+      setQrError('Could not start QR session. Make sure you are signed in.');
+    } finally {
+      setQrLoading(false);
+    }
   };
 
   const updateGuest = (id: string, field: keyof Guest, value: string) => {
@@ -203,7 +250,7 @@ export default function GuestDetails({
           </div>
 
           {/* Add Guest Buttons */}
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
             <button
               onClick={addGuest}
               className="py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
@@ -254,6 +301,15 @@ export default function GuestDetails({
               />
             </label>
 
+            <button
+              onClick={handleQRImport}
+              disabled={qrLoading}
+              className="py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <span className="material-icons text-sm">qr_code_scanner</span>
+              {qrLoading ? 'Starting...' : 'QR Import'}
+            </button>
+
             {/* Select from Phone Contacts */}
             <button
               onClick={async () => {
@@ -292,6 +348,29 @@ export default function GuestDetails({
           </p>
         </div>
       </div>
+
+      {qrSession && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#1a2418] border border-[#9cb092]/30 p-8 max-w-sm w-full text-center">
+            <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-2">Scan with Phone</h3>
+            <p className="font-display text-[10px] tracking-[0.15em] text-[#b2c3b1]/60 uppercase mb-6">
+              Open this QR on your phone → pick contacts → they appear here automatically
+            </p>
+            <img
+              src={`data:image/png;base64,${qrSession.image}`}
+              alt="QR Code"
+              className="w-48 h-48 mx-auto mb-6 border border-white/10"
+            />
+            {qrError && <p className="text-red-400 text-xs mb-4">{qrError}</p>}
+            <button
+              onClick={() => setQrSession(null)}
+              className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/50 hover:text-[#9cb092] transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

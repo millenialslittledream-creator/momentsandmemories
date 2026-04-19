@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '@/lib/api';
 import gsap from 'gsap';
 import Navigation from '@/sections/Navigation';
 import EventTypeSelector from '@/sections/create/EventTypeSelector';
@@ -27,6 +28,7 @@ export default function CreateEvite() {
   const navigate = useNavigate();
   const pageRef = useRef<HTMLDivElement>(null);
   const topAnchorRef = useRef<HTMLDivElement>(null);
+  const eventIdRef = useRef<string | null>(null);
   const [step, setStep] = useState(0);
   const [eventType, setEventType] = useState<EventType | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
@@ -115,8 +117,37 @@ export default function CreateEvite() {
     }
   };
 
-  const handleConfirm = () => {
-    setConfirmed(true);
+  const handleConfirm = async () => {
+    try {
+      const event = await api.createEvent({
+        title: formData.eventName || formData.title || (eventType ? `${eventType} Event` : 'My Event'),
+        description: formData.description || null,
+        event_date: formData.eventDate || formData.date || new Date().toISOString().split('T')[0],
+        event_time: formData.eventTime || formData.time || null,
+        location: formData.location || formData.venue || null,
+        template_id: selectedTemplate,
+        status: 'published',
+      });
+
+      eventIdRef.current = event.id;
+
+      if (guests.length > 0 && guests.some(g => g.name.trim())) {
+        const invitees = guests
+          .filter(g => g.name.trim())
+          .map(g => ({
+            name: g.name,
+            email: g.email || undefined,
+            phone: g.phone || undefined,
+            source: 'manual' as const,
+          }));
+        await api.addInvitees(event.id, invitees);
+      }
+
+      setConfirmed(true);
+    } catch (e) {
+      console.error('Failed to save event:', e);
+      alert('Failed to create event. Please try again.');
+    }
   };
 
   // Auto-advance from step 0 when event type is selected
@@ -295,7 +326,7 @@ export default function CreateEvite() {
               {step === 5 && (
                 <PaymentStep
                   guestCount={guests.length}
-                  onConfirm={handleConfirm}
+                  onConfirm={() => { handleConfirm(); }}
                 />
               )}
             </>

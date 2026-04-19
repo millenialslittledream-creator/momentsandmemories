@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import gsap from 'gsap';
 import Navigation from '../sections/Navigation';
+import { api } from '@/lib/api';
 
 const FILTERS = [
   { id: 'bestsellers', label: 'Bestsellers' },
@@ -16,6 +17,26 @@ export default function Shop() {
   const gridRef = useRef<HTMLDivElement>(null);
 
   const [activeFilter, setActiveFilter] = useState('bestsellers');
+  const [backendProducts, setBackendProducts] = useState<Array<{
+    id: string; name: string; price: number; category: string; image_url: string | null;
+  }> | null>(null);
+  const [backendLoading, setBackendLoading] = useState(true);
+  const [cart, setCart] = useState<Array<{ id: string; name: string; price: number; qty: number }>>([]);
+
+  useEffect(() => {
+    api.listShopItems()
+      .then((items) => setBackendProducts(items))
+      .catch(() => setBackendProducts([]))
+      .finally(() => setBackendLoading(false));
+  }, []);
+
+  const addToCart = (product: { id: string; name: string; price: number }) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.id === product.id);
+      if (existing) return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i);
+      return [...prev, { ...product, qty: 1 }];
+    });
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -69,7 +90,19 @@ export default function Shop() {
     { id: 9, name: "Stone Diffuser", price: 1100, tags: ['premium'], isBestseller: false, image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBAscIZcqGph6yS58AlvzkmiILkufMC2Qsyn_kNSTcHu67p2pJ8lKRDQoaaIsRpZGb6R45h9jOn9bfO3N-qMlBNsg-HSOu2c6GxtgBZJTE4-Zrg-blRLRDMFFwFHTKpSDXHFdZHcdMrVyd9gZvhioPy_Xz8XciGFzYN8zA9ivrcu7Pkp6-amSycXRYku1_BOR7HWPy59rLG6vdLPT1zIP9qrbKmea348EV0bPPUMkjTg6ZIHGbN_Ay4Td4DERXapdMYM6Xxb3qnrG4d" },
   ];
 
-  const products = allProducts.filter(p => p.tags.includes(activeFilter));
+  const useBackend = !backendLoading && backendProducts !== null && backendProducts.length > 0;
+
+  const mappedBackendProducts = (backendProducts ?? []).map(p => ({
+    id: String(p.id),
+    name: p.name,
+    price: p.price,
+    tags: [p.category],
+    isBestseller: false,
+    image: p.image_url || '',
+  }));
+
+  const sourceProducts = useBackend ? mappedBackendProducts : allProducts.map(p => ({ ...p, id: String(p.id) }));
+  const products = sourceProducts.filter(p => p.tags.includes(activeFilter));
 
   return (
     <div ref={pageRef} className="relative min-h-screen bg-[#EADDD7] text-[#e4eee1] overflow-hidden flex flex-col pt-32">
@@ -88,6 +121,16 @@ export default function Shop() {
         <div className="container mx-auto px-6">
           {/* Header */}
           <div ref={headerRef} className="flex flex-col items-center mb-10 mt-8">
+            <div className="w-full flex justify-end mb-2">
+              {cart.length > 0 && (
+                <div className="flex items-center gap-2 px-4 py-2 bg-[#9cb092]/10 border border-[#9cb092]/30">
+                  <span className="material-icons text-[#9cb092] text-sm">shopping_bag</span>
+                  <span className="font-display text-[10px] tracking-[0.15em] uppercase text-[#9cb092]">
+                    {cart.reduce((sum, i) => sum + i.qty, 0)} {cart.reduce((sum, i) => sum + i.qty, 0) === 1 ? 'item' : 'items'}
+                  </span>
+                </div>
+              )}
+            </div>
             <h1 className="text-5xl md:text-7xl font-serif-exp italic text-center mb-2 relative z-10">
               Décor <span className="text-[#9cb092] not-italic font-bold font-agatho">&</span> Gifts
             </h1>
@@ -142,7 +185,10 @@ export default function Shop() {
 
                   {/* Add to Bag on hover */}
                   <div className="absolute bottom-0 left-0 w-full p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-500 z-10">
-                    <button className="w-full py-2.5 bg-[#9cb092] text-[#111914] text-[10px] font-display tracking-[0.15em] uppercase font-bold hover:bg-[#adc4a3] transition-colors">
+                    <button
+                      onClick={() => addToCart({ id: product.id, name: product.name, price: product.price })}
+                      className="w-full py-2.5 bg-[#9cb092] text-[#111914] text-[10px] font-display tracking-[0.15em] uppercase font-bold hover:bg-[#adc4a3] transition-colors"
+                    >
                       Add to Bag
                     </button>
                   </div>
