@@ -93,4 +93,9 @@ export const api = {
       template_id: string | null;
       created_at: string;
     }>>('/events'),
+
+  getInvitees: (eventId: string) =>
+    apiFetch<Array<{ id: string; name: string; email: string | null; phone: string | null; source: string }>>(
+      `/events/${eventId}/invitees`
+    ),
 };

@@ -121,8 +121,8 @@ export default function CreateEvite() {
       try { localStorage.setItem(LS_KEY, JSON.stringify({ ...payload, updated_at: new Date().toISOString() })); } catch {}
       const token = (window as any).__mm_token;
       if (token) {
-        const API_URL = import.meta.env.VITE_API_URL || '';
-        fetch(`${API_URL}/api/drafts/my`, {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+        fetch(`${API_URL}/drafts/my`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify(payload),

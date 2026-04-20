@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '@/sections/Navigation';
 import { api } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
 interface EventRow {
@@ -21,12 +22,35 @@ interface Draft {
   updated_at: string;
 }
 
+interface ModalGuest {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+}
+
+let modalGuestCounter = 0;
+function newModalGuest(): ModalGuest {
+  return { id: `mg-${++modalGuestCounter}`, name: '', email: '', phone: '' };
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [events, setEvents] = useState<EventRow[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Add-guests modal state
+  const [addGuestsEvent, setAddGuestsEvent] = useState<EventRow | null>(null);
+  const [existingCount, setExistingCount] = useState(0);
+  const [modalGuests, setModalGuests] = useState<ModalGuest[]>([newModalGuest()]);
+  const modalGuestsRef = useRef(modalGuests);
+  useEffect(() => { modalGuestsRef.current = modalGuests; }, [modalGuests]);
+  const [modalQrSession, setModalQrSession] = useState<{ token: string; qr_code_base64: string } | null>(null);
+  const [modalQrLoading, setModalQrLoading] = useState(false);
+  const [savingGuests, setSavingGuests] = useState(false);
+  const [savedCount, setSavedCount] = useState<number | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -43,6 +67,106 @@ export default function Dashboard() {
     (e) => e.status === 'published' && new Date(e.event_date) >= new Date()
   );
 
+  const openAddGuests = async (e: React.MouseEvent, event: EventRow) => {
+    e.stopPropagation();
+    setAddGuestsEvent(event);
+    setModalGuests([newModalGuest()]);
+    setSavedCount(null);
+    setModalQrSession(null);
+    try {
+      const invitees = await api.getInvitees(event.id);
+      setExistingCount(invitees.length);
+    } catch { setExistingCount(0); }
+  };
+
+  const closeModal = () => {
+    setAddGuestsEvent(null);
+    setModalQrSession(null);
+  };
+
+  const handleModalQRImport = async () => {
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+    if (!authSession) return;
+    setModalQrLoading(true);
+    try {
+      const session = await api.createQRSession();
+      setModalQrSession({ token: session.session_token, qr_code_base64: session.qr_code_base64 });
+
+      let resolved = false;
+
+      const resolve = (contacts: Array<{ name: string; email?: string; phone?: string }>) => {
+        if (resolved) return;
+        resolved = true;
+        const newGuests = contacts.map((c) => ({
+          id: `mg-${++modalGuestCounter}`,
+          name: c.name || '',
+          email: c.email || '',
+          phone: c.phone || '',
+        }));
+        // Functional update: always merges with current state, not stale closure
+        setModalGuests((prev) => {
+          const existing = prev.filter((g) => g.name.trim());
+          return [...existing, ...newGuests];
+        });
+        supabase.removeChannel(channel);
+        clearInterval(pollInterval);
+        setModalQrSession(null);
+      };
+
+      const channel = supabase
+        .channel(`qr-dash-${session.session_token}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'qr_contact_sessions', filter: `session_token=eq.${session.session_token}` },
+          (payload: { new: { status: string; contacts_json: Array<{ name: string; email?: string; phone?: string }> } }) => {
+            if (payload.new.status === 'completed' && payload.new.contacts_json?.length) {
+              resolve(payload.new.contacts_json);
+            }
+          }
+        )
+        .subscribe();
+
+      const pollInterval = setInterval(async () => {
+        try {
+          const status = await api.pollQRSession(session.session_token) as { status: string; contacts_json?: Array<{ name: string; email?: string; phone?: string }> };
+          if (status.status === 'completed' && status.contacts_json?.length) {
+            resolve(status.contacts_json);
+          }
+        } catch { /* ignore */ }
+      }, 2000);
+
+      setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          clearInterval(pollInterval);
+          supabase.removeChannel(channel);
+          setModalQrSession(null);
+        }
+      }, 15 * 60 * 1000);
+
+    } finally {
+      setModalQrLoading(false);
+    }
+  };
+
+  const handleSaveGuests = async () => {
+    if (!addGuestsEvent) return;
+    const valid = modalGuests.filter((g) => g.name.trim());
+    if (!valid.length) return;
+    setSavingGuests(true);
+    try {
+      await api.addInvitees(
+        addGuestsEvent.id,
+        valid.map((g) => ({ name: g.name, email: g.email || undefined, phone: g.phone || undefined, source: 'manual' }))
+      );
+      setSavedCount(valid.length);
+      const updated = await api.getMyEvents().catch(() => events);
+      setEvents(updated);
+    } finally {
+      setSavingGuests(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0d1a10] flex items-center justify-center">
@@ -58,9 +182,7 @@ export default function Dashboard() {
 
         {/* Header */}
         <div className="mb-10">
-          <p className="font-display text-[10px] tracking-[0.25em] uppercase text-[#9cb092]/70 mb-2">
-            Welcome back
-          </p>
+          <p className="font-display text-[10px] tracking-[0.25em] uppercase text-[#9cb092]/70 mb-2">Welcome back</p>
           <h1 className="text-3xl md:text-5xl font-serif-exp italic text-[#e4eee1]">
             {user?.email?.split('@')[0]}
           </h1>
@@ -86,12 +208,9 @@ export default function Dashboard() {
             <div className="flex items-center gap-4">
               <span className="material-icons text-[#9cb092] text-2xl">edit_note</span>
               <div>
-                <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#9cb092] mb-0.5">
-                  Draft in progress
-                </p>
+                <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#9cb092] mb-0.5">Draft in progress</p>
                 <p className="text-sm text-[#b2c3b1]/60">
-                  {draft.event_type || 'Evite'} — Step {draft.step + 1}
-                  {' · '}Last saved {new Date(draft.updated_at).toLocaleDateString()}
+                  {draft.event_type || 'Evite'} — Step {draft.step + 1}{' · '}Last saved {new Date(draft.updated_at).toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -119,9 +238,7 @@ export default function Dashboard() {
         {events.length === 0 ? (
           <div className="border border-white/5 bg-white/[0.02] p-12 text-center">
             <span className="material-icons text-[#9cb092]/30 text-4xl mb-4 block">celebration</span>
-            <p className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/30 mb-6">
-              No evites yet
-            </p>
+            <p className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/30 mb-6">No evites yet</p>
             <button
               onClick={() => navigate('/create')}
               className="px-8 py-3 bg-[#3d4a35] text-white font-display text-[10px] tracking-[0.2em] uppercase hover:bg-[#4d5a44] transition-colors"
@@ -139,26 +256,165 @@ export default function Dashboard() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-[#e4eee1] truncate">{event.title}</p>
                   <p className="font-display text-[9px] tracking-[0.1em] uppercase text-[#b2c3b1]/40 mt-0.5">
-                    {new Date(event.event_date).toLocaleDateString('en-US', {
-                      month: 'short', day: 'numeric', year: 'numeric',
-                    })}
+                    {new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     {event.location ? ` · ${event.location}` : ''}
                   </p>
                 </div>
-                <span
-                  className={`font-display text-[9px] tracking-[0.15em] uppercase px-2 py-1 border flex-shrink-0 ${
-                    event.status === 'published'
-                      ? 'border-[#9cb092]/30 text-[#9cb092]'
-                      : 'border-white/10 text-[#b2c3b1]/40'
-                  }`}
-                >
+                <span className={`font-display text-[9px] tracking-[0.15em] uppercase px-2 py-1 border flex-shrink-0 ${
+                  event.status === 'published' ? 'border-[#9cb092]/30 text-[#9cb092]' : 'border-white/10 text-[#b2c3b1]/40'
+                }`}>
                   {event.status}
                 </span>
+                <button
+                  onClick={(e) => openAddGuests(e, event)}
+                  title="Add guests"
+                  className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
+                >
+                  <span className="material-icons text-sm">person_add</span>
+                  <span className="hidden sm:inline">Add Guests</span>
+                </button>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* ── Add Guests Modal ── */}
+      {addGuestsEvent && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#1a2418] border border-[#9cb092]/30 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+
+            {/* Header */}
+            <div className="flex items-start justify-between p-6 border-b border-white/10">
+              <div>
+                <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]/70">Add Guests</p>
+                <h3 className="font-serif-exp text-lg italic text-[#e4eee1] mt-1">{addGuestsEvent.title}</h3>
+                {existingCount > 0 && (
+                  <p className="font-display text-[9px] tracking-[0.1em] uppercase text-[#b2c3b1]/40 mt-1">
+                    {existingCount} existing guest{existingCount !== 1 ? 's' : ''} on this list
+                  </p>
+                )}
+              </div>
+              <button onClick={closeModal} className="text-[#b2c3b1]/40 hover:text-[#9cb092] transition-colors mt-1">
+                <span className="material-icons">close</span>
+              </button>
+            </div>
+
+            {savedCount !== null ? (
+              /* Success state */
+              <div className="p-10 text-center">
+                <span className="material-icons text-[#9cb092] text-4xl mb-4 block">check_circle</span>
+                <p className="font-serif-exp text-lg italic text-[#e4eee1] mb-1">
+                  {savedCount} guest{savedCount !== 1 ? 's' : ''} added
+                </p>
+                <p className="font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]/40 mb-6">
+                  They've been added to {addGuestsEvent.title}
+                </p>
+                <button
+                  onClick={closeModal}
+                  className="px-8 py-2 bg-[#9cb092] text-[#0d1a10] font-display text-[10px] tracking-[0.2em] uppercase hover:bg-[#b2c3b1] transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <div className="p-6 space-y-5">
+                {/* QR import button */}
+                <button
+                  onClick={handleModalQRImport}
+                  disabled={modalQrLoading}
+                  className="w-full py-3 border border-dashed border-[#9cb092]/40 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="material-icons text-sm">{modalQrLoading ? 'hourglass_top' : 'qr_code_scanner'}</span>
+                  {modalQrLoading ? 'Generating QR…' : 'Scan to Import from Phone'}
+                </button>
+
+                <div className="flex items-center gap-3 text-[#b2c3b1]/20">
+                  <div className="flex-1 h-px bg-white/5" />
+                  <span className="font-display text-[9px] tracking-[0.15em] uppercase">or add manually</span>
+                  <div className="flex-1 h-px bg-white/5" />
+                </div>
+
+                {/* Manual guest rows */}
+                <div className="space-y-3">
+                  {modalGuests.map((guest, idx) => (
+                    <div key={guest.id} className="flex gap-2 items-start">
+                      <div className="flex-1 space-y-1.5">
+                        <input
+                          type="text"
+                          placeholder={`Guest ${idx + 1} name *`}
+                          value={guest.name}
+                          onChange={(e) => setModalGuests((prev) => prev.map((g) => g.id === guest.id ? { ...g, name: e.target.value } : g))}
+                          className="w-full bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] text-sm px-3 py-2 placeholder:text-[#b2c3b1]/30 outline-none transition-colors"
+                        />
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <input
+                            type="email"
+                            placeholder="Email"
+                            value={guest.email}
+                            onChange={(e) => setModalGuests((prev) => prev.map((g) => g.id === guest.id ? { ...g, email: e.target.value } : g))}
+                            className="bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] text-sm px-3 py-2 placeholder:text-[#b2c3b1]/30 outline-none transition-colors"
+                          />
+                          <input
+                            type="tel"
+                            placeholder="Phone"
+                            value={guest.phone}
+                            onChange={(e) => setModalGuests((prev) => prev.map((g) => g.id === guest.id ? { ...g, phone: e.target.value } : g))}
+                            className="bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] text-sm px-3 py-2 placeholder:text-[#b2c3b1]/30 outline-none transition-colors"
+                          />
+                        </div>
+                      </div>
+                      {modalGuests.length > 1 && (
+                        <button
+                          onClick={() => setModalGuests((prev) => prev.filter((g) => g.id !== guest.id))}
+                          className="mt-2 text-[#b2c3b1]/30 hover:text-red-400/70 transition-colors"
+                        >
+                          <span className="material-icons text-sm">close</span>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setModalGuests((prev) => [...prev, newModalGuest()])}
+                    className="flex items-center gap-1 font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]/60 hover:text-[#9cb092] transition-colors"
+                  >
+                    <span className="material-icons text-xs">add</span>
+                    Add another guest
+                  </button>
+                </div>
+
+                <button
+                  onClick={handleSaveGuests}
+                  disabled={savingGuests || !modalGuests.some((g) => g.name.trim())}
+                  className="w-full py-3 bg-[#9cb092] text-[#0d1a10] font-display text-[10px] tracking-[0.2em] uppercase disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#b2c3b1] transition-colors"
+                >
+                  {savingGuests ? 'Saving…' : 'Save Guests'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* QR scan modal (Dashboard) */}
+      {modalQrSession && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#1a2418] border border-[#9cb092]/30 p-8 max-w-sm w-full text-center">
+            <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-2">Scan with Phone</h3>
+            <p className="font-display text-[10px] tracking-[0.15em] text-[#b2c3b1]/60 uppercase mb-6">
+              Open this QR on your phone → pick contacts → they appear here automatically
+            </p>
+            <img src={`data:image/png;base64,${modalQrSession.qr_code_base64}`} alt="QR Code" className="w-48 h-48 mx-auto mb-6 border border-white/10" />
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <div className="w-3 h-3 border border-[#9cb092]/40 border-t-[#9cb092] rounded-full animate-spin" />
+              <p className="font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]/50">Waiting for contacts…</p>
+            </div>
+            <button onClick={() => setModalQrSession(null)} className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/50 hover:text-[#9cb092] transition-colors">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
