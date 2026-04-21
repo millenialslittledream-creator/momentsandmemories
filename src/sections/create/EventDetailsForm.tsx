@@ -284,43 +284,16 @@ function VenueAutocomplete({
 
 /* ── Timezone Select — compact inline version ─────────────── */
 const TIMEZONE_OPTIONS = [
-  'UTC-10 — Hawaii (HST)',
-  'UTC-9 — Alaska (AKST)',
-  'UTC-8 — Pacific (PST)',
-  'UTC-7 — Mountain (MST)',
-  'UTC-7 — Arizona, no DST',
-  'UTC-6 — Central (CST)',
-  'UTC-5 — Eastern (EST)',
-  'UTC-5 — Colombia / Peru',
-  'UTC-4 — Atlantic (AST)',
-  'UTC-3:30 — Newfoundland (NST)',
-  'UTC-3 — Brazil (BRT)',
-  'UTC-3 — Argentina (ART)',
-  'UTC+0 — London (GMT)',
-  'UTC+1 — Central Europe (CET)',
-  'UTC+2 — Eastern Europe (EET)',
-  'UTC+3 — Moscow (MSK)',
-  'UTC+1 — West Africa (WAT)',
-  'UTC+2 — South Africa (SAST)',
-  'UTC+3 — East Africa (EAT)',
-  'UTC+3 — Arabia / Riyadh',
-  'UTC+3:30 — Iran (IRST)',
-  'UTC+4 — Gulf / Dubai (GST)',
-  'UTC+4:30 — Afghanistan (AFT)',
-  'UTC+5 — Pakistan (PKT)',
-  'UTC+5:30 — India (IST)',
-  'UTC+5:45 — Nepal (NPT)',
-  'UTC+6 — Bangladesh (BST)',
-  'UTC+6:30 — Myanmar (MMT)',
-  'UTC+7 — Indochina (ICT)',
-  'UTC+8 — Singapore (SGT)',
-  'UTC+8 — China (CST)',
-  'UTC+8 — W. Australia (AWST)',
-  'UTC+9 — Japan (JST)',
-  'UTC+9 — Korea (KST)',
-  'UTC+9:30 — C. Australia (ACST)',
-  'UTC+10 — E. Australia (AEST)',
-  'UTC+12 — New Zealand (NZST)',
+  'PT',
+  'MT',
+  'CT',
+  'ET',
+  'AKT',
+  'HAT',
+  'AST',
+  'SST',
+  'ChST',
+  'IST',
 ];
 
 function TimezoneSelect({
@@ -583,8 +556,8 @@ export default function EventDetailsForm({
       </div>
 
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Multiple Events — at the top for wedding */}
-        {eventType === 'marriage' && (
+        {/* Multiple Events — for weddings and custom events */}
+        {(eventType === 'marriage' || eventType === 'custom') && (
           <div className="glass-panel rounded-none p-6">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
               <h3 className="font-serif-exp text-lg text-[#e4eee1] flex items-center gap-3">
@@ -607,7 +580,9 @@ export default function EventDetailsForm({
 
             {!hasSubEvents && (
               <p className="font-display text-[11px] text-[#b2c3b1]/50 leading-relaxed">
-                Toggle this on if your celebration includes multiple events (e.g. Ceremony, Reception, Rehearsal Dinner, etc.)
+                {eventType === 'marriage'
+                  ? 'Toggle this on if your celebration includes multiple events (e.g. Ceremony, Reception, Rehearsal Dinner, etc.)'
+                  : 'Toggle this on if your celebration spans multiple events (e.g. Welcome Dinner, Main Event, After-Party, etc.)'}
               </p>
             )}
 
@@ -638,7 +613,9 @@ export default function EventDetailsForm({
                         type="text"
                         value={formData[`sub_${i}_name`] || ''}
                         onChange={(e) => onChange(`sub_${i}_name`, e.target.value)}
-                        placeholder="e.g. Ceremony, Reception, Rehearsal Dinner..."
+                        placeholder={eventType === 'marriage'
+                          ? 'e.g. Ceremony, Reception, Rehearsal Dinner...'
+                          : 'e.g. Welcome Dinner, Main Event, After-Party...'}
                         className="bg-white/[0.06] backdrop-blur-sm border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30"
                       />
                     </div>

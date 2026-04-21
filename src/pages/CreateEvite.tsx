@@ -44,7 +44,7 @@ export default function CreateEvite() {
     event_type: string | null;
     form_data: Record<string, string>;
     selected_template: string | null;
-    guests: Array<{ id: string; name: string; email: string; phone: string }>;
+    guests: Array<{ id: string; name: string; email: string; phone: string; events?: string[] }>;
     delivery_preference: 'email' | 'phone' | 'both';
     updated_at: string;
   }>(null);
@@ -54,6 +54,16 @@ export default function CreateEvite() {
 
   const VALID_EVENT_TYPES = Object.keys(eventSpecificFields) as EventType[];
   const LS_KEY = 'mm_draft_backup';
+
+  // Keep saved drafts from carrying forward old long-form timezones
+  // (e.g. "UTC+0 — London (GMT)"). Clear if value isn't a current short code.
+  const VALID_TIMEZONES = new Set(['PT', 'MT', 'CT', 'ET', 'AKT', 'HAT', 'AST', 'SST', 'ChST', 'IST']);
+  useEffect(() => {
+    if (formData.timezone && !VALID_TIMEZONES.has(formData.timezone)) {
+      setFormData((prev) => ({ ...prev, timezone: '' }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.timezone]);
 
   // Build the current draft payload
   const buildDraftPayload = useCallback(() => ({
@@ -491,6 +501,7 @@ export default function CreateEvite() {
                   onGuestsChange={setGuests}
                   deliveryPreference={deliveryPreference}
                   onDeliveryPreferenceChange={setDeliveryPreference}
+                  formData={formData}
                 />
               )}
               {step === 5 && (

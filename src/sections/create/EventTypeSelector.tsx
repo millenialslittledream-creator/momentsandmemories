@@ -21,15 +21,14 @@ export default function EventTypeSelector({ selected, onSelect, onAutoAdvance }:
       );
       gsap.fromTo(
         '.event-type-card',
-        { opacity: 0, y: 36, scale: 0.95 },
+        { opacity: 0, y: 16, scale: 0.97 },
         {
           opacity: 1,
           y: 0,
           scale: 1,
-          duration: 0.65,
-          stagger: 0.1,
+          duration: 0.35,
+          stagger: 0.04,
           ease: 'power3.out',
-          delay: 0.25,
         }
       );
     }, containerRef);
