@@ -29,6 +29,34 @@ function createGuest(): Guest {
 
 type GuestInputMethod = 'manual' | 'qr' | 'excel';
 
+// Hoisted out of the parent render so typing into adjacent <input>s doesn't
+// remount inputs and steal focus after each keystroke.
+function Checkbox({
+  checked,
+  onChange,
+  label,
+  indeterminate = false,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label?: string;
+  indeterminate?: boolean;
+}) {
+  return (
+    <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
+      <input
+        type="checkbox"
+        checked={checked}
+        ref={(el) => { if (el) el.indeterminate = indeterminate; }}
+        onChange={onChange}
+        className="appearance-none w-[14px] h-[14px] border border-[#9cb092]/50 bg-white/[0.04] checked:bg-[#9cb092] checked:border-[#9cb092] relative cursor-pointer transition-colors
+          checked:after:content-['✓'] checked:after:absolute checked:after:inset-0 checked:after:flex checked:after:items-center checked:after:justify-center checked:after:text-[#111914] checked:after:text-[10px] checked:after:font-bold checked:after:leading-none"
+      />
+      {label && <span className="text-[10px] font-display text-[#b2c3b1]/80">{label}</span>}
+    </label>
+  );
+}
+
 interface SubEvent {
   idx: number;
   name: string;
@@ -272,169 +300,6 @@ export default function GuestDetails({
   const headerCellClass =
     'px-2 py-2.5 text-left font-display text-[9px] tracking-[0.15em] uppercase text-[#9cb092]/80 font-semibold';
 
-  const Checkbox = ({
-    checked,
-    onChange,
-    label,
-    indeterminate = false,
-  }: {
-    checked: boolean;
-    onChange: () => void;
-    label?: string;
-    indeterminate?: boolean;
-  }) => (
-    <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
-      <input
-        type="checkbox"
-        checked={checked}
-        ref={(el) => { if (el) el.indeterminate = indeterminate; }}
-        onChange={onChange}
-        className="appearance-none w-[14px] h-[14px] border border-[#9cb092]/50 bg-white/[0.04] checked:bg-[#9cb092] checked:border-[#9cb092] relative cursor-pointer transition-colors
-          checked:after:content-['✓'] checked:after:absolute checked:after:inset-0 checked:after:flex checked:after:items-center checked:after:justify-center checked:after:text-[#111914] checked:after:text-[10px] checked:after:font-bold checked:after:leading-none"
-      />
-      {label && <span className="text-[10px] font-display text-[#b2c3b1]/80">{label}</span>}
-    </label>
-  );
-
-  // ── Unified Guest Table ──────────────────────────────────────────────────
-  const GuestTable = () => (
-    <div className="space-y-3">
-      {hasSubEvents && (
-        <div className="flex items-center justify-between flex-wrap gap-3 px-1 pb-2">
-          <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/60">
-            Tick events each guest should receive
-          </p>
-          <button
-            onClick={toggleAllEverywhere}
-            className="flex items-center gap-1.5 font-display text-[9px] tracking-[0.2em] uppercase px-3 py-1.5 border border-[#9cb092]/30 hover:border-[#9cb092]/70 hover:bg-[#9cb092]/10 text-[#9cb092] transition-all"
-          >
-            <span className="material-icons text-xs">
-              {allSelectedEverywhere ? 'deselect' : 'select_all'}
-            </span>
-            {allSelectedEverywhere ? 'Clear All' : 'Select All'}
-          </button>
-        </div>
-      )}
-
-      <div className="overflow-x-auto border border-white/5 bg-white/[0.015]">
-        <table className="w-full border-collapse min-w-[640px]">
-          <thead>
-            <tr className="border-b border-white/10 bg-white/[0.03]">
-              <th className={`${headerCellClass} w-10 text-center`}>#</th>
-              <th className={`${headerCellClass} min-w-[140px]`}>Name</th>
-              {showEmail && <th className={`${headerCellClass} min-w-[180px]`}>Email</th>}
-              {showPhone && <th className={`${headerCellClass} min-w-[140px]`}>Phone</th>}
-              {hasSubEvents && (
-                <th className={`${headerCellClass} text-center w-14`}>
-                  <div className="flex flex-col items-center gap-1">
-                    <span>All</span>
-                  </div>
-                </th>
-              )}
-              {hasSubEvents && subEvents.map((ev) => (
-                <th key={ev.idx} className={`${headerCellClass} text-center min-w-[90px]`}>
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="truncate max-w-[120px]" title={ev.name}>{ev.name}</span>
-                    <Checkbox
-                      checked={allGuestsInEvent(ev.idx)}
-                      onChange={() => toggleAllForEvent(ev.idx)}
-                    />
-                  </div>
-                </th>
-              ))}
-              <th className={`${headerCellClass} w-10`} />
-            </tr>
-          </thead>
-          <tbody>
-            {guests.map((guest, index) => (
-              <tr
-                key={guest.id}
-                className="border-b border-white/5 last:border-b-0 hover:bg-white/[0.02] transition-colors"
-              >
-                <td className="px-2 py-2 text-center font-display text-[10px] text-[#9cb092]/60">
-                  {index + 1}
-                </td>
-                <td className="px-2 py-2">
-                  <input
-                    type="text"
-                    value={guest.name}
-                    onChange={(e) => updateGuest(guest.id, 'name', e.target.value)}
-                    placeholder="Guest name"
-                    className={cellInputClass}
-                  />
-                </td>
-                {showEmail && (
-                  <td className="px-2 py-2">
-                    <input
-                      type="email"
-                      value={guest.email}
-                      onChange={(e) => updateGuest(guest.id, 'email', e.target.value)}
-                      placeholder="guest@email.com"
-                      className={cellInputClass}
-                    />
-                  </td>
-                )}
-                {showPhone && (
-                  <td className="px-2 py-2">
-                    <input
-                      type="tel"
-                      value={guest.phone}
-                      onChange={(e) => updateGuest(guest.id, 'phone', e.target.value)}
-                      placeholder="+1 (555) 000-0000"
-                      className={cellInputClass}
-                    />
-                  </td>
-                )}
-                {hasSubEvents && (
-                  <td className="px-2 py-2 text-center">
-                    <Checkbox
-                      checked={allEventsForGuest(guest)}
-                      onChange={() => toggleAllEventsForGuest(guest.id)}
-                    />
-                  </td>
-                )}
-                {hasSubEvents && subEvents.map((ev) => (
-                  <td key={ev.idx} className="px-2 py-2 text-center">
-                    <Checkbox
-                      checked={isGuestInEvent(guest, ev.idx)}
-                      onChange={() => toggleGuestEvent(guest.id, ev.idx)}
-                    />
-                  </td>
-                ))}
-                <td className="px-2 py-2 text-center">
-                  <button
-                    onClick={() => removeGuest(guest.id)}
-                    className="text-[#b2c3b1]/30 hover:text-red-400/80 transition-colors"
-                    title="Remove row"
-                  >
-                    <span className="material-icons text-sm">close</span>
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-        <button
-          onClick={addGuest}
-          className="py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
-        >
-          <span className="material-icons text-sm">add</span>
-          Add Row
-        </button>
-        <button
-          onClick={handlePhoneContacts}
-          className="py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
-        >
-          <span className="material-icons text-sm">contacts</span>
-          Import from Phone
-        </button>
-      </div>
-    </div>
-  );
-
   const prefOptions: { value: 'email' | 'phone' | 'both'; label: string; icon: string }[] = [
     { value: 'email', label: 'Email', icon: 'email' },
     { value: 'phone', label: 'Phone / SMS', icon: 'smartphone' },
@@ -575,7 +440,141 @@ export default function GuestDetails({
                 {importedCount} of {guests.length} {guests.length === 1 ? 'row' : 'rows'} filled
               </span>
             </div>
-            <GuestTable />
+            <div className="space-y-3">
+              {hasSubEvents && (
+                <div className="flex items-center justify-between flex-wrap gap-3 px-1 pb-2">
+                  <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/60">
+                    Tick events each guest should receive
+                  </p>
+                  <button
+                    onClick={toggleAllEverywhere}
+                    className="flex items-center gap-1.5 font-display text-[9px] tracking-[0.2em] uppercase px-3 py-1.5 border border-[#9cb092]/30 hover:border-[#9cb092]/70 hover:bg-[#9cb092]/10 text-[#9cb092] transition-all"
+                  >
+                    <span className="material-icons text-xs">
+                      {allSelectedEverywhere ? 'deselect' : 'select_all'}
+                    </span>
+                    {allSelectedEverywhere ? 'Clear All' : 'Select All'}
+                  </button>
+                </div>
+              )}
+
+              <div className="overflow-x-auto border border-white/5 bg-white/[0.015]">
+                <table className="w-full border-collapse min-w-[640px]">
+                  <thead>
+                    <tr className="border-b border-white/10 bg-white/[0.03]">
+                      <th className={`${headerCellClass} w-10 text-center`}>#</th>
+                      <th className={`${headerCellClass} min-w-[140px]`}>Name</th>
+                      {showEmail && <th className={`${headerCellClass} min-w-[180px]`}>Email</th>}
+                      {showPhone && <th className={`${headerCellClass} min-w-[140px]`}>Phone</th>}
+                      {hasSubEvents && (
+                        <th className={`${headerCellClass} text-center w-14`}>
+                          <div className="flex flex-col items-center gap-1">
+                            <span>All</span>
+                          </div>
+                        </th>
+                      )}
+                      {hasSubEvents && subEvents.map((ev) => (
+                        <th key={ev.idx} className={`${headerCellClass} text-center min-w-[90px]`}>
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="truncate max-w-[120px]" title={ev.name}>{ev.name}</span>
+                            <Checkbox
+                              checked={allGuestsInEvent(ev.idx)}
+                              onChange={() => toggleAllForEvent(ev.idx)}
+                            />
+                          </div>
+                        </th>
+                      ))}
+                      <th className={`${headerCellClass} w-10`} />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {guests.map((guest, index) => (
+                      <tr
+                        key={guest.id}
+                        className="border-b border-white/5 last:border-b-0 hover:bg-white/[0.02] transition-colors"
+                      >
+                        <td className="px-2 py-2 text-center font-display text-[10px] text-[#9cb092]/60">
+                          {index + 1}
+                        </td>
+                        <td className="px-2 py-2">
+                          <input
+                            type="text"
+                            value={guest.name}
+                            onChange={(e) => updateGuest(guest.id, 'name', e.target.value)}
+                            placeholder="Guest name"
+                            className={cellInputClass}
+                          />
+                        </td>
+                        {showEmail && (
+                          <td className="px-2 py-2">
+                            <input
+                              type="email"
+                              value={guest.email}
+                              onChange={(e) => updateGuest(guest.id, 'email', e.target.value)}
+                              placeholder="guest@email.com"
+                              className={cellInputClass}
+                            />
+                          </td>
+                        )}
+                        {showPhone && (
+                          <td className="px-2 py-2">
+                            <input
+                              type="tel"
+                              value={guest.phone}
+                              onChange={(e) => updateGuest(guest.id, 'phone', e.target.value)}
+                              placeholder="+1 (555) 000-0000"
+                              className={cellInputClass}
+                            />
+                          </td>
+                        )}
+                        {hasSubEvents && (
+                          <td className="px-2 py-2 text-center">
+                            <Checkbox
+                              checked={allEventsForGuest(guest)}
+                              onChange={() => toggleAllEventsForGuest(guest.id)}
+                            />
+                          </td>
+                        )}
+                        {hasSubEvents && subEvents.map((ev) => (
+                          <td key={ev.idx} className="px-2 py-2 text-center">
+                            <Checkbox
+                              checked={isGuestInEvent(guest, ev.idx)}
+                              onChange={() => toggleGuestEvent(guest.id, ev.idx)}
+                            />
+                          </td>
+                        ))}
+                        <td className="px-2 py-2 text-center">
+                          <button
+                            onClick={() => removeGuest(guest.id)}
+                            className="text-[#b2c3b1]/30 hover:text-red-400/80 transition-colors"
+                            title="Remove row"
+                          >
+                            <span className="material-icons text-sm">close</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <button
+                  onClick={addGuest}
+                  className="py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
+                >
+                  <span className="material-icons text-sm">add</span>
+                  Add Row
+                </button>
+                <button
+                  onClick={handlePhoneContacts}
+                  className="py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
+                >
+                  <span className="material-icons text-sm">contacts</span>
+                  Import from Phone
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
