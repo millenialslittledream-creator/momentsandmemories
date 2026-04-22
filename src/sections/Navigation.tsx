@@ -72,7 +72,9 @@ export default function Navigation() {
         ref={navRef}
         className={`fixed top-0 left-0 w-full z-50 px-8 py-6 flex justify-between items-center transition-all duration-500 ${isScrolled
           ? 'bg-[#111914]/84 backdrop-blur-md border-b border-white/10 text-[#e2ebde]'
-          : 'bg-transparent text-[#f2f6ef]'
+          : location.pathname === '/'
+            ? 'bg-transparent text-[#2a3328]'
+            : 'bg-transparent text-[#f2f6ef]'
           }`}
       >
         {/* Left Side - Logo (always visible) */}

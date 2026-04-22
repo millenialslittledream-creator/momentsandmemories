@@ -414,52 +414,52 @@ export default function Shop() {
             </div>
 
             {/* ── RIGHT — product details ─────────────────────────────── */}
-            <div className="w-[42%] min-w-[280px] max-w-[480px] flex-shrink-0 flex flex-col px-8 md:px-10 py-8 overflow-y-auto">
+            <div className="w-[42%] min-w-[280px] max-w-[480px] flex-shrink-0 flex flex-col px-8 md:px-10 py-8 overflow-hidden">
 
-              {/* Page label */}
-              <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092]/40 mb-5">
-                Gifts
-              </p>
-
-              {/* Bestseller tag */}
-              {selected.isBestseller && (
-                <span className="inline-flex self-start bg-[#9cb092]/10 border border-[#9cb092]/30 text-[#9cb092] font-display text-[8px] tracking-[0.22em] uppercase px-3 py-1 mb-4">
-                  Bestseller
-                </span>
-              )}
-
-              {/* Product name */}
-              <h2 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight mb-2">
-                {selected.name}
-              </h2>
-
-              {/* Price */}
-              <p className="font-serif-exp text-2xl text-[#9cb092] mb-6">
-                $ {selected.price}
-              </p>
-
-              {/* Description */}
-              <p className="font-display text-sm text-[#b2c3b1] leading-relaxed mb-6">
-                {selected.description}
-              </p>
-
-              {/* Details list */}
-              <div className="mb-8">
-                <p className="font-display text-[9px] tracking-[0.25em] uppercase text-[#9cb092]/60 mb-3">
-                  Details
+              {/* ── Fixed top: label, tag, name, price ─────────────── */}
+              <div className="flex-shrink-0">
+                <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092]/40 mb-5">
+                  Gifts
                 </p>
-                <ul className="space-y-2">
-                  {selected.details.map((d, i) => (
-                    <li key={i} className="flex items-center gap-2.5 font-display text-xs text-[#b2c3b1]/80">
-                      <span className="w-1 h-1 rounded-full bg-[#9cb092]/50 flex-shrink-0" />
-                      {d}
-                    </li>
-                  ))}
-                </ul>
+
+                {selected.isBestseller && (
+                  <span className="inline-flex bg-[#9cb092]/10 border border-[#9cb092]/30 text-[#9cb092] font-display text-[8px] tracking-[0.22em] uppercase px-3 py-1 mb-4">
+                    Bestseller
+                  </span>
+                )}
+
+                <h2 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight mb-2">
+                  {selected.name}
+                </h2>
+
+                <p className="font-serif-exp text-2xl text-[#9cb092] mb-6">
+                  $ {selected.price}
+                </p>
               </div>
 
-              {/* CTA buttons */}
-              <div className="mt-auto flex flex-col gap-2.5">
+              {/* ── Scrollable middle: description + details ──────── */}
+              <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto pr-3 scrollbar-subtle">
+                <p className="font-display text-sm text-[#b2c3b1] leading-relaxed mb-6">
+                  {selected.description}
+                </p>
+
+                <div className="mb-2">
+                  <p className="font-display text-[9px] tracking-[0.25em] uppercase text-[#9cb092]/60 mb-3">
+                    Details
+                  </p>
+                  <ul className="space-y-2">
+                    {selected.details.map((d, i) => (
+                      <li key={i} className="flex items-center gap-2.5 font-display text-xs text-[#b2c3b1]/80">
+                        <span className="w-1 h-1 rounded-full bg-[#9cb092]/50 flex-shrink-0" />
+                        {d}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* ── Fixed bottom: CTA buttons ─────────────────────── */}
+              <div className="flex-shrink-0 flex flex-col gap-2.5 pt-6 mt-2 border-t border-white/[0.06]">
                 <button className="w-full py-3.5 bg-[#9cb092] text-[#111914] font-display text-[11px] tracking-[0.22em] uppercase font-bold hover:bg-[#adc4a3] transition-colors">
                   Add to Bag
                 </button>

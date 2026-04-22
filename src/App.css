@@ -70,12 +70,7 @@ button:active {
 
 /* Loading state for images */
 img {
-  opacity: 1;
   transition: opacity 0.3s ease;
-}
-
-img[loading] {
-  opacity: 0;
 }
 
 /* Responsive typography adjustments */

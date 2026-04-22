@@ -57,7 +57,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/shop" element={<Shop />} />
-              <Route path="/create" element={<ProtectedRoute><CreateEvite /></ProtectedRoute>} />
+              <Route path="/create" element={<CreateEvite />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/sign-in" element={<SignIn />} />
               <Route path="/sign-up" element={<SignUp />} />

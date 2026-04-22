@@ -340,10 +340,29 @@
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar — hidden by default on the page */
 ::-webkit-scrollbar {
   width: 0px;
   background: transparent;
+}
+
+/* Opt-in visible, thin scrollbar for scrollable panels
+   (e.g. product description, evite form, guest list) */
+.scrollbar-subtle {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 176, 146, 0.35) transparent;
+}
+.scrollbar-subtle::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  background: transparent;
+}
+.scrollbar-subtle::-webkit-scrollbar-thumb {
+  background: rgba(156, 176, 146, 0.35);
+  border-radius: 3px;
+}
+.scrollbar-subtle::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 176, 146, 0.6);
 }
 
 /* Liquid background animations */
