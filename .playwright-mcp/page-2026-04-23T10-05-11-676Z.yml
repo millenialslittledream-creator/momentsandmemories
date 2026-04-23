@@ -1,0 +1,285 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - navigation [ref=e5]:
+      - button "moments & memories" [ref=e6] [cursor=pointer]
+      - generic [ref=e7]:
+        - button "Home" [ref=e8] [cursor=pointer]
+        - button "Create Evite" [ref=e9] [cursor=pointer]
+        - button "Shop Gifts" [ref=e10] [cursor=pointer]
+        - button "Login" [ref=e11] [cursor=pointer]
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - heading "What are we bringing to life today?" [level=1] [ref=e16]
+          - paragraph [ref=e17]: Choose a design — or upload your own
+        - generic [ref=e18]:
+          - button "All" [ref=e19] [cursor=pointer]
+          - button "Birthday" [ref=e20] [cursor=pointer]
+          - button "Wedding" [ref=e21] [cursor=pointer]
+          - button "Baby Shower" [ref=e22] [cursor=pointer]
+          - button "Pre-Wedding Party" [ref=e23] [cursor=pointer]
+          - button "Gender Reveal" [ref=e24] [cursor=pointer]
+          - button "Custom" [ref=e25] [cursor=pointer]
+      - generic [ref=e27]:
+        - button "add Upload Your Own Design Image · Video · Image + Music Custom upload" [ref=e28] [cursor=pointer]:
+          - generic [ref=e29]:
+            - generic [ref=e31]: add
+            - paragraph [ref=e32]: Upload Your Own Design
+            - paragraph [ref=e33]: Image · Video · Image + Music
+          - heading "Custom upload" [level=3] [ref=e35]
+        - button "Golden Hour zoom_in Golden Hour" [ref=e36] [cursor=pointer]:
+          - generic [ref=e37]:
+            - img "Golden Hour" [ref=e38]
+            - generic [ref=e40]: zoom_in
+          - heading "Golden Hour" [level=3] [ref=e42]
+        - button "Neon Glow zoom_in Neon Glow" [ref=e43] [cursor=pointer]:
+          - generic [ref=e44]:
+            - img "Neon Glow" [ref=e45]
+            - generic [ref=e47]: zoom_in
+          - heading "Neon Glow" [level=3] [ref=e49]
+        - button "Garden Party zoom_in Garden Party" [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]:
+            - img "Garden Party" [ref=e52]
+            - generic [ref=e54]: zoom_in
+          - heading "Garden Party" [level=3] [ref=e56]
+        - button "Minimalist Chic zoom_in Minimalist Chic" [ref=e57] [cursor=pointer]:
+          - generic [ref=e58]:
+            - img "Minimalist Chic" [ref=e59]
+            - generic [ref=e61]: zoom_in
+          - heading "Minimalist Chic" [level=3] [ref=e63]
+        - button "Pastel Dream zoom_in Pastel Dream" [ref=e64] [cursor=pointer]:
+          - generic [ref=e65]:
+            - img "Pastel Dream" [ref=e66]
+            - generic [ref=e68]: zoom_in
+          - heading "Pastel Dream" [level=3] [ref=e70]
+        - button "Starry Night zoom_in Starry Night" [ref=e71] [cursor=pointer]:
+          - generic [ref=e72]:
+            - img "Starry Night" [ref=e73]
+            - generic [ref=e75]: zoom_in
+          - heading "Starry Night" [level=3] [ref=e77]
+        - button "Tropical Fiesta zoom_in Tropical Fiesta" [ref=e78] [cursor=pointer]:
+          - generic [ref=e79]:
+            - img "Tropical Fiesta" [ref=e80]
+            - generic [ref=e82]: zoom_in
+          - heading "Tropical Fiesta" [level=3] [ref=e84]
+        - button "Rustic Wood zoom_in Rustic Wood" [ref=e85] [cursor=pointer]:
+          - generic [ref=e86]:
+            - img "Rustic Wood" [ref=e87]
+            - generic [ref=e89]: zoom_in
+          - heading "Rustic Wood" [level=3] [ref=e91]
+        - button "Midnight Luxe zoom_in Midnight Luxe" [ref=e92] [cursor=pointer]:
+          - generic [ref=e93]:
+            - img "Midnight Luxe" [ref=e94]
+            - generic [ref=e96]: zoom_in
+          - heading "Midnight Luxe" [level=3] [ref=e98]
+        - button "Confetti Pop zoom_in Confetti Pop" [ref=e99] [cursor=pointer]:
+          - generic [ref=e100]:
+            - img "Confetti Pop" [ref=e101]
+            - generic [ref=e103]: zoom_in
+          - heading "Confetti Pop" [level=3] [ref=e105]
+        - button "Classic Romance zoom_in Classic Romance" [ref=e106] [cursor=pointer]:
+          - generic [ref=e107]:
+            - img "Classic Romance" [ref=e108]
+            - generic [ref=e110]: zoom_in
+          - heading "Classic Romance" [level=3] [ref=e112]
+        - button "Botanical Dream zoom_in Botanical Dream" [ref=e113] [cursor=pointer]:
+          - generic [ref=e114]:
+            - img "Botanical Dream" [ref=e115]
+            - generic [ref=e117]: zoom_in
+          - heading "Botanical Dream" [level=3] [ref=e119]
+        - button "Modern Luxe zoom_in Modern Luxe" [ref=e120] [cursor=pointer]:
+          - generic [ref=e121]:
+            - img "Modern Luxe" [ref=e122]
+            - generic [ref=e124]: zoom_in
+          - heading "Modern Luxe" [level=3] [ref=e126]
+        - button "Rustic Charm zoom_in Rustic Charm" [active] [ref=e127] [cursor=pointer]:
+          - generic [ref=e128]:
+            - img "Rustic Charm" [ref=e129]
+            - generic [ref=e131]: zoom_in
+          - heading "Rustic Charm" [level=3] [ref=e133]
+        - button "Indian Heritage zoom_in Indian Heritage" [ref=e134] [cursor=pointer]:
+          - generic [ref=e135]:
+            - img "Indian Heritage" [ref=e136]
+            - generic [ref=e138]: zoom_in
+          - heading "Indian Heritage" [level=3] [ref=e140]
+        - button "Mehendi Magic zoom_in Mehendi Magic" [ref=e141] [cursor=pointer]:
+          - generic [ref=e142]:
+            - img "Mehendi Magic" [ref=e143]
+            - generic [ref=e145]: zoom_in
+          - heading "Mehendi Magic" [level=3] [ref=e147]
+        - button "Golden Mandap zoom_in Golden Mandap" [ref=e148] [cursor=pointer]:
+          - generic [ref=e149]:
+            - img "Golden Mandap" [ref=e150]
+            - generic [ref=e152]: zoom_in
+          - heading "Golden Mandap" [level=3] [ref=e154]
+        - button "Soft Clouds zoom_in Soft Clouds" [ref=e155] [cursor=pointer]:
+          - generic [ref=e156]:
+            - img "Soft Clouds" [ref=e157]
+            - generic [ref=e159]: zoom_in
+          - heading "Soft Clouds" [level=3] [ref=e161]
+        - button "Little Safari zoom_in Little Safari" [ref=e162] [cursor=pointer]:
+          - generic [ref=e163]:
+            - img "Little Safari" [ref=e164]
+            - generic [ref=e166]: zoom_in
+          - heading "Little Safari" [level=3] [ref=e168]
+        - button "Bloom & Grow zoom_in Bloom & Grow" [ref=e169] [cursor=pointer]:
+          - generic [ref=e170]:
+            - img "Bloom & Grow" [ref=e171]
+            - generic [ref=e173]: zoom_in
+          - heading "Bloom & Grow" [level=3] [ref=e175]
+        - button "Storybook zoom_in Storybook" [ref=e176] [cursor=pointer]:
+          - generic [ref=e177]:
+            - img "Storybook" [ref=e178]
+            - generic [ref=e180]: zoom_in
+          - heading "Storybook" [level=3] [ref=e182]
+        - button "Starlight zoom_in Starlight" [ref=e183] [cursor=pointer]:
+          - generic [ref=e184]:
+            - img "Starlight" [ref=e185]
+            - generic [ref=e187]: zoom_in
+          - heading "Starlight" [level=3] [ref=e189]
+        - button "Garden Baby zoom_in Garden Baby" [ref=e190] [cursor=pointer]:
+          - generic [ref=e191]:
+            - img "Garden Baby" [ref=e192]
+            - generic [ref=e194]: zoom_in
+          - heading "Garden Baby" [level=3] [ref=e196]
+        - button "Classic Charm zoom_in Classic Charm" [ref=e197] [cursor=pointer]:
+          - generic [ref=e198]:
+            - img "Classic Charm" [ref=e199]
+            - generic [ref=e201]: zoom_in
+          - heading "Classic Charm" [level=3] [ref=e203]
+        - button "Blush & Gold zoom_in Blush & Gold" [ref=e204] [cursor=pointer]:
+          - generic [ref=e205]:
+            - img "Blush & Gold" [ref=e206]
+            - generic [ref=e208]: zoom_in
+          - heading "Blush & Gold" [level=3] [ref=e210]
+        - button "Champagne Toast zoom_in Champagne Toast" [ref=e211] [cursor=pointer]:
+          - generic [ref=e212]:
+            - img "Champagne Toast" [ref=e213]
+            - generic [ref=e215]: zoom_in
+          - heading "Champagne Toast" [level=3] [ref=e217]
+        - button "Boho Bride zoom_in Boho Bride" [ref=e218] [cursor=pointer]:
+          - generic [ref=e219]:
+            - img "Boho Bride" [ref=e220]
+            - generic [ref=e222]: zoom_in
+          - heading "Boho Bride" [level=3] [ref=e224]
+        - button "Rose Garden zoom_in Rose Garden" [ref=e225] [cursor=pointer]:
+          - generic [ref=e226]:
+            - img "Rose Garden" [ref=e227]
+            - generic [ref=e229]: zoom_in
+          - heading "Rose Garden" [level=3] [ref=e231]
+        - button "Garden Brunch zoom_in Garden Brunch" [ref=e232] [cursor=pointer]:
+          - generic [ref=e233]:
+            - img "Garden Brunch" [ref=e234]
+            - generic [ref=e236]: zoom_in
+          - heading "Garden Brunch" [level=3] [ref=e238]
+        - button "Luxe Soirée zoom_in Luxe Soirée" [ref=e239] [cursor=pointer]:
+          - generic [ref=e240]:
+            - img "Luxe Soirée" [ref=e241]
+            - generic [ref=e243]: zoom_in
+          - heading "Luxe Soirée" [level=3] [ref=e245]
+        - button "Bachelorette zoom_in Bachelorette" [ref=e246] [cursor=pointer]:
+          - generic [ref=e247]:
+            - img "Bachelorette" [ref=e248]
+            - generic [ref=e250]: zoom_in
+          - heading "Bachelorette" [level=3] [ref=e252]
+        - button "Pink or Blue zoom_in Pink or Blue" [ref=e253] [cursor=pointer]:
+          - generic [ref=e254]:
+            - img "Pink or Blue" [ref=e255]
+            - generic [ref=e257]: zoom_in
+          - heading "Pink or Blue" [level=3] [ref=e259]
+        - button "Twinkle Stars zoom_in Twinkle Stars" [ref=e260] [cursor=pointer]:
+          - generic [ref=e261]:
+            - img "Twinkle Stars" [ref=e262]
+            - generic [ref=e264]: zoom_in
+          - heading "Twinkle Stars" [level=3] [ref=e266]
+        - button "He or She zoom_in He or She" [ref=e267] [cursor=pointer]:
+          - generic [ref=e268]:
+            - img "He or She" [ref=e269]
+            - generic [ref=e271]: zoom_in
+          - heading "He or She" [level=3] [ref=e273]
+        - button "Little Peanut zoom_in Little Peanut" [ref=e274] [cursor=pointer]:
+          - generic [ref=e275]:
+            - img "Little Peanut" [ref=e276]
+            - generic [ref=e278]: zoom_in
+          - heading "Little Peanut" [level=3] [ref=e280]
+        - button "Confetti Cloud zoom_in Confetti Cloud" [ref=e281] [cursor=pointer]:
+          - generic [ref=e282]:
+            - img "Confetti Cloud" [ref=e283]
+            - generic [ref=e285]: zoom_in
+          - heading "Confetti Cloud" [level=3] [ref=e287]
+        - button "Balloon Burst zoom_in Balloon Burst" [ref=e288] [cursor=pointer]:
+          - generic [ref=e289]:
+            - img "Balloon Burst" [ref=e290]
+            - generic [ref=e292]: zoom_in
+          - heading "Balloon Burst" [level=3] [ref=e294]
+        - button "Sweet Surprise zoom_in Sweet Surprise" [ref=e295] [cursor=pointer]:
+          - generic [ref=e296]:
+            - img "Sweet Surprise" [ref=e297]
+            - generic [ref=e299]: zoom_in
+          - heading "Sweet Surprise" [level=3] [ref=e301]
+        - button "Adventure Awaits zoom_in Adventure Awaits" [ref=e302] [cursor=pointer]:
+          - generic [ref=e303]:
+            - img "Adventure Awaits" [ref=e304]
+            - generic [ref=e306]: zoom_in
+          - heading "Adventure Awaits" [level=3] [ref=e308]
+    - generic [ref=e310]:
+      - button "close" [ref=e311] [cursor=pointer]:
+        - generic [ref=e312]: close
+      - generic [ref=e314]:
+        - generic [ref=e315]:
+          - img "Rustic Charm" [ref=e316]
+          - generic:
+            - paragraph: You're invited to
+            - heading "Bride & Groom" [level=4]
+        - button "chevron_left" [ref=e317] [cursor=pointer]:
+          - generic [ref=e318]: chevron_left
+        - button "chevron_right" [ref=e319] [cursor=pointer]:
+          - generic [ref=e320]: chevron_right
+        - generic:
+          - generic: 14 / 39
+      - generic [ref=e321]:
+        - generic [ref=e322]:
+          - generic [ref=e323]:
+            - generic [ref=e324]:
+              - generic [ref=e325]:
+                - generic [ref=e326]: celebration
+                - paragraph [ref=e327]: Multiple Events
+              - button [ref=e328] [cursor=pointer]
+            - paragraph [ref=e330]: Toggle on if your celebration includes Mehendi, Sangeet, Reception, etc.
+          - generic [ref=e331]:
+            - generic [ref=e332]: Bride's Name*
+            - textbox "Bride's full name" [ref=e333]
+          - generic [ref=e334]:
+            - generic [ref=e335]: Groom's Name*
+            - textbox "Groom's full name" [ref=e336]
+          - generic [ref=e337]:
+            - generic [ref=e338]: Host Name(s)*
+            - textbox "Who is hosting?" [ref=e339]
+          - generic [ref=e340]:
+            - generic [ref=e341]: When is the event?*
+            - button "calendar_today Start * Pick a date & time" [ref=e342] [cursor=pointer]:
+              - paragraph [ref=e343]:
+                - generic [ref=e344]: calendar_today
+                - text: Start
+                - generic [ref=e345]: "*"
+              - paragraph [ref=e346]: Pick a date & time
+          - generic [ref=e347]:
+            - generic [ref=e348]: Venue / Location*
+            - textbox "Where is the event?" [ref=e349]
+          - generic [ref=e350]:
+            - generic [ref=e351]: RSVP Contact (Phone or Email)*
+            - textbox "How should guests RSVP?" [ref=e352]
+          - generic [ref=e353]:
+            - generic [ref=e354]: Custom Message
+            - generic [ref=e355]:
+              - textbox "Add a personal note (optional)" [ref=e356]
+              - paragraph [ref=e357]: 0/200
+          - generic [ref=e358]:
+            - generic [ref=e359]: Approximate Guest Count
+            - spinbutton [ref=e360]
+        - generic [ref=e361]:
+          - button "Proceed arrow_forward" [disabled] [ref=e362]:
+            - text: Proceed
+            - generic [ref=e363]: arrow_forward
+          - paragraph [ref=e364]: Fill required fields to continue
+  - region "Notifications alt+T"

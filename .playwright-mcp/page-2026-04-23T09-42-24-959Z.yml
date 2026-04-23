@@ -1,0 +1,148 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - navigation [ref=e5]:
+      - button "moments & memories" [ref=e6] [cursor=pointer]
+      - generic [ref=e7]:
+        - button "Home" [ref=e8] [cursor=pointer]
+        - button "Create Evite" [ref=e9] [cursor=pointer]
+        - button "Shop Gifts" [ref=e10] [cursor=pointer]
+        - button "Login" [ref=e11] [cursor=pointer]
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - heading "What are we bringing to life today?" [level=1] [ref=e16]
+          - paragraph [ref=e17]: Choose a design — or upload your own
+        - generic [ref=e18]:
+          - button "All" [ref=e19] [cursor=pointer]
+          - button "Birthday" [ref=e20] [cursor=pointer]
+          - button "Wedding" [ref=e21] [cursor=pointer]
+          - button "Baby Shower" [ref=e22] [cursor=pointer]
+          - button "Pre-Wedding Party" [ref=e23] [cursor=pointer]
+          - button "Gender Reveal" [ref=e24] [cursor=pointer]
+          - button "Custom" [ref=e25] [cursor=pointer]
+      - generic [ref=e27]:
+        - button "add Upload Your Own Design Image · Video · Image + Music Custom upload" [ref=e28] [cursor=pointer]:
+          - generic [ref=e29]:
+            - generic [ref=e31]: add
+            - paragraph [ref=e32]: Upload Your Own Design
+            - paragraph [ref=e33]: Image · Video · Image + Music
+          - heading "Custom upload" [level=3] [ref=e35]
+        - button "Golden Hour zoom_in Golden Hour" [ref=e383] [cursor=pointer]:
+          - generic [ref=e384]:
+            - img "Golden Hour" [ref=e385]
+            - generic [ref=e387]: zoom_in
+          - heading "Golden Hour" [level=3] [ref=e389]
+        - button "Neon Glow zoom_in Neon Glow" [ref=e390] [cursor=pointer]:
+          - generic [ref=e391]:
+            - img "Neon Glow" [ref=e392]
+            - generic [ref=e394]: zoom_in
+          - heading "Neon Glow" [level=3] [ref=e396]
+        - button "Garden Party zoom_in Garden Party" [ref=e397] [cursor=pointer]:
+          - generic [ref=e398]:
+            - img "Garden Party" [ref=e399]
+            - generic [ref=e401]: zoom_in
+          - heading "Garden Party" [level=3] [ref=e403]
+        - button "Minimalist Chic zoom_in Minimalist Chic" [ref=e404] [cursor=pointer]:
+          - generic [ref=e405]:
+            - img "Minimalist Chic" [ref=e406]
+            - generic [ref=e408]: zoom_in
+          - heading "Minimalist Chic" [level=3] [ref=e410]
+        - button "Pastel Dream zoom_in Pastel Dream" [ref=e411] [cursor=pointer]:
+          - generic [ref=e412]:
+            - img "Pastel Dream" [ref=e413]
+            - generic [ref=e415]: zoom_in
+          - heading "Pastel Dream" [level=3] [ref=e417]
+        - button "Starry Night zoom_in Starry Night" [ref=e418] [cursor=pointer]:
+          - generic [ref=e419]:
+            - img "Starry Night" [ref=e420]
+            - generic [ref=e422]: zoom_in
+          - heading "Starry Night" [level=3] [ref=e424]
+        - button "Tropical Fiesta zoom_in Tropical Fiesta" [ref=e425] [cursor=pointer]:
+          - generic [ref=e426]:
+            - img "Tropical Fiesta" [ref=e427]
+            - generic [ref=e429]: zoom_in
+          - heading "Tropical Fiesta" [level=3] [ref=e431]
+        - button "Rustic Wood zoom_in Rustic Wood" [ref=e432] [cursor=pointer]:
+          - generic [ref=e433]:
+            - img "Rustic Wood" [ref=e434]
+            - generic [ref=e436]: zoom_in
+          - heading "Rustic Wood" [level=3] [ref=e438]
+        - button "Midnight Luxe zoom_in Midnight Luxe" [ref=e439] [cursor=pointer]:
+          - generic [ref=e440]:
+            - img "Midnight Luxe" [ref=e441]
+            - generic [ref=e443]: zoom_in
+          - heading "Midnight Luxe" [level=3] [ref=e445]
+        - button "Confetti Pop zoom_in Confetti Pop" [ref=e446] [cursor=pointer]:
+          - generic [ref=e447]:
+            - img "Confetti Pop" [ref=e448]
+            - generic [ref=e450]: zoom_in
+          - heading "Confetti Pop" [level=3] [ref=e452]
+    - generic [ref=e454]:
+      - button "close" [ref=e455] [cursor=pointer]:
+        - generic [ref=e456]: close
+      - generic [ref=e458]:
+        - generic [ref=e459]:
+          - img "Golden Hour" [ref=e460]
+          - generic:
+            - paragraph: You're invited to
+            - heading "Sana's Birthday" [level=4]
+            - generic:
+              - paragraph:
+                - generic: calendar_today
+                - text: Friday, May 15, 2026
+              - paragraph:
+                - generic: schedule
+                - text: 18:00 · PT
+        - button "chevron_right" [ref=e461] [cursor=pointer]:
+          - generic [ref=e462]: chevron_right
+        - generic:
+          - generic: 1 / 10
+      - generic [ref=e463]:
+        - generic [ref=e464]:
+          - paragraph [ref=e465]: Elegant & Warm
+          - heading "Golden Hour" [level=2] [ref=e466]
+          - paragraph [ref=e467]: Birthday Details
+        - generic [ref=e468]:
+          - generic [ref=e469]:
+            - generic [ref=e470]: Celebrant's Name*
+            - textbox "Who's the birthday star?" [ref=e471]: Sana
+          - generic [ref=e472]:
+            - generic [ref=e473]: Host Name(s)*
+            - textbox "Who is hosting?" [ref=e474]: Mom & Dad
+          - generic [ref=e475]:
+            - generic [ref=e476]: When is the event?*
+            - generic [ref=e477]:
+              - textbox [ref=e478]: 2026-05-15
+              - textbox [active] [ref=e479]: 18:00
+              - generic [ref=e480]:
+                - combobox [ref=e481] [cursor=pointer]:
+                  - option "Select..."
+                  - option "PT" [selected]
+                  - option "MT"
+                  - option "CT"
+                  - option "ET"
+                  - option "AKT"
+                  - option "HAT"
+                  - option "AST"
+                  - option "SST"
+                  - option "ChST"
+                  - option "IST"
+                - generic: expand_more
+            - paragraph [ref=e482]: Date · Time · Timezone
+          - generic [ref=e483]:
+            - generic [ref=e484]: Venue / Location*
+            - textbox "Where is the event?" [ref=e485]
+          - generic [ref=e486]:
+            - generic [ref=e487]: Custom Message
+            - generic [ref=e488]:
+              - textbox "Add a personal note (optional)" [ref=e489]
+              - paragraph [ref=e490]: 0/200
+          - generic [ref=e491]:
+            - generic [ref=e492]: Approximate Guest Count
+            - spinbutton [ref=e493]
+        - generic [ref=e494]:
+          - button "Proceed arrow_forward" [disabled] [ref=e495]:
+            - text: Proceed
+            - generic [ref=e496]: arrow_forward
+          - paragraph [ref=e497]: Fill required fields to continue
+  - region "Notifications alt+T"

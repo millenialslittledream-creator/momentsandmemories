@@ -1,0 +1,562 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e4]:
+      - navigation [ref=e5]:
+        - button "moments & memories" [ref=e6] [cursor=pointer]
+        - generic [ref=e7]:
+          - button "Home" [ref=e8] [cursor=pointer]
+          - button "Create Evite" [ref=e9] [cursor=pointer]
+          - button "Shop Gifts" [ref=e10] [cursor=pointer]
+          - button "Login" [ref=e11] [cursor=pointer]
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]:
+            - heading "What are we bringing to life today?" [level=1] [ref=e16]
+            - paragraph [ref=e17]: Choose a design — or upload your own
+          - generic [ref=e18]:
+            - button "All" [ref=e19] [cursor=pointer]
+            - button "Birthday" [ref=e20] [cursor=pointer]
+            - button "Wedding" [ref=e21] [cursor=pointer]
+            - button "Baby Shower" [ref=e22] [cursor=pointer]
+            - button "Pre-Wedding Party" [ref=e23] [cursor=pointer]
+            - button "Gender Reveal" [ref=e24] [cursor=pointer]
+            - button "Custom" [ref=e25] [cursor=pointer]
+        - generic [ref=e27]:
+          - button "add Upload Your Own Design Image · Video · Image + Music Custom upload" [ref=e28] [cursor=pointer]:
+            - generic [ref=e29]:
+              - generic [ref=e31]: add
+              - paragraph [ref=e32]: Upload Your Own Design
+              - paragraph [ref=e33]: Image · Video · Image + Music
+            - heading "Custom upload" [level=3] [ref=e35]
+          - button "Golden Hour zoom_in Golden Hour" [ref=e36] [cursor=pointer]:
+            - generic [ref=e37]:
+              - img "Golden Hour" [ref=e38]
+              - generic [ref=e40]: zoom_in
+            - heading "Golden Hour" [level=3] [ref=e42]
+          - button "Neon Glow zoom_in Neon Glow" [ref=e43] [cursor=pointer]:
+            - generic [ref=e44]:
+              - img "Neon Glow" [ref=e45]
+              - generic [ref=e47]: zoom_in
+            - heading "Neon Glow" [level=3] [ref=e49]
+          - button "Garden Party zoom_in Garden Party" [ref=e50] [cursor=pointer]:
+            - generic [ref=e51]:
+              - img "Garden Party" [ref=e52]
+              - generic [ref=e54]: zoom_in
+            - heading "Garden Party" [level=3] [ref=e56]
+          - button "Minimalist Chic zoom_in Minimalist Chic" [ref=e57] [cursor=pointer]:
+            - generic [ref=e58]:
+              - img "Minimalist Chic" [ref=e59]
+              - generic [ref=e61]: zoom_in
+            - heading "Minimalist Chic" [level=3] [ref=e63]
+          - button "Pastel Dream zoom_in Pastel Dream" [ref=e64] [cursor=pointer]:
+            - generic [ref=e65]:
+              - img "Pastel Dream" [ref=e66]
+              - generic [ref=e68]: zoom_in
+            - heading "Pastel Dream" [level=3] [ref=e70]
+          - button "Starry Night zoom_in Starry Night" [ref=e71] [cursor=pointer]:
+            - generic [ref=e72]:
+              - img "Starry Night" [ref=e73]
+              - generic [ref=e75]: zoom_in
+            - heading "Starry Night" [level=3] [ref=e77]
+          - button "Tropical Fiesta zoom_in Tropical Fiesta" [ref=e78] [cursor=pointer]:
+            - generic [ref=e79]:
+              - img "Tropical Fiesta" [ref=e80]
+              - generic [ref=e82]: zoom_in
+            - heading "Tropical Fiesta" [level=3] [ref=e84]
+          - button "Rustic Wood zoom_in Rustic Wood" [ref=e85] [cursor=pointer]:
+            - generic [ref=e86]:
+              - img "Rustic Wood" [ref=e87]
+              - generic [ref=e89]: zoom_in
+            - heading "Rustic Wood" [level=3] [ref=e91]
+          - button "Midnight Luxe zoom_in Midnight Luxe" [ref=e92] [cursor=pointer]:
+            - generic [ref=e93]:
+              - img "Midnight Luxe" [ref=e94]
+              - generic [ref=e96]: zoom_in
+            - heading "Midnight Luxe" [level=3] [ref=e98]
+          - button "Confetti Pop zoom_in Confetti Pop" [ref=e99] [cursor=pointer]:
+            - generic [ref=e100]:
+              - img "Confetti Pop" [ref=e101]
+              - generic [ref=e103]: zoom_in
+            - heading "Confetti Pop" [level=3] [ref=e105]
+          - button "Classic Romance zoom_in Classic Romance" [ref=e106] [cursor=pointer]:
+            - generic [ref=e107]:
+              - img "Classic Romance" [ref=e108]
+              - generic [ref=e110]: zoom_in
+            - heading "Classic Romance" [level=3] [ref=e112]
+          - button "Botanical Dream zoom_in Botanical Dream" [ref=e113] [cursor=pointer]:
+            - generic [ref=e114]:
+              - img "Botanical Dream" [ref=e115]
+              - generic [ref=e117]: zoom_in
+            - heading "Botanical Dream" [level=3] [ref=e119]
+          - button "Modern Luxe zoom_in Modern Luxe" [ref=e120] [cursor=pointer]:
+            - generic [ref=e121]:
+              - img "Modern Luxe" [ref=e122]
+              - generic [ref=e124]: zoom_in
+            - heading "Modern Luxe" [level=3] [ref=e126]
+          - button "Rustic Charm zoom_in Rustic Charm" [ref=e127] [cursor=pointer]:
+            - generic [ref=e128]:
+              - img "Rustic Charm" [ref=e129]
+              - generic [ref=e131]: zoom_in
+            - heading "Rustic Charm" [level=3] [ref=e133]
+          - button "Indian Heritage zoom_in Indian Heritage" [ref=e134] [cursor=pointer]:
+            - generic [ref=e135]:
+              - img "Indian Heritage" [ref=e136]
+              - generic [ref=e138]: zoom_in
+            - heading "Indian Heritage" [level=3] [ref=e140]
+          - button "Mehendi Magic zoom_in Mehendi Magic" [ref=e141] [cursor=pointer]:
+            - generic [ref=e142]:
+              - img "Mehendi Magic" [ref=e143]
+              - generic [ref=e145]: zoom_in
+            - heading "Mehendi Magic" [level=3] [ref=e147]
+          - button "Golden Mandap zoom_in Golden Mandap" [ref=e148] [cursor=pointer]:
+            - generic [ref=e149]:
+              - img "Golden Mandap" [ref=e150]
+              - generic [ref=e152]: zoom_in
+            - heading "Golden Mandap" [level=3] [ref=e154]
+          - button "Soft Clouds zoom_in Soft Clouds" [ref=e155] [cursor=pointer]:
+            - generic [ref=e156]:
+              - img "Soft Clouds" [ref=e157]
+              - generic [ref=e159]: zoom_in
+            - heading "Soft Clouds" [level=3] [ref=e161]
+          - button "Little Safari zoom_in Little Safari" [ref=e162] [cursor=pointer]:
+            - generic [ref=e163]:
+              - img "Little Safari" [ref=e164]
+              - generic [ref=e166]: zoom_in
+            - heading "Little Safari" [level=3] [ref=e168]
+          - button "Bloom & Grow zoom_in Bloom & Grow" [ref=e169] [cursor=pointer]:
+            - generic [ref=e170]:
+              - img "Bloom & Grow" [ref=e171]
+              - generic [ref=e173]: zoom_in
+            - heading "Bloom & Grow" [level=3] [ref=e175]
+          - button "Storybook zoom_in Storybook" [ref=e176] [cursor=pointer]:
+            - generic [ref=e177]:
+              - img "Storybook" [ref=e178]
+              - generic [ref=e180]: zoom_in
+            - heading "Storybook" [level=3] [ref=e182]
+          - button "Starlight zoom_in Starlight" [ref=e183] [cursor=pointer]:
+            - generic [ref=e184]:
+              - img "Starlight" [ref=e185]
+              - generic [ref=e187]: zoom_in
+            - heading "Starlight" [level=3] [ref=e189]
+          - button "Garden Baby zoom_in Garden Baby" [ref=e190] [cursor=pointer]:
+            - generic [ref=e191]:
+              - img "Garden Baby" [ref=e192]
+              - generic [ref=e194]: zoom_in
+            - heading "Garden Baby" [level=3] [ref=e196]
+          - button "Classic Charm zoom_in Classic Charm" [ref=e197] [cursor=pointer]:
+            - generic [ref=e198]:
+              - img "Classic Charm" [ref=e199]
+              - generic [ref=e201]: zoom_in
+            - heading "Classic Charm" [level=3] [ref=e203]
+          - button "Blush & Gold zoom_in Blush & Gold" [ref=e204] [cursor=pointer]:
+            - generic [ref=e205]:
+              - img "Blush & Gold" [ref=e206]
+              - generic [ref=e208]: zoom_in
+            - heading "Blush & Gold" [level=3] [ref=e210]
+          - button "Champagne Toast zoom_in Champagne Toast" [ref=e211] [cursor=pointer]:
+            - generic [ref=e212]:
+              - img "Champagne Toast" [ref=e213]
+              - generic [ref=e215]: zoom_in
+            - heading "Champagne Toast" [level=3] [ref=e217]
+          - button "Boho Bride zoom_in Boho Bride" [ref=e218] [cursor=pointer]:
+            - generic [ref=e219]:
+              - img "Boho Bride" [ref=e220]
+              - generic [ref=e222]: zoom_in
+            - heading "Boho Bride" [level=3] [ref=e224]
+          - button "Rose Garden zoom_in Rose Garden" [ref=e225] [cursor=pointer]:
+            - generic [ref=e226]:
+              - img "Rose Garden" [ref=e227]
+              - generic [ref=e229]: zoom_in
+            - heading "Rose Garden" [level=3] [ref=e231]
+          - button "Garden Brunch zoom_in Garden Brunch" [ref=e232] [cursor=pointer]:
+            - generic [ref=e233]:
+              - img "Garden Brunch" [ref=e234]
+              - generic [ref=e236]: zoom_in
+            - heading "Garden Brunch" [level=3] [ref=e238]
+          - button "Luxe Soirée zoom_in Luxe Soirée" [ref=e239] [cursor=pointer]:
+            - generic [ref=e240]:
+              - img "Luxe Soirée" [ref=e241]
+              - generic [ref=e243]: zoom_in
+            - heading "Luxe Soirée" [level=3] [ref=e245]
+          - button "Bachelorette zoom_in Bachelorette" [ref=e246] [cursor=pointer]:
+            - generic [ref=e247]:
+              - img "Bachelorette" [ref=e248]
+              - generic [ref=e250]: zoom_in
+            - heading "Bachelorette" [level=3] [ref=e252]
+          - button "Pink or Blue zoom_in Pink or Blue" [ref=e253] [cursor=pointer]:
+            - generic [ref=e254]:
+              - img "Pink or Blue" [ref=e255]
+              - generic [ref=e257]: zoom_in
+            - heading "Pink or Blue" [level=3] [ref=e259]
+          - button "Twinkle Stars zoom_in Twinkle Stars" [ref=e260] [cursor=pointer]:
+            - generic [ref=e261]:
+              - img "Twinkle Stars" [ref=e262]
+              - generic [ref=e264]: zoom_in
+            - heading "Twinkle Stars" [level=3] [ref=e266]
+          - button "He or She zoom_in He or She" [ref=e267] [cursor=pointer]:
+            - generic [ref=e268]:
+              - img "He or She" [ref=e269]
+              - generic [ref=e271]: zoom_in
+            - heading "He or She" [level=3] [ref=e273]
+          - button "Little Peanut zoom_in Little Peanut" [ref=e274] [cursor=pointer]:
+            - generic [ref=e275]:
+              - img "Little Peanut" [ref=e276]
+              - generic [ref=e278]: zoom_in
+            - heading "Little Peanut" [level=3] [ref=e280]
+          - button "Confetti Cloud zoom_in Confetti Cloud" [ref=e281] [cursor=pointer]:
+            - generic [ref=e282]:
+              - img "Confetti Cloud" [ref=e283]
+              - generic [ref=e285]: zoom_in
+            - heading "Confetti Cloud" [level=3] [ref=e287]
+          - button "Balloon Burst zoom_in Balloon Burst" [ref=e288] [cursor=pointer]:
+            - generic [ref=e289]:
+              - img "Balloon Burst" [ref=e290]
+              - generic [ref=e292]: zoom_in
+            - heading "Balloon Burst" [level=3] [ref=e294]
+          - button "Sweet Surprise zoom_in Sweet Surprise" [ref=e295] [cursor=pointer]:
+            - generic [ref=e296]:
+              - img "Sweet Surprise" [ref=e297]
+              - generic [ref=e299]: zoom_in
+            - heading "Sweet Surprise" [level=3] [ref=e301]
+          - button "Adventure Awaits zoom_in Adventure Awaits" [ref=e302] [cursor=pointer]:
+            - generic [ref=e303]:
+              - img "Adventure Awaits" [ref=e304]
+              - generic [ref=e306]: zoom_in
+            - heading "Adventure Awaits" [level=3] [ref=e308]
+      - generic [ref=e310]:
+        - button "close" [ref=e311] [cursor=pointer]:
+          - generic [ref=e312]: close
+        - generic [ref=e314]:
+          - generic [ref=e315]:
+            - img "Rustic Charm" [ref=e316]
+            - generic:
+              - paragraph: You're invited to
+              - heading "Sana & Aman" [level=4]
+              - generic:
+                - paragraph:
+                  - generic: location_on
+                  - text: Grand Hall
+                - paragraph:
+                  - generic: mail
+                  - text: "RSVP: sana@example.com"
+          - button "chevron_left" [ref=e317] [cursor=pointer]:
+            - generic [ref=e318]: chevron_left
+          - button "chevron_right" [ref=e319] [cursor=pointer]:
+            - generic [ref=e320]: chevron_right
+          - generic:
+            - generic: 14 / 39
+        - generic [ref=e321]:
+          - generic [ref=e322]:
+            - generic [ref=e323]:
+              - generic [ref=e324]:
+                - generic [ref=e325]:
+                  - generic [ref=e326]: celebration
+                  - paragraph [ref=e327]: Multiple Events
+                - button [pressed] [ref=e328] [cursor=pointer]
+              - generic [ref=e330]:
+                - generic [ref=e367]:
+                  - generic [ref=e368]:
+                    - paragraph [ref=e369]: Event 1
+                    - button "close" [ref=e370] [cursor=pointer]:
+                      - generic [ref=e371]: close
+                  - textbox "Event name (e.g. Mehendi, Sangeet)" [ref=e372]: Mehendi
+                  - button "calendar_today Start Pick a date & time" [ref=e373] [cursor=pointer]:
+                    - paragraph [ref=e374]:
+                      - generic [ref=e375]: calendar_today
+                      - text: Start
+                    - paragraph [ref=e376]: Pick a date & time
+                  - textbox "Venue" [ref=e377]
+                  - spinbutton [ref=e378]
+                - generic [ref=e379]:
+                  - generic [ref=e380]:
+                    - paragraph [ref=e381]: Event 2
+                    - button "close" [ref=e382] [cursor=pointer]:
+                      - generic [ref=e383]: close
+                  - textbox "Event name (e.g. Mehendi, Sangeet)" [ref=e384]: Sangeet
+                  - button "calendar_today Start Pick a date & time" [ref=e385] [cursor=pointer]:
+                    - paragraph [ref=e386]:
+                      - generic [ref=e387]: calendar_today
+                      - text: Start
+                    - paragraph [ref=e388]: Pick a date & time
+                  - textbox "Venue" [ref=e389]
+                  - spinbutton [ref=e390]
+                - generic [ref=e391]:
+                  - generic [ref=e392]:
+                    - paragraph [ref=e393]: Event 3
+                    - button "close" [ref=e394] [cursor=pointer]:
+                      - generic [ref=e395]: close
+                  - textbox "Event name (e.g. Mehendi, Sangeet)" [ref=e396]: Wedding
+                  - button "calendar_today Start Pick a date & time" [ref=e397] [cursor=pointer]:
+                    - paragraph [ref=e398]:
+                      - generic [ref=e399]: calendar_today
+                      - text: Start
+                    - paragraph [ref=e400]: Pick a date & time
+                  - textbox "Venue" [ref=e401]
+                  - spinbutton [ref=e402]
+                - generic [ref=e403]:
+                  - generic [ref=e404]:
+                    - paragraph [ref=e405]: Event 4
+                    - button "close" [ref=e406] [cursor=pointer]:
+                      - generic [ref=e407]: close
+                  - textbox "Event name (e.g. Mehendi, Sangeet)" [ref=e408]: Reception
+                  - button "calendar_today Start Pick a date & time" [ref=e409] [cursor=pointer]:
+                    - paragraph [ref=e410]:
+                      - generic [ref=e411]: calendar_today
+                      - text: Start
+                    - paragraph [ref=e412]: Pick a date & time
+                  - textbox "Venue" [ref=e413]
+                  - spinbutton [ref=e414]
+                - button "add Add Another Event" [ref=e331] [cursor=pointer]:
+                  - generic [ref=e332]: add
+                  - text: Add Another Event
+            - generic [ref=e333]:
+              - generic [ref=e334]: Bride's Name*
+              - textbox "Bride's full name" [ref=e335]: Sana
+            - generic [ref=e336]:
+              - generic [ref=e337]: Groom's Name*
+              - textbox "Groom's full name" [ref=e338]: Aman
+            - generic [ref=e339]:
+              - generic [ref=e340]: Host Name(s)*
+              - textbox "Who is hosting?" [ref=e341]: Both Families
+            - generic [ref=e342]:
+              - generic [ref=e343]: When is the event?*
+              - button "calendar_today Start * Pick a date & time" [expanded] [ref=e344] [cursor=pointer]:
+                - paragraph [ref=e345]:
+                  - generic [ref=e346]: calendar_today
+                  - text: Start
+                  - generic [ref=e347]: "*"
+                - paragraph [ref=e348]: Pick a date & time
+            - generic [ref=e349]:
+              - generic [ref=e350]: Venue / Location*
+              - textbox "Where is the event?" [ref=e351]: Grand Hall
+            - generic [ref=e352]:
+              - generic [ref=e353]: RSVP Contact (Phone or Email)*
+              - textbox "How should guests RSVP?" [ref=e354]: sana@example.com
+            - generic [ref=e355]:
+              - generic [ref=e356]: Custom Message
+              - generic [ref=e357]:
+                - textbox "Add a personal note (optional)" [ref=e358]
+                - paragraph [ref=e359]: 0/200
+            - generic [ref=e360]:
+              - generic [ref=e361]: Approximate Guest Count
+              - spinbutton [ref=e362]
+          - generic [ref=e363]:
+            - button "Proceed arrow_forward" [disabled] [ref=e364]:
+              - text: Proceed
+              - generic [ref=e365]: arrow_forward
+            - paragraph [ref=e366]: Fill required fields to continue
+    - region "Notifications alt+T"
+  - dialog [ref=e416]:
+    - generic [ref=e417]:
+      - generic [ref=e420]:
+        - navigation "Navigation bar" [ref=e421]:
+          - button "Go to the Previous Month" [active] [ref=e422] [cursor=pointer]:
+            - img [ref=e423]
+          - button "Go to the Next Month" [ref=e425] [cursor=pointer]:
+            - img [ref=e426]
+        - generic [ref=e428]:
+          - status [ref=e430]: April 2026
+          - grid "April 2026" [ref=e431]:
+            - rowgroup [ref=e432]:
+              - row [ref=e433]:
+                - columnheader [ref=e434]: Su
+                - columnheader [ref=e435]: Mo
+                - columnheader [ref=e436]: Tu
+                - columnheader [ref=e437]: We
+                - columnheader [ref=e438]: Th
+                - columnheader [ref=e439]: Fr
+                - columnheader [ref=e440]: Sa
+            - rowgroup [ref=e441]:
+              - row "Sunday, March 29th, 2026 Monday, March 30th, 2026 Tuesday, March 31st, 2026 Wednesday, April 1st, 2026 Thursday, April 2nd, 2026 Friday, April 3rd, 2026 Saturday, April 4th, 2026" [ref=e442]:
+                - gridcell "Sunday, March 29th, 2026" [ref=e443]:
+                  - button "Sunday, March 29th, 2026" [disabled]: "29"
+                - gridcell "Monday, March 30th, 2026" [ref=e444]:
+                  - button "Monday, March 30th, 2026" [disabled]: "30"
+                - gridcell "Tuesday, March 31st, 2026" [ref=e445]:
+                  - button "Tuesday, March 31st, 2026" [disabled]: "31"
+                - gridcell "Wednesday, April 1st, 2026" [ref=e446]:
+                  - button "Wednesday, April 1st, 2026" [disabled]: "1"
+                - gridcell "Thursday, April 2nd, 2026" [ref=e447]:
+                  - button "Thursday, April 2nd, 2026" [disabled]: "2"
+                - gridcell "Friday, April 3rd, 2026" [ref=e448]:
+                  - button "Friday, April 3rd, 2026" [disabled]: "3"
+                - gridcell "Saturday, April 4th, 2026" [ref=e449]:
+                  - button "Saturday, April 4th, 2026" [disabled]: "4"
+              - row "Sunday, April 5th, 2026 Monday, April 6th, 2026 Tuesday, April 7th, 2026 Wednesday, April 8th, 2026 Thursday, April 9th, 2026 Friday, April 10th, 2026 Saturday, April 11th, 2026" [ref=e450]:
+                - gridcell "Sunday, April 5th, 2026" [ref=e451]:
+                  - button "Sunday, April 5th, 2026" [disabled]: "5"
+                - gridcell "Monday, April 6th, 2026" [ref=e452]:
+                  - button "Monday, April 6th, 2026" [disabled]: "6"
+                - gridcell "Tuesday, April 7th, 2026" [ref=e453]:
+                  - button "Tuesday, April 7th, 2026" [disabled]: "7"
+                - gridcell "Wednesday, April 8th, 2026" [ref=e454]:
+                  - button "Wednesday, April 8th, 2026" [disabled]: "8"
+                - gridcell "Thursday, April 9th, 2026" [ref=e455]:
+                  - button "Thursday, April 9th, 2026" [disabled]: "9"
+                - gridcell "Friday, April 10th, 2026" [ref=e456]:
+                  - button "Friday, April 10th, 2026" [disabled]: "10"
+                - gridcell "Saturday, April 11th, 2026" [ref=e457]:
+                  - button "Saturday, April 11th, 2026" [disabled]: "11"
+              - row "Sunday, April 12th, 2026 Monday, April 13th, 2026 Tuesday, April 14th, 2026 Wednesday, April 15th, 2026 Thursday, April 16th, 2026 Friday, April 17th, 2026 Saturday, April 18th, 2026" [ref=e458]:
+                - gridcell "Sunday, April 12th, 2026" [ref=e459]:
+                  - button "Sunday, April 12th, 2026" [disabled]: "12"
+                - gridcell "Monday, April 13th, 2026" [ref=e460]:
+                  - button "Monday, April 13th, 2026" [disabled]: "13"
+                - gridcell "Tuesday, April 14th, 2026" [ref=e461]:
+                  - button "Tuesday, April 14th, 2026" [disabled]: "14"
+                - gridcell "Wednesday, April 15th, 2026" [ref=e462]:
+                  - button "Wednesday, April 15th, 2026" [disabled]: "15"
+                - gridcell "Thursday, April 16th, 2026" [ref=e463]:
+                  - button "Thursday, April 16th, 2026" [disabled]: "16"
+                - gridcell "Friday, April 17th, 2026" [ref=e464]:
+                  - button "Friday, April 17th, 2026" [disabled]: "17"
+                - gridcell "Saturday, April 18th, 2026" [ref=e465]:
+                  - button "Saturday, April 18th, 2026" [disabled]: "18"
+              - row "Sunday, April 19th, 2026 Monday, April 20th, 2026 Tuesday, April 21st, 2026 Wednesday, April 22nd, 2026 Today, Thursday, April 23rd, 2026 Friday, April 24th, 2026 Saturday, April 25th, 2026" [ref=e466]:
+                - gridcell "Sunday, April 19th, 2026" [ref=e467]:
+                  - button "Sunday, April 19th, 2026" [disabled]: "19"
+                - gridcell "Monday, April 20th, 2026" [ref=e468]:
+                  - button "Monday, April 20th, 2026" [disabled]: "20"
+                - gridcell "Tuesday, April 21st, 2026" [ref=e469]:
+                  - button "Tuesday, April 21st, 2026" [disabled]: "21"
+                - gridcell "Wednesday, April 22nd, 2026" [ref=e470]:
+                  - button "Wednesday, April 22nd, 2026" [disabled]: "22"
+                - gridcell "Today, Thursday, April 23rd, 2026" [ref=e471]:
+                  - button "Today, Thursday, April 23rd, 2026" [ref=e472] [cursor=pointer]: "23"
+                - gridcell "Friday, April 24th, 2026" [ref=e473]:
+                  - button "Friday, April 24th, 2026" [ref=e474] [cursor=pointer]: "24"
+                - gridcell "Saturday, April 25th, 2026" [ref=e475]:
+                  - button "Saturday, April 25th, 2026" [ref=e476] [cursor=pointer]: "25"
+              - row "Sunday, April 26th, 2026 Monday, April 27th, 2026 Tuesday, April 28th, 2026 Wednesday, April 29th, 2026 Thursday, April 30th, 2026 Friday, May 1st, 2026 Saturday, May 2nd, 2026" [ref=e477]:
+                - gridcell "Sunday, April 26th, 2026" [ref=e478]:
+                  - button "Sunday, April 26th, 2026" [ref=e479] [cursor=pointer]: "26"
+                - gridcell "Monday, April 27th, 2026" [ref=e480]:
+                  - button "Monday, April 27th, 2026" [ref=e481] [cursor=pointer]: "27"
+                - gridcell "Tuesday, April 28th, 2026" [ref=e482]:
+                  - button "Tuesday, April 28th, 2026" [ref=e483] [cursor=pointer]: "28"
+                - gridcell "Wednesday, April 29th, 2026" [ref=e484]:
+                  - button "Wednesday, April 29th, 2026" [ref=e485] [cursor=pointer]: "29"
+                - gridcell "Thursday, April 30th, 2026" [ref=e486]:
+                  - button "Thursday, April 30th, 2026" [ref=e487] [cursor=pointer]: "30"
+                - gridcell "Friday, May 1st, 2026" [ref=e488]:
+                  - button "Friday, May 1st, 2026" [ref=e489] [cursor=pointer]: "1"
+                - gridcell "Saturday, May 2nd, 2026" [ref=e490]:
+                  - button "Saturday, May 2nd, 2026" [ref=e491] [cursor=pointer]: "2"
+      - generic [ref=e492]:
+        - paragraph [ref=e493]: Start Time
+        - generic [ref=e494]:
+          - button "12:00 AM" [ref=e495] [cursor=pointer]
+          - button "12:15 AM" [ref=e496] [cursor=pointer]
+          - button "12:30 AM" [ref=e497] [cursor=pointer]
+          - button "12:45 AM" [ref=e498] [cursor=pointer]
+          - button "1:00 AM" [ref=e499] [cursor=pointer]
+          - button "1:15 AM" [ref=e500] [cursor=pointer]
+          - button "1:30 AM" [ref=e501] [cursor=pointer]
+          - button "1:45 AM" [ref=e502] [cursor=pointer]
+          - button "2:00 AM" [ref=e503] [cursor=pointer]
+          - button "2:15 AM" [ref=e504] [cursor=pointer]
+          - button "2:30 AM" [ref=e505] [cursor=pointer]
+          - button "2:45 AM" [ref=e506] [cursor=pointer]
+          - button "3:00 AM" [ref=e507] [cursor=pointer]
+          - button "3:15 AM" [ref=e508] [cursor=pointer]
+          - button "3:30 AM" [ref=e509] [cursor=pointer]
+          - button "3:45 AM" [ref=e510] [cursor=pointer]
+          - button "4:00 AM" [ref=e511] [cursor=pointer]
+          - button "4:15 AM" [ref=e512] [cursor=pointer]
+          - button "4:30 AM" [ref=e513] [cursor=pointer]
+          - button "4:45 AM" [ref=e514] [cursor=pointer]
+          - button "5:00 AM" [ref=e515] [cursor=pointer]
+          - button "5:15 AM" [ref=e516] [cursor=pointer]
+          - button "5:30 AM" [ref=e517] [cursor=pointer]
+          - button "5:45 AM" [ref=e518] [cursor=pointer]
+          - button "6:00 AM" [ref=e519] [cursor=pointer]
+          - button "6:15 AM" [ref=e520] [cursor=pointer]
+          - button "6:30 AM" [ref=e521] [cursor=pointer]
+          - button "6:45 AM" [ref=e522] [cursor=pointer]
+          - button "7:00 AM" [ref=e523] [cursor=pointer]
+          - button "7:15 AM" [ref=e524] [cursor=pointer]
+          - button "7:30 AM" [ref=e525] [cursor=pointer]
+          - button "7:45 AM" [ref=e526] [cursor=pointer]
+          - button "8:00 AM" [ref=e527] [cursor=pointer]
+          - button "8:15 AM" [ref=e528] [cursor=pointer]
+          - button "8:30 AM" [ref=e529] [cursor=pointer]
+          - button "8:45 AM" [ref=e530] [cursor=pointer]
+          - button "9:00 AM" [ref=e531] [cursor=pointer]
+          - button "9:15 AM" [ref=e532] [cursor=pointer]
+          - button "9:30 AM" [ref=e533] [cursor=pointer]
+          - button "9:45 AM" [ref=e534] [cursor=pointer]
+          - button "10:00 AM" [ref=e535] [cursor=pointer]
+          - button "10:15 AM" [ref=e536] [cursor=pointer]
+          - button "10:30 AM" [ref=e537] [cursor=pointer]
+          - button "10:45 AM" [ref=e538] [cursor=pointer]
+          - button "11:00 AM" [ref=e539] [cursor=pointer]
+          - button "11:15 AM" [ref=e540] [cursor=pointer]
+          - button "11:30 AM" [ref=e541] [cursor=pointer]
+          - button "11:45 AM" [ref=e542] [cursor=pointer]
+          - button "12:00 PM" [ref=e543] [cursor=pointer]
+          - button "12:15 PM" [ref=e544] [cursor=pointer]
+          - button "12:30 PM" [ref=e545] [cursor=pointer]
+          - button "12:45 PM" [ref=e546] [cursor=pointer]
+          - button "1:00 PM" [ref=e547] [cursor=pointer]
+          - button "1:15 PM" [ref=e548] [cursor=pointer]
+          - button "1:30 PM" [ref=e549] [cursor=pointer]
+          - button "1:45 PM" [ref=e550] [cursor=pointer]
+          - button "2:00 PM" [ref=e551] [cursor=pointer]
+          - button "2:15 PM" [ref=e552] [cursor=pointer]
+          - button "2:30 PM" [ref=e553] [cursor=pointer]
+          - button "2:45 PM" [ref=e554] [cursor=pointer]
+          - button "3:00 PM" [ref=e555] [cursor=pointer]
+          - button "3:15 PM" [ref=e556] [cursor=pointer]
+          - button "3:30 PM" [ref=e557] [cursor=pointer]
+          - button "3:45 PM" [ref=e558] [cursor=pointer]
+          - button "4:00 PM" [ref=e559] [cursor=pointer]
+          - button "4:15 PM" [ref=e560] [cursor=pointer]
+          - button "4:30 PM" [ref=e561] [cursor=pointer]
+          - button "4:45 PM" [ref=e562] [cursor=pointer]
+          - button "5:00 PM" [ref=e563] [cursor=pointer]
+          - button "5:15 PM" [ref=e564] [cursor=pointer]
+          - button "5:30 PM" [ref=e565] [cursor=pointer]
+          - button "5:45 PM" [ref=e566] [cursor=pointer]
+          - button "6:00 PM" [ref=e567] [cursor=pointer]
+          - button "6:15 PM" [ref=e568] [cursor=pointer]
+          - button "6:30 PM" [ref=e569] [cursor=pointer]
+          - button "6:45 PM" [ref=e570] [cursor=pointer]
+          - button "7:00 PM" [ref=e571] [cursor=pointer]
+          - button "7:15 PM" [ref=e572] [cursor=pointer]
+          - button "7:30 PM" [ref=e573] [cursor=pointer]
+          - button "7:45 PM" [ref=e574] [cursor=pointer]
+          - button "8:00 PM" [ref=e575] [cursor=pointer]
+          - button "8:15 PM" [ref=e576] [cursor=pointer]
+          - button "8:30 PM" [ref=e577] [cursor=pointer]
+          - button "8:45 PM" [ref=e578] [cursor=pointer]
+          - button "9:00 PM" [ref=e579] [cursor=pointer]
+          - button "9:15 PM" [ref=e580] [cursor=pointer]
+          - button "9:30 PM" [ref=e581] [cursor=pointer]
+          - button "9:45 PM" [ref=e582] [cursor=pointer]
+          - button "10:00 PM" [ref=e583] [cursor=pointer]
+          - button "10:15 PM" [ref=e584] [cursor=pointer]
+          - button "10:30 PM" [ref=e585] [cursor=pointer]
+          - button "10:45 PM" [ref=e586] [cursor=pointer]
+          - button "11:00 PM" [ref=e587] [cursor=pointer]
+          - button "11:15 PM" [ref=e588] [cursor=pointer]
+          - button "11:30 PM" [ref=e589] [cursor=pointer]
+          - button "11:45 PM" [ref=e590] [cursor=pointer]
+    - generic [ref=e591]:
+      - generic [ref=e592]:
+        - generic [ref=e593]: public
+        - paragraph [ref=e594]: Timezone:not set
+      - generic [ref=e595]:
+        - combobox [ref=e596] [cursor=pointer]:
+          - option "Change" [selected]
+          - option "PT"
+          - option "MT"
+          - option "CT"
+          - option "ET"
+          - option "AKT"
+          - option "HAT"
+          - option "AST"
+          - option "SST"
+          - option "ChST"
+          - option "IST"
+        - generic: expand_more
+    - button "Done" [ref=e598] [cursor=pointer]

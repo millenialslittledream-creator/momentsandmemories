@@ -1,0 +1,139 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - navigation [ref=e5]:
+      - button "moments & memories" [ref=e6] [cursor=pointer]
+      - generic [ref=e7]:
+        - button "Home" [ref=e8] [cursor=pointer]
+        - button "Create Evite" [ref=e9] [cursor=pointer]
+        - button "Shop Gifts" [ref=e10] [cursor=pointer]
+        - button "Login" [ref=e11] [cursor=pointer]
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - heading "What are we bringing to life today?" [level=1] [ref=e16]
+          - paragraph [ref=e17]: Choose a design — or upload your own
+        - generic [ref=e18]:
+          - button "All" [ref=e19] [cursor=pointer]
+          - button "Birthday" [ref=e20] [cursor=pointer]
+          - button "Wedding" [ref=e21] [cursor=pointer]
+          - button "Baby Shower" [ref=e22] [cursor=pointer]
+          - button "Pre-Wedding Party" [ref=e23] [cursor=pointer]
+          - button "Gender Reveal" [ref=e24] [cursor=pointer]
+          - button "Custom" [ref=e25] [cursor=pointer]
+      - generic [ref=e27]:
+        - button "add Upload Your Own Design Image · Video · Image + Music Custom upload" [ref=e28] [cursor=pointer]:
+          - generic [ref=e29]:
+            - generic [ref=e31]: add
+            - paragraph [ref=e32]: Upload Your Own Design
+            - paragraph [ref=e33]: Image · Video · Image + Music
+          - heading "Custom upload" [level=3] [ref=e35]
+        - button "Classic Romance zoom_in Classic Romance" [active] [ref=e106] [cursor=pointer]:
+          - generic [ref=e107]:
+            - img "Classic Romance" [ref=e108]
+            - generic [ref=e110]: zoom_in
+          - heading "Classic Romance" [level=3] [ref=e112]
+        - button "Botanical Dream zoom_in Botanical Dream" [ref=e113] [cursor=pointer]:
+          - generic [ref=e114]:
+            - img "Botanical Dream" [ref=e115]
+            - generic [ref=e117]: zoom_in
+          - heading "Botanical Dream" [level=3] [ref=e119]
+        - button "Modern Luxe zoom_in Modern Luxe" [ref=e120] [cursor=pointer]:
+          - generic [ref=e121]:
+            - img "Modern Luxe" [ref=e122]
+            - generic [ref=e124]: zoom_in
+          - heading "Modern Luxe" [level=3] [ref=e126]
+        - button "Rustic Charm zoom_in Rustic Charm" [ref=e127] [cursor=pointer]:
+          - generic [ref=e128]:
+            - img "Rustic Charm" [ref=e129]
+            - generic [ref=e131]: zoom_in
+          - heading "Rustic Charm" [level=3] [ref=e133]
+        - button "Indian Heritage zoom_in Indian Heritage" [ref=e134] [cursor=pointer]:
+          - generic [ref=e135]:
+            - img "Indian Heritage" [ref=e136]
+            - generic [ref=e138]: zoom_in
+          - heading "Indian Heritage" [level=3] [ref=e140]
+        - button "Mehendi Magic zoom_in Mehendi Magic" [ref=e141] [cursor=pointer]:
+          - generic [ref=e142]:
+            - img "Mehendi Magic" [ref=e143]
+            - generic [ref=e145]: zoom_in
+          - heading "Mehendi Magic" [level=3] [ref=e147]
+        - button "Golden Mandap zoom_in Golden Mandap" [ref=e148] [cursor=pointer]:
+          - generic [ref=e149]:
+            - img "Golden Mandap" [ref=e150]
+            - generic [ref=e152]: zoom_in
+          - heading "Golden Mandap" [level=3] [ref=e154]
+    - generic [ref=e310]:
+      - button "close" [ref=e311] [cursor=pointer]:
+        - generic [ref=e312]: close
+      - generic [ref=e314]:
+        - generic [ref=e315]:
+          - img "Classic Romance" [ref=e316]
+          - generic:
+            - paragraph: You're invited to
+            - heading "Bride & Groom" [level=4]
+        - button "chevron_right" [ref=e317] [cursor=pointer]:
+          - generic [ref=e318]: chevron_right
+        - generic:
+          - generic: 1 / 7
+      - generic [ref=e319]:
+        - generic [ref=e320]:
+          - paragraph [ref=e321]: Timeless & Elegant
+          - heading "Classic Romance" [level=2] [ref=e322]
+          - paragraph [ref=e323]: Wedding Details
+        - generic [ref=e324]:
+          - generic [ref=e325]:
+            - generic [ref=e326]:
+              - generic [ref=e327]:
+                - generic [ref=e328]: celebration
+                - paragraph [ref=e329]: Multiple Events
+              - button [ref=e330] [cursor=pointer]
+            - paragraph [ref=e332]: Toggle on if your celebration includes Mehendi, Sangeet, Reception, etc.
+          - generic [ref=e333]:
+            - generic [ref=e334]: Bride's Name*
+            - textbox "Bride's full name" [ref=e335]
+          - generic [ref=e336]:
+            - generic [ref=e337]: Groom's Name*
+            - textbox "Groom's full name" [ref=e338]
+          - generic [ref=e339]:
+            - generic [ref=e340]: Host Name(s)*
+            - textbox "Who is hosting?" [ref=e341]
+          - generic [ref=e342]:
+            - generic [ref=e343]: When is the event?*
+            - generic [ref=e344]:
+              - textbox [ref=e345]
+              - textbox [ref=e346]
+              - generic [ref=e347]:
+                - combobox [ref=e348] [cursor=pointer]:
+                  - option "Select..." [selected]
+                  - option "PT"
+                  - option "MT"
+                  - option "CT"
+                  - option "ET"
+                  - option "AKT"
+                  - option "HAT"
+                  - option "AST"
+                  - option "SST"
+                  - option "ChST"
+                  - option "IST"
+                - generic: expand_more
+            - paragraph [ref=e349]: Date · Time · Timezone
+          - generic [ref=e350]:
+            - generic [ref=e351]: Venue / Location*
+            - textbox "Where is the event?" [ref=e352]
+          - generic [ref=e353]:
+            - generic [ref=e354]: RSVP Contact (Phone or Email)*
+            - textbox "How should guests RSVP?" [ref=e355]
+          - generic [ref=e356]:
+            - generic [ref=e357]: Custom Message
+            - generic [ref=e358]:
+              - textbox "Add a personal note (optional)" [ref=e359]
+              - paragraph [ref=e360]: 0/200
+          - generic [ref=e361]:
+            - generic [ref=e362]: Approximate Guest Count
+            - spinbutton [ref=e363]
+        - generic [ref=e364]:
+          - button "Proceed arrow_forward" [disabled] [ref=e365]:
+            - text: Proceed
+            - generic [ref=e366]: arrow_forward
+          - paragraph [ref=e367]: Fill required fields to continue
+  - region "Notifications alt+T"

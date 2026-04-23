@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
@@ -11,9 +11,16 @@ interface GuestPopupProps {
   onDeliveryPreferenceChange: (pref: 'email' | 'phone' | 'both') => void;
   onBack: () => void;
   onProceed: () => void;
+  formData: Record<string, string>;
 }
 
-type ImportMethod = 'manual' | 'csv' | 'phone' | 'qr' | '';
+type ContactMethod = 'manual' | 'excel' | 'qr';
+type DeliveryPref = 'email' | 'phone' | 'both';
+
+interface SubEvent {
+  idx: number;
+  name: string;
+}
 
 let guestIdCounter = Date.now();
 
@@ -24,16 +31,31 @@ export default function GuestPopup({
   onDeliveryPreferenceChange,
   onBack,
   onProceed,
+  formData,
 }: GuestPopupProps) {
   const backdropRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const guestsRef = useRef(guests);
+  useEffect(() => {
+    guestsRef.current = guests;
+  }, [guests]);
 
-  const [importMethod, setImportMethod] = useState<ImportMethod>('manual');
+  // The active contact-collection sub-popup. null = closed.
+  const [activeMethod, setActiveMethod] = useState<ContactMethod | null>(null);
   const [qrSession, setQrSession] = useState<{ token: string; qr_code_base64: string } | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrError, setQrError] = useState('');
 
-  // Animate in
+  // Derived sub-events from the editor's formData (set by Multiple Events toggle).
+  const subEvents: SubEvent[] = useMemo(() => {
+    const count = parseInt(formData['sub_events_count'] || '0', 10) || 0;
+    return Array.from({ length: count }, (_, i) => ({
+      idx: i,
+      name: formData[`sub_${i}_name`]?.trim() || `Event ${i + 1}`,
+    }));
+  }, [formData]);
+  const hasSubEvents = subEvents.length > 0;
+
   useEffect(() => {
     if (backdropRef.current && panelRef.current) {
       gsap.fromTo(
@@ -49,7 +71,15 @@ export default function GuestPopup({
     }
   }, []);
 
-  // ── Guest operations ────────────────────────────────────────────────
+  // ── Guest row operations ────────────────────────────────────────────
+  const addGuestAfter = (id: string) => {
+    const idx = guests.findIndex((g) => g.id === id);
+    const next = createGuest();
+    const arr = [...guests];
+    arr.splice(idx + 1, 0, next);
+    onGuestsChange(arr);
+  };
+
   const addGuest = () => onGuestsChange([...guests, createGuest()]);
 
   const removeGuest = (id: string) => {
@@ -64,7 +94,53 @@ export default function GuestPopup({
     onGuestsChange(guests.map((g) => (g.id === id ? { ...g, [field]: value } : g)));
   };
 
-  // ── Import: CSV ─────────────────────────────────────────────────────
+  // ── Sub-event checkbox helpers ──────────────────────────────────────
+  const allEventKeys = () => subEvents.map((ev) => String(ev.idx));
+
+  const isGuestInEvent = (g: Guest, idx: number) => {
+    if (!g.events) return true;
+    return g.events.includes(String(idx));
+  };
+
+  const toggleGuestEvent = (id: string, idx: number) => {
+    const key = String(idx);
+    onGuestsChange(
+      guests.map((g) => {
+        if (g.id !== id) return g;
+        const current = g.events ?? allEventKeys();
+        const next = current.includes(key)
+          ? current.filter((k) => k !== key)
+          : [...current, key];
+        return { ...g, events: next };
+      })
+    );
+  };
+
+  const guestInAllEvents = (g: Guest) =>
+    subEvents.every((ev) => isGuestInEvent(g, ev.idx));
+
+  const toggleAllForGuest = (id: string) => {
+    onGuestsChange(
+      guests.map((g) => {
+        if (g.id !== id) return g;
+        return { ...g, events: guestInAllEvents(g) ? [] : allEventKeys() };
+      })
+    );
+  };
+
+  // ── Imports ─────────────────────────────────────────────────────────
+  const applyContacts = (contacts: Array<{ name: string; email?: string; phone?: string }>) => {
+    const newGuests: Guest[] = contacts.map((c) => ({
+      id: `guest-import-${++guestIdCounter}`,
+      name: c.name || '',
+      email: c.email || '',
+      phone: c.phone || '',
+    }));
+    if (newGuests.length === 0) return;
+    const existing = guestsRef.current.filter((g) => g.name.trim());
+    onGuestsChange([...existing, ...newGuests]);
+  };
+
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -74,61 +150,26 @@ export default function GuestPopup({
       if (!text) return;
       const lines = text.split('\n').filter((l) => l.trim());
       const startIdx = lines[0]?.toLowerCase().includes('name') ? 1 : 0;
-      const newGuests: Guest[] = [];
+      const newGuests: Array<{ name: string; email?: string; phone?: string }> = [];
       for (let i = startIdx; i < lines.length; i++) {
         const cols = lines[i].split(/[,\t]/).map((c) => c.trim().replace(/^"|"$/g, ''));
         if (cols[0]) {
-          newGuests.push({
-            id: `guest-csv-${++guestIdCounter}`,
-            name: cols[0] || '',
-            email: cols[1] || '',
-            phone: cols[2] || '',
-          });
+          newGuests.push({ name: cols[0] || '', email: cols[1] || '', phone: cols[2] || '' });
         }
       }
-      if (newGuests.length > 0) {
-        const existing = guests.filter((g) => g.name.trim());
-        onGuestsChange([...existing, ...newGuests]);
-      }
+      applyContacts(newGuests);
     };
     reader.readAsText(file);
     e.target.value = '';
   };
 
-  // ── Import: Phone contacts ──────────────────────────────────────────
-  const handlePhoneContacts = async () => {
-    try {
-      if ('contacts' in navigator && (navigator as any).contacts) {
-        const contacts = await (navigator as any).contacts.select(
-          ['name', 'email', 'tel'],
-          { multiple: true }
-        );
-        const newGuests: Guest[] = contacts.map((c: any) => ({
-          id: `guest-phone-${++guestIdCounter}`,
-          name: c.name?.[0] || '',
-          email: c.email?.[0] || '',
-          phone: c.tel?.[0] || '',
-        }));
-        if (newGuests.length > 0) {
-          const existing = guests.filter((g) => g.name.trim());
-          onGuestsChange([...existing, ...newGuests]);
-        }
-      } else {
-        alert(
-          'Contact picker is only available on Android Chrome. Please use CSV upload or QR option.'
-        );
-      }
-    } catch {
-      /* cancelled */
-    }
-  };
-
-  // ── Import: QR ──────────────────────────────────────────────────────
   const handleQRImport = async () => {
     setQrError('');
-    const { data: { session: authSession } } = await supabase.auth.getSession();
+    const {
+      data: { session: authSession },
+    } = await supabase.auth.getSession();
     if (!authSession) {
-      setQrError('QR import requires sign-in. Use manual entry, CSV, or phone contacts instead.');
+      setQrError('QR import requires sign-in. Use manual entry or Excel upload instead.');
       return;
     }
     setQrLoading(true);
@@ -140,14 +181,7 @@ export default function GuestPopup({
       const resolve = (contacts: Array<{ name: string; email?: string; phone?: string }>) => {
         if (resolved) return;
         resolved = true;
-        const newGuests: Guest[] = contacts.map((c) => ({
-          id: `guest-qr-${++guestIdCounter}`,
-          name: c.name || '',
-          email: c.email || '',
-          phone: c.phone || '',
-        }));
-        const existing = guests.filter((g) => g.name.trim());
-        onGuestsChange([...existing, ...newGuests]);
+        applyContacts(contacts);
         supabase.removeChannel(channel);
         clearInterval(pollInterval);
         setQrSession(null);
@@ -216,27 +250,151 @@ export default function GuestPopup({
   const headerCellClass =
     'px-2 py-2 text-left font-display text-[9px] tracking-[0.15em] uppercase text-[#9cb092]/80 font-semibold';
 
-  const importOptions: { value: ImportMethod; label: string; icon: string }[] = [
-    { value: 'manual', label: 'Add manually', icon: 'edit_note' },
-    { value: 'csv', label: 'Upload .csv or .xlsx', icon: 'upload_file' },
-    { value: 'phone', label: 'Import from phone contacts', icon: 'contacts' },
-    { value: 'qr', label: 'Scan QR code from phone', icon: 'qr_code_2' },
-  ];
-
-  const selectClass =
-    'bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display text-sm outline-none transition-colors w-full px-3 py-2 rounded-sm appearance-none cursor-pointer pr-8';
-
   const importedCount = guests.filter((g) => g.name.trim()).length;
 
-  const handleMethodChange = (method: ImportMethod) => {
-    setImportMethod(method);
+  const deliveryOptions: { value: DeliveryPref; label: string; icon: string; description: string }[] = [
+    { value: 'email', label: 'Email', icon: 'email', description: 'Send invites via email' },
+    { value: 'phone', label: 'SMS', icon: 'sms', description: 'Send invites via text' },
+    { value: 'both', label: 'Email + SMS', icon: 'mark_email_read', description: 'Use both for best reach' },
+  ];
+
+  const contactOptions: { value: ContactMethod; label: string; icon: string; description: string }[] = [
+    { value: 'excel', label: 'Excel Upload', icon: 'upload_file', description: '.csv or .xlsx file' },
+    { value: 'qr', label: 'QR Scan', icon: 'qr_code_2', description: 'Scan from your phone' },
+    { value: 'manual', label: 'Manual Entry', icon: 'edit_note', description: 'Type each guest in' },
+  ];
+
+  const openMethod = (method: ContactMethod) => {
+    setActiveMethod(method);
     if (method === 'qr') handleQRImport();
+  };
+
+  const closeSubPopup = () => {
+    setActiveMethod(null);
   };
 
   const handleProceed = () => {
     if (importedCount === 0) return;
     onProceed();
   };
+
+  const subPopupTitle =
+    activeMethod === 'manual'
+      ? 'Add guests manually'
+      : activeMethod === 'excel'
+      ? 'Upload guest list'
+      : activeMethod === 'qr'
+      ? 'Import via QR scan'
+      : '';
+
+  const guestRows = (
+    <div className="overflow-x-auto border border-white/5 bg-white/[0.015]">
+      <table className="w-full border-collapse min-w-[520px]">
+        <thead>
+          <tr className="border-b border-white/10 bg-white/[0.03]">
+            <th className={`${headerCellClass} w-8 text-center`}>#</th>
+            <th className={`${headerCellClass} min-w-[120px]`}>Name</th>
+            {showEmail && <th className={`${headerCellClass} min-w-[160px]`}>Email</th>}
+            {showPhone && <th className={`${headerCellClass} min-w-[120px]`}>Phone</th>}
+            {hasSubEvents && (
+              <>
+                <th className={`${headerCellClass} text-center min-w-[60px]`}>All</th>
+                {subEvents.map((ev) => (
+                  <th key={ev.idx} className={`${headerCellClass} text-center min-w-[80px]`}>
+                    <span className="truncate block max-w-[100px]" title={ev.name}>
+                      {ev.name}
+                    </span>
+                  </th>
+                ))}
+              </>
+            )}
+            <th className={`${headerCellClass} w-16 text-right`}>{/* row controls */}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {guests.map((guest, index) => (
+            <tr
+              key={guest.id}
+              className="border-b border-white/5 last:border-b-0 hover:bg-white/[0.02] transition-colors"
+            >
+              <td className="px-2 py-1.5 text-center font-display text-[10px] text-[#9cb092]/60">
+                {index + 1}
+              </td>
+              <td className="px-2 py-1.5">
+                <input
+                  type="text"
+                  value={guest.name}
+                  onChange={(e) => updateGuest(guest.id, 'name', e.target.value)}
+                  placeholder="Guest name"
+                  className={cellInputClass}
+                />
+              </td>
+              {showEmail && (
+                <td className="px-2 py-1.5">
+                  <input
+                    type="email"
+                    value={guest.email}
+                    onChange={(e) => updateGuest(guest.id, 'email', e.target.value)}
+                    placeholder="guest@email.com"
+                    className={cellInputClass}
+                  />
+                </td>
+              )}
+              {showPhone && (
+                <td className="px-2 py-1.5">
+                  <input
+                    type="tel"
+                    value={guest.phone}
+                    onChange={(e) => updateGuest(guest.id, 'phone', e.target.value)}
+                    placeholder="+1 (555) 000-0000"
+                    className={cellInputClass}
+                  />
+                </td>
+              )}
+              {hasSubEvents && (
+                <>
+                  <td className="px-2 py-1.5 text-center">
+                    <EventCheckbox
+                      checked={guestInAllEvents(guest)}
+                      onChange={() => toggleAllForGuest(guest.id)}
+                    />
+                  </td>
+                  {subEvents.map((ev) => (
+                    <td key={ev.idx} className="px-2 py-1.5 text-center">
+                      <EventCheckbox
+                        checked={isGuestInEvent(guest, ev.idx)}
+                        onChange={() => toggleGuestEvent(guest.id, ev.idx)}
+                      />
+                    </td>
+                  ))}
+                </>
+              )}
+              <td className="px-1 py-1.5">
+                <div className="flex items-center justify-end gap-1">
+                  {activeMethod === 'manual' && (
+                    <button
+                      onClick={() => addGuestAfter(guest.id)}
+                      className="text-[#9cb092]/60 hover:text-[#9cb092] transition-colors"
+                      title="Add row below"
+                    >
+                      <span className="material-icons text-base">add</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => removeGuest(guest.id)}
+                    className="text-[#b2c3b1]/30 hover:text-red-400/80 transition-colors"
+                    title="Remove row"
+                  >
+                    <span className="material-icons text-sm">close</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 
   return (
     <div
@@ -249,10 +407,9 @@ export default function GuestPopup({
     >
       <div
         ref={panelRef}
-        className="relative w-full max-w-5xl h-full max-h-[88vh] flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
+        className="relative w-full max-w-3xl max-h-[88vh] flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close */}
         <button
           onClick={onBack}
           className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
@@ -268,252 +425,91 @@ export default function GuestPopup({
           <h2 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
             Who's on the <span className="text-[#9cb092] font-agatho italic">guest list?</span>
           </h2>
+          <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/55 mt-3">
+            Pick how you'd like to deliver — and how to add your guests.
+          </p>
         </div>
 
-        {/* Body: left table | right dropdown */}
-        <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
-          {/* ── LEFT — Guest table ─────────────────────────────── */}
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-white/[0.06]">
-            <div className="flex-shrink-0 flex items-center justify-between px-6 md:px-8 py-3 border-b border-white/[0.04]">
-              <h3 className="font-display text-[10px] tracking-[0.22em] uppercase text-[#b2c3b1] flex items-center gap-2">
-                <span className="material-icons text-[#9cb092] text-[16px]">group</span>
-                Guest List
-              </h3>
-              <span className="font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]/50">
-                {importedCount} added
-              </span>
-            </div>
-
-            <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-4 md:px-6 py-4">
-              <div className="border border-white/5 bg-white/[0.015] overflow-x-auto">
-                <table className="w-full border-collapse min-w-[420px]">
-                  <thead>
-                    <tr className="border-b border-white/10 bg-white/[0.03]">
-                      <th className={`${headerCellClass} w-8 text-center`}>#</th>
-                      <th className={`${headerCellClass} min-w-[120px]`}>Name</th>
-                      {showEmail && (
-                        <th className={`${headerCellClass} min-w-[160px]`}>Email</th>
-                      )}
-                      {showPhone && (
-                        <th className={`${headerCellClass} min-w-[120px]`}>Phone</th>
-                      )}
-                      <th className={`${headerCellClass} w-8`} />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {guests.map((guest, index) => (
-                      <tr
-                        key={guest.id}
-                        className="border-b border-white/5 last:border-b-0 hover:bg-white/[0.02] transition-colors"
-                      >
-                        <td className="px-2 py-1.5 text-center font-display text-[10px] text-[#9cb092]/60">
-                          {index + 1}
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <input
-                            type="text"
-                            value={guest.name}
-                            onChange={(e) => updateGuest(guest.id, 'name', e.target.value)}
-                            placeholder="Guest name"
-                            className={cellInputClass}
-                          />
-                        </td>
-                        {showEmail && (
-                          <td className="px-2 py-1.5">
-                            <input
-                              type="email"
-                              value={guest.email}
-                              onChange={(e) => updateGuest(guest.id, 'email', e.target.value)}
-                              placeholder="guest@email.com"
-                              className={cellInputClass}
-                            />
-                          </td>
-                        )}
-                        {showPhone && (
-                          <td className="px-2 py-1.5">
-                            <input
-                              type="tel"
-                              value={guest.phone}
-                              onChange={(e) => updateGuest(guest.id, 'phone', e.target.value)}
-                              placeholder="+1 (555) 000-0000"
-                              className={cellInputClass}
-                            />
-                          </td>
-                        )}
-                        <td className="px-1 py-1.5 text-center">
-                          <button
-                            onClick={() => removeGuest(guest.id)}
-                            className="text-[#b2c3b1]/30 hover:text-red-400/80 transition-colors"
-                            title="Remove row"
-                          >
-                            <span className="material-icons text-sm">close</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <button
-                onClick={addGuest}
-                className="w-full mt-3 py-2.5 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
-              >
-                <span className="material-icons text-sm">add</span>
-                Add Row
-              </button>
+        {/* Body */}
+        <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-6 md:px-10 py-6 space-y-7">
+          {/* Section 1: Delivery method */}
+          <div>
+            <h3 className="font-serif-exp text-base text-[#e4eee1] mb-3 flex items-center gap-2">
+              <span className="material-icons text-[#9cb092] text-base">send</span>
+              How should we deliver the evite?
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {deliveryOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => onDeliveryPreferenceChange(opt.value)}
+                  className={`group text-left p-4 border transition-all duration-200 ${
+                    deliveryPreference === opt.value
+                      ? 'border-[#9cb092] bg-[#9cb092]/10 shadow-sm shadow-[#9cb092]/10'
+                      : 'border-white/10 bg-white/[0.03] hover:border-[#9cb092]/40'
+                  }`}
+                >
+                  <span
+                    className={`material-icons text-xl mb-2 block transition-colors ${
+                      deliveryPreference === opt.value ? 'text-[#9cb092]' : 'text-[#b2c3b1]/55'
+                    }`}
+                  >
+                    {opt.icon}
+                  </span>
+                  <p className="font-display text-[10px] tracking-[0.18em] uppercase text-[#e4eee1] mb-0.5">
+                    {opt.label}
+                  </p>
+                  <p className="font-display text-[9px] text-[#b2c3b1]/55 leading-relaxed">
+                    {opt.description}
+                  </p>
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* ── RIGHT — Dropdown options ────────────────────────── */}
-          <div data-lenis-prevent className="w-full md:w-[36%] md:min-w-[260px] md:max-w-[360px] flex-shrink-0 flex flex-col overflow-y-auto scrollbar-subtle bg-white/[0.015]">
-            <div className="px-6 md:px-7 py-6 space-y-6">
-              {/* Delivery preference */}
-              <div>
-                <label className="block font-display text-[9px] tracking-[0.22em] uppercase text-[#b2c3b1] mb-2">
-                  Delivery Method
-                </label>
-                <div className="relative">
-                  <select
-                    value={deliveryPreference}
-                    onChange={(e) =>
-                      onDeliveryPreferenceChange(
-                        e.target.value as 'email' | 'phone' | 'both'
-                      )
-                    }
-                    className={selectClass}
-                  >
-                    <option value="email" className="bg-[#1a2418]">
-                      Email
-                    </option>
-                    <option value="phone" className="bg-[#1a2418]">
-                      Phone / SMS
-                    </option>
-                    <option value="both" className="bg-[#1a2418]">
-                      Both
-                    </option>
-                  </select>
-                  <span
-                    className="material-icons absolute right-2 top-1/2 -translate-y-1/2 text-[#9cb092] pointer-events-none"
-                    style={{ fontSize: '16px' }}
-                  >
-                    expand_more
+          {/* Section 2: Contact method */}
+          <div>
+            <h3 className="font-serif-exp text-base text-[#e4eee1] mb-3 flex items-center gap-2">
+              <span className="material-icons text-[#9cb092] text-base">group_add</span>
+              How would you like to add your guests?
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {contactOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => openMethod(opt.value)}
+                  className="group text-left p-4 border border-white/10 bg-white/[0.03] hover:border-[#9cb092]/40 hover:bg-[#9cb092]/[0.05] transition-all duration-200"
+                >
+                  <span className="material-icons text-xl mb-2 block text-[#b2c3b1]/55 group-hover:text-[#9cb092] transition-colors">
+                    {opt.icon}
                   </span>
-                </div>
-                <p className="font-display text-[9px] text-[#b2c3b1]/45 mt-1.5 leading-relaxed">
-                  Choose how guests receive the evite
-                </p>
-              </div>
-
-              {/* Add guests dropdown */}
-              <div>
-                <label className="block font-display text-[9px] tracking-[0.22em] uppercase text-[#b2c3b1] mb-2">
-                  Add Guests
-                </label>
-                <div className="relative">
-                  <select
-                    value={importMethod}
-                    onChange={(e) => handleMethodChange(e.target.value as ImportMethod)}
-                    className={selectClass}
-                  >
-                    {importOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value} className="bg-[#1a2418]">
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <span
-                    className="material-icons absolute right-2 top-1/2 -translate-y-1/2 text-[#9cb092] pointer-events-none"
-                    style={{ fontSize: '16px' }}
-                  >
-                    expand_more
-                  </span>
-                </div>
-                <p className="font-display text-[9px] text-[#b2c3b1]/45 mt-1.5 leading-relaxed">
-                  Choose a method to populate your list
-                </p>
-              </div>
-
-              {/* Action panel based on selected method */}
-              <div className="pt-2 border-t border-white/[0.06]">
-                {importMethod === 'manual' && (
-                  <div className="flex items-start gap-2 text-[#b2c3b1]/60">
-                    <span className="material-icons text-[#9cb092]/60 text-base mt-0.5">
-                      info
-                    </span>
-                    <p className="font-display text-[10px] leading-relaxed">
-                      Use the table on the left to add, edit, or remove guests manually.
-                    </p>
-                  </div>
-                )}
-
-                {importMethod === 'csv' && (
-                  <label className="w-full py-5 border-2 border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer">
-                    <span className="material-icons text-[#9cb092]/70 text-2xl">
-                      upload_file
-                    </span>
-                    <span className="font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] text-center px-3">
-                      Choose .csv or .xlsx
-                    </span>
-                    <span className="font-display text-[8px] text-[#b2c3b1]/45 text-center px-3 leading-relaxed">
-                      Format: Name, Email, Phone
-                    </span>
-                    <input
-                      type="file"
-                      accept=".csv,.xlsx,.xls"
-                      className="hidden"
-                      onChange={handleCsvUpload}
-                    />
-                  </label>
-                )}
-
-                {importMethod === 'phone' && (
-                  <button
-                    onClick={handlePhoneContacts}
-                    className="w-full py-5 border border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all flex flex-col items-center justify-center gap-2"
-                  >
-                    <span className="material-icons text-[#9cb092]/70 text-2xl">contacts</span>
-                    <span className="font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092]">
-                      Open Contacts
-                    </span>
-                    <span className="font-display text-[8px] text-[#b2c3b1]/45 text-center px-3 leading-relaxed">
-                      Android Chrome only
-                    </span>
-                  </button>
-                )}
-
-                {importMethod === 'qr' && (
-                  <div className="space-y-3">
-                    {qrLoading && (
-                      <div className="flex items-center justify-center gap-2 py-6">
-                        <div className="w-4 h-4 border-2 border-[#9cb092]/30 border-t-[#9cb092] rounded-full animate-spin" />
-                        <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/60">
-                          Generating QR…
-                        </p>
-                      </div>
-                    )}
-                    {qrError && (
-                      <div className="flex items-start gap-2">
-                        <span className="material-icons text-red-400/70 text-base mt-0.5">
-                          error_outline
-                        </span>
-                        <p className="font-display text-[10px] text-red-400/80 leading-relaxed">
-                          {qrError}
-                        </p>
-                      </div>
-                    )}
-                    {!qrLoading && !qrError && !qrSession && (
-                      <button
-                        onClick={handleQRImport}
-                        className="w-full py-3 border border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092]"
-                      >
-                        Generate QR
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
+                  <p className="font-display text-[10px] tracking-[0.18em] uppercase text-[#e4eee1] mb-0.5">
+                    {opt.label}
+                  </p>
+                  <p className="font-display text-[9px] text-[#b2c3b1]/55 leading-relaxed">
+                    {opt.description}
+                  </p>
+                </button>
+              ))}
             </div>
+          </div>
+
+          {/* Status hint */}
+          <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
+            <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/50">
+              {importedCount > 0
+                ? `${importedCount} guest${importedCount === 1 ? '' : 's'} added`
+                : 'No guests added yet — pick a method above'}
+            </p>
+            {importedCount > 0 && (
+              <button
+                onClick={() => openMethod('manual')}
+                className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092] hover:text-[#adc4a3] transition-colors flex items-center gap-1"
+              >
+                <span className="material-icons text-sm">visibility</span>
+                Review guests
+              </button>
+            )}
           </div>
         </div>
 
@@ -542,34 +538,163 @@ export default function GuestPopup({
         </div>
       </div>
 
-      {/* QR scan modal */}
-      {qrSession && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-[#1a2418] border border-[#9cb092]/30 p-8 max-w-sm w-full text-center">
-            <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-2">Scan with Phone</h3>
-            <p className="font-display text-[10px] tracking-[0.15em] text-[#b2c3b1]/60 uppercase mb-6">
-              Open this QR on your phone → pick contacts → they appear here automatically
-            </p>
-            <img
-              src={`data:image/png;base64,${qrSession.qr_code_base64}`}
-              alt="QR Code"
-              className="w-48 h-48 mx-auto mb-6 border border-white/10"
-            />
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="w-3 h-3 border border-[#9cb092]/40 border-t-[#9cb092] rounded-full animate-spin" />
-              <p className="font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]/50">
-                Waiting for contacts…
-              </p>
-            </div>
+      {/* ── Sub-popup: contact-method specific (manual / excel / qr) ── */}
+      {activeMethod && (
+        <div
+          className="fixed inset-0 z-[55] flex items-center justify-center p-4 md:p-8"
+          style={{ backgroundColor: 'rgba(13, 21, 18, 0.85)', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeSubPopup();
+          }}
+        >
+          <div
+            className="relative w-full max-w-4xl max-h-[85vh] flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
-              onClick={() => setQrSession(null)}
-              className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/50 hover:text-[#9cb092] transition-colors"
+              onClick={closeSubPopup}
+              className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
             >
-              Cancel
+              <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
             </button>
+
+            <div className="flex-shrink-0 px-6 md:px-8 pt-7 pb-4 border-b border-white/[0.06]">
+              <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092]/50 mb-2">
+                Guest Details
+              </p>
+              <h3 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight">
+                {subPopupTitle}
+              </h3>
+              {hasSubEvents && (
+                <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/55 mt-3">
+                  Tick which events each guest should be invited to.
+                </p>
+              )}
+            </div>
+
+            <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-6 md:px-8 py-5 space-y-4">
+              {/* Method-specific intro */}
+              {activeMethod === 'excel' && (
+                <label className="block w-full py-6 border-2 border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all cursor-pointer text-center">
+                  <span className="material-icons text-[#9cb092]/70 text-2xl block mb-2">
+                    upload_file
+                  </span>
+                  <span className="font-display text-[11px] tracking-[0.2em] uppercase text-[#9cb092] block mb-1">
+                    Choose .csv or .xlsx file
+                  </span>
+                  <span className="font-display text-[9px] text-[#b2c3b1]/45 block">
+                    Format: Name, Email, Phone — header row optional
+                  </span>
+                  <input
+                    type="file"
+                    accept=".csv,.xlsx,.xls"
+                    className="hidden"
+                    onChange={handleCsvUpload}
+                  />
+                </label>
+              )}
+
+              {activeMethod === 'qr' && (
+                <div className="border border-white/10 bg-white/[0.02] p-5 text-center">
+                  {qrLoading && (
+                    <div className="flex items-center justify-center gap-3 py-4">
+                      <div className="w-5 h-5 border-2 border-[#9cb092]/30 border-t-[#9cb092] rounded-full animate-spin" />
+                      <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/60">
+                        Generating QR…
+                      </p>
+                    </div>
+                  )}
+                  {qrError && (
+                    <div className="flex flex-col items-center gap-3">
+                      <p className="font-display text-[11px] text-red-400/80">{qrError}</p>
+                      <button
+                        onClick={() => {
+                          setQrError('');
+                          handleQRImport();
+                        }}
+                        className="py-2 px-5 border border-[#9cb092]/40 font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] hover:bg-[#9cb092]/10 transition-all flex items-center gap-2"
+                      >
+                        <span className="material-icons text-sm">refresh</span>
+                        Try Again
+                      </button>
+                    </div>
+                  )}
+                  {qrSession && (
+                    <div className="flex flex-col items-center">
+                      <p className="font-serif-exp text-base text-[#e4eee1] italic mb-2">
+                        Scan with your phone
+                      </p>
+                      <p className="font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]/55 mb-4">
+                        Open the QR → pick contacts → they appear here automatically
+                      </p>
+                      <img
+                        src={`data:image/png;base64,${qrSession.qr_code_base64}`}
+                        alt="QR Code"
+                        className="w-44 h-44 mx-auto mb-4 border border-white/10"
+                      />
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-3 h-3 border border-[#9cb092]/40 border-t-[#9cb092] rounded-full animate-spin" />
+                        <p className="font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]/50">
+                          Waiting for contacts…
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeMethod === 'manual' && (
+                <p className="font-display text-[10px] text-[#b2c3b1]/55 leading-relaxed">
+                  Click the
+                  <span className="material-icons text-[#9cb092] text-sm align-middle mx-1">
+                    add
+                  </span>
+                  on any row to insert a new guest below it.
+                </p>
+              )}
+
+              {/* Editable / review table */}
+              {(activeMethod === 'manual' || importedCount > 0 || activeMethod === 'excel') && guestRows}
+
+              {activeMethod === 'manual' && (
+                <button
+                  onClick={addGuest}
+                  className="w-full py-2.5 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
+                >
+                  <span className="material-icons text-sm">add</span>
+                  Add Row
+                </button>
+              )}
+            </div>
+
+            <div className="flex-shrink-0 flex items-center justify-between gap-3 px-6 md:px-8 py-4 border-t border-white/[0.06] bg-[#0e1712]">
+              <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/55">
+                {importedCount} added
+              </p>
+              <button
+                onClick={closeSubPopup}
+                className="py-2.5 px-6 bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3] font-display text-[10px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center gap-2"
+              >
+                <span className="material-icons text-sm">check</span>
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+// Small inline checkbox component — matches GuestDetails styling.
+function EventCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      className="appearance-none w-[14px] h-[14px] border border-[#9cb092]/50 bg-white/[0.04] checked:bg-[#9cb092] checked:border-[#9cb092] relative cursor-pointer transition-colors
+        checked:after:content-['✓'] checked:after:absolute checked:after:inset-0 checked:after:flex checked:after:items-center checked:after:justify-center checked:after:text-[#111914] checked:after:text-[10px] checked:after:font-bold checked:after:leading-none"
+    />
   );
 }

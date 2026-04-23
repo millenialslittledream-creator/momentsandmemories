@@ -10,7 +10,9 @@
       "Bash(cp -r \"templates/birthday\" public/templates/)",
       "Bash(cp -r \"templates/bride to be\" public/templates/)",
       "Bash(cp -r \"templates/gender reveal\" public/templates/)",
-      "Bash(cp -r \"templates/wedding\" public/templates/)"
+      "Bash(cp -r \"templates/wedding\" public/templates/)",
+      "Bash(npx vite *)",
+      "mcp__playwright__browser_resize"
     ]
   }
 }

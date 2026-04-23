@@ -1,0 +1,90 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - navigation [ref=e5]:
+      - button "moments & memories" [ref=e6] [cursor=pointer]
+      - generic [ref=e7]:
+        - button "Home" [ref=e8] [cursor=pointer]
+        - button "Create Evite" [ref=e9] [cursor=pointer]
+        - button "Shop Gifts" [ref=e10] [cursor=pointer]
+        - button "Login" [ref=e11] [cursor=pointer]
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - heading "What are we bringing to life today?" [level=1] [ref=e16]
+          - paragraph [ref=e17]: Choose a design — or upload your own
+        - generic [ref=e18]:
+          - button "All" [ref=e19] [cursor=pointer]
+          - button "Birthday" [ref=e20] [cursor=pointer]
+          - button "Wedding" [ref=e21] [cursor=pointer]
+          - button "Baby Shower" [ref=e22] [cursor=pointer]
+          - button "Pre-Wedding Party" [ref=e23] [cursor=pointer]
+          - button "Gender Reveal" [ref=e24] [cursor=pointer]
+          - button "Custom" [ref=e25] [cursor=pointer]
+      - generic [ref=e27]:
+        - button "add Upload Your Own Design Image · Video · Image + Music Custom upload" [ref=e28] [cursor=pointer]:
+          - generic [ref=e29]:
+            - generic [ref=e31]: add
+            - paragraph [ref=e32]: Upload Your Own Design
+            - paragraph [ref=e33]: Image · Video · Image + Music
+          - heading "Custom upload" [level=3] [ref=e35]
+        - button "Golden Hour zoom_in Golden Hour" [ref=e383] [cursor=pointer]:
+          - generic [ref=e384]:
+            - img "Golden Hour" [ref=e385]
+            - generic [ref=e387]: zoom_in
+          - heading "Golden Hour" [level=3] [ref=e389]
+        - button "Neon Glow zoom_in Neon Glow" [ref=e390] [cursor=pointer]:
+          - generic [ref=e391]:
+            - img "Neon Glow" [ref=e392]
+            - generic [ref=e394]: zoom_in
+          - heading "Neon Glow" [level=3] [ref=e396]
+        - button "Garden Party zoom_in Garden Party" [ref=e397] [cursor=pointer]:
+          - generic [ref=e398]:
+            - img "Garden Party" [ref=e399]
+            - generic [ref=e401]: zoom_in
+          - heading "Garden Party" [level=3] [ref=e403]
+        - button "Minimalist Chic zoom_in Minimalist Chic" [ref=e404] [cursor=pointer]:
+          - generic [ref=e405]:
+            - img "Minimalist Chic" [ref=e406]
+            - generic [ref=e408]: zoom_in
+          - heading "Minimalist Chic" [level=3] [ref=e410]
+        - button "Pastel Dream zoom_in Pastel Dream" [ref=e411] [cursor=pointer]:
+          - generic [ref=e412]:
+            - img "Pastel Dream" [ref=e413]
+            - generic [ref=e415]: zoom_in
+          - heading "Pastel Dream" [level=3] [ref=e417]
+        - button "Starry Night zoom_in Starry Night" [ref=e418] [cursor=pointer]:
+          - generic [ref=e419]:
+            - img "Starry Night" [ref=e420]
+            - generic [ref=e422]: zoom_in
+          - heading "Starry Night" [level=3] [ref=e424]
+        - button "Tropical Fiesta zoom_in Tropical Fiesta" [ref=e425] [cursor=pointer]:
+          - generic [ref=e426]:
+            - img "Tropical Fiesta" [ref=e427]
+            - generic [ref=e429]: zoom_in
+          - heading "Tropical Fiesta" [level=3] [ref=e431]
+        - button "Rustic Wood zoom_in Rustic Wood" [ref=e432] [cursor=pointer]:
+          - generic [ref=e433]:
+            - img "Rustic Wood" [ref=e434]
+            - generic [ref=e436]: zoom_in
+          - heading "Rustic Wood" [level=3] [ref=e438]
+        - button "Midnight Luxe zoom_in Midnight Luxe" [ref=e439] [cursor=pointer]:
+          - generic [ref=e440]:
+            - img "Midnight Luxe" [ref=e441]
+            - generic [ref=e443]: zoom_in
+          - heading "Midnight Luxe" [level=3] [ref=e445]
+        - button "Confetti Pop zoom_in Confetti Pop" [ref=e446] [cursor=pointer]:
+          - generic [ref=e447]:
+            - img "Confetti Pop" [ref=e448]
+            - generic [ref=e450]: zoom_in
+          - heading "Confetti Pop" [level=3] [ref=e452]
+    - generic [ref=e499]:
+      - button "close" [ref=e500] [cursor=pointer]:
+        - generic [ref=e501]: close
+      - generic [ref=e503]: lock
+      - heading "Almost there" [level=2] [ref=e504]
+      - paragraph [ref=e505]: Sign in to save your design, manage guest list, and send invites.
+      - button "Sign In to Continue arrow_forward" [ref=e506] [cursor=pointer]:
+        - text: Sign In to Continue
+        - generic [ref=e507]: arrow_forward
+      - button "Back to design" [ref=e508] [cursor=pointer]
+  - region "Notifications alt+T"
