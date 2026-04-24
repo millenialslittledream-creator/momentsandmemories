@@ -219,11 +219,20 @@ export default function CreateEvite() {
     }
   }, [user]);
 
+  // Don't overwrite a saved draft with our untouched initial state — only
+  // persist after the user starts interacting (formData has any keys,
+  // a template is selected, or guests beyond the empty seed exist).
   useEffect(() => {
+    const hasUserContent =
+      Object.keys(formData).length > 0 ||
+      !!selectedTemplateId ||
+      !!uploadedTemplate ||
+      hasSubEvents ||
+      guests.some((g) => g.name.trim() || g.email.trim() || g.phone.trim());
+    if (!hasUserContent) return;
     try {
       const existing = localStorage.getItem('mm_evite_draft');
       const parsed = existing ? JSON.parse(existing) : {};
-      // Don't persist blob URLs — they don't survive a reload.
       const safeUploaded =
         uploadedTemplate && !uploadedTemplate.url.startsWith('blob:')
           ? uploadedTemplate
@@ -336,10 +345,8 @@ export default function CreateEvite() {
 
   // After event details are captured we ask the user to sign in (so we can save
   // their design + guest list). Already-signed-in users skip straight to guests.
-  // Set window.__bypassSignInGate = true in DevTools to skip during local testing.
   const proceedFromEditor = useCallback(() => {
-    const bypass = typeof window !== 'undefined' && (window as any).__bypassSignInGate === true;
-    if (user || bypass) {
+    if (user) {
       setModalPhase('guests');
     } else {
       try {

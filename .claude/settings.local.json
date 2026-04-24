@@ -12,7 +12,8 @@
       "Bash(cp -r \"templates/gender reveal\" public/templates/)",
       "Bash(cp -r \"templates/wedding\" public/templates/)",
       "Bash(npx vite *)",
-      "mcp__playwright__browser_resize"
+      "mcp__playwright__browser_resize",
+      "Bash(curl -sf -o /dev/null -w \"%{http_code}\" http://localhost:5189/create)"
     ]
   }
 }
