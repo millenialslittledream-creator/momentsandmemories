@@ -371,15 +371,6 @@ export default function GuestPopup({
               )}
               <td className="px-1 py-1.5">
                 <div className="flex items-center justify-end gap-1">
-                  {activeMethod === 'manual' && (
-                    <button
-                      onClick={() => addGuestAfter(guest.id)}
-                      className="text-[#9cb092]/60 hover:text-[#9cb092] transition-colors"
-                      title="Add row below"
-                    >
-                      <span className="material-icons text-base">add</span>
-                    </button>
-                  )}
                   <button
                     onClick={() => removeGuest(guest.id)}
                     className="text-[#b2c3b1]/30 hover:text-red-400/80 transition-colors"
@@ -643,15 +634,6 @@ export default function GuestPopup({
                 </div>
               )}
 
-              {activeMethod === 'manual' && (
-                <p className="font-display text-[10px] text-[#b2c3b1]/55 leading-relaxed">
-                  Click the
-                  <span className="material-icons text-[#9cb092] text-sm align-middle mx-1">
-                    add
-                  </span>
-                  on any row to insert a new guest below it.
-                </p>
-              )}
 
               {/* Editable / review table */}
               {(activeMethod === 'manual' || importedCount > 0 || activeMethod === 'excel') && guestRows}

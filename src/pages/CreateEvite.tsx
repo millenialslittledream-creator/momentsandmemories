@@ -16,7 +16,7 @@ import GuestPopup from '@/sections/create/GuestPopup';
 import PaymentModal from '@/sections/create/PaymentModal';
 import DateTimePicker from '@/sections/create/DateTimePicker';
 
-type EventTypeFilter = 'all' | EventType;
+type EventTypeFilter = EventType;
 type ModalPhase = 'upload' | 'editor' | 'signin' | 'guests' | 'payment' | 'sent' | null;
 
 interface UploadedTemplate {
@@ -28,12 +28,12 @@ interface UploadedTemplate {
 }
 
 const FILTERS: { id: EventTypeFilter; label: string }[] = [
-  { id: 'all',          label: 'All' },
   { id: 'birthday',     label: 'Birthday' },
   { id: 'marriage',     label: 'Wedding' },
   { id: 'babyshower',   label: 'Baby Shower' },
   { id: 'bridetobe',    label: 'Pre-Wedding Party' },
   { id: 'genderreveal', label: 'Gender Reveal' },
+  { id: 'housewarming', label: 'Housewarming' },
   { id: 'custom',       label: 'Custom' },
 ];
 
@@ -46,7 +46,7 @@ function renderEditorField(
   onChange: (name: string, value: string) => void
 ) {
   const baseInputClass =
-    'bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-3 py-2 text-sm rounded-sm w-full outline-none transition-colors';
+    'bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-3 h-10 text-sm rounded-sm w-full outline-none transition-colors';
 
   switch (field.type) {
     case 'date':
@@ -147,7 +147,7 @@ export default function CreateEvite() {
   const editorPanelRef = useRef<HTMLDivElement>(null);
   const mainImgRef = useRef<HTMLImageElement>(null);
 
-  const [activeFilter, setActiveFilter] = useState<EventTypeFilter>('all');
+  const [activeFilter, setActiveFilter] = useState<EventTypeFilter>('birthday');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [uploadedTemplate, setUploadedTemplate] = useState<UploadedTemplate | null>(null);
   const [modalPhase, setModalPhase] = useState<ModalPhase>(null);
@@ -166,7 +166,7 @@ export default function CreateEvite() {
   // 'custom' is special: there are no inherently-custom designs, so we show
   // every template (any of them can be repurposed for a custom event).
   const visibleTemplates = useMemo(() => {
-    if (activeFilter === 'all' || activeFilter === 'custom') return eviteTemplates;
+    if (activeFilter === 'custom') return eviteTemplates;
     return eviteTemplates.filter((t) => t.eventType === activeFilter);
   }, [activeFilter]);
 
@@ -542,6 +542,7 @@ export default function CreateEvite() {
     formData.eventName ||
     formData.brideName ||
     formData.parentNames ||
+    formData.homeownerName ||
     formData.hostName ||
     '';
 
@@ -588,7 +589,7 @@ export default function CreateEvite() {
           <div className="flex items-end justify-between py-4 md:py-5 flex-shrink-0 border-b border-white/[0.07] flex-wrap gap-3">
             <div>
               <h1 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
-                What are we bringing to <span className="text-[#9cb092] font-agatho italic">life today?</span>
+                What special moment are we <span className="text-[#9cb092] font-agatho italic">bringing to life today?</span>
               </h1>
               <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#b2c3b1]/40 mt-1">
                 Choose a design — or upload your own
@@ -890,18 +891,71 @@ export default function CreateEvite() {
         >
           <div
             ref={editorPanelRef}
-            className="relative w-full max-w-5xl h-full max-h-[88vh] flex flex-col md:flex-row bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
+            className="relative w-full max-w-6xl max-h-[82vh] flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              onClick={closeAnyModal}
-              className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
-            >
-              <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
-            </button>
+            {/* ── Modal top bar: header + controls ── */}
+            <div className="flex-shrink-0 flex items-center justify-between px-6 md:px-8 py-4 border-b border-white/[0.07] bg-[#0e1712]">
+              <div>
+                <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092]/50">Create Evite</p>
+                <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight mt-0.5">
+                  Let's bring your celebration <span className="text-[#9cb092] font-agatho italic">to life</span>
+                </h2>
+              </div>
+
+              <div className="flex items-center gap-4">
+                {/* Step indicator */}
+                <div className="hidden md:flex items-center gap-2">
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-[#9cb092] flex items-center justify-center">
+                      <span className="material-icons text-[#111914] text-[15px]">event</span>
+                    </div>
+                    <span className="font-display text-[7px] tracking-[0.08em] uppercase text-[#9cb092] mt-1 whitespace-nowrap">Event Details</span>
+                  </div>
+                  <div className="w-8 h-px bg-white/20 mb-3" />
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center">
+                      <span className="material-icons text-[#b2c3b1]/40 text-[15px]">mail</span>
+                    </div>
+                    <span className="font-display text-[7px] tracking-[0.08em] uppercase text-[#b2c3b1]/40 mt-1">Message</span>
+                  </div>
+                  <div className="w-8 h-px bg-white/20 mb-3" />
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center">
+                      <span className="material-icons text-[#b2c3b1]/40 text-[15px]">preview</span>
+                    </div>
+                    <span className="font-display text-[7px] tracking-[0.08em] uppercase text-[#b2c3b1]/40 mt-1">Preview</span>
+                  </div>
+                </div>
+
+                {/* Multiple Events toggle — visible only for wedding/custom */}
+                {supportsMultipleEvents && (
+                  <div className="flex items-center gap-2">
+                    <span className="font-display text-[9px] tracking-[0.12em] uppercase text-[#b2c3b1]/60 hidden sm:block">Multiple Events</span>
+                    <button
+                      onClick={toggleHasSubEvents}
+                      className={`relative w-10 h-5 rounded-full transition-colors duration-300 ${hasSubEvents ? 'bg-[#9cb092]' : 'bg-white/15'}`}
+                      aria-pressed={hasSubEvents}
+                    >
+                      <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-300 ${hasSubEvents ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  onClick={closeAnyModal}
+                  className="w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
+                >
+                  <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
+                </button>
+              </div>
+            </div>
+
+            {/* ── Two-column body ── */}
+            <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
 
             {/* ── LEFT: image / video preview ─────────────────────── */}
-            <div className="flex-shrink-0 h-[38vh] md:h-auto md:flex-1 md:min-h-0 flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-white/[0.07]">
+            <div className="flex-shrink-0 h-[38vh] md:h-auto md:w-[36%] md:min-h-0 flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-white/[0.07]">
               <div className="flex-1 relative overflow-hidden bg-[#0d1512] flex items-center justify-center">
                 <div className="relative h-full aspect-[9/16] max-w-full overflow-hidden">
                   {uploadedTemplate ? (
@@ -1025,104 +1079,8 @@ export default function CreateEvite() {
             </div>
 
             {/* ── RIGHT: form (scrollable) ────────────────────────── */}
-            <div className="flex-1 md:flex-[unset] md:w-[42%] md:min-w-[320px] md:max-w-[500px] min-h-0 flex flex-col overflow-hidden">
-              <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-6 md:px-8 pt-7 pb-5 space-y-4">
-                {/* Multiple Events toggle — wedding & custom only */}
-                {supportsMultipleEvents && (
-                  <div className="border border-white/10 bg-white/[0.02] p-4 space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="material-icons text-[#9cb092] text-base">celebration</span>
-                        <p className="font-display text-[10px] tracking-[0.18em] uppercase text-[#e4eee1]">
-                          Multiple Events
-                        </p>
-                      </div>
-                      <button
-                        onClick={toggleHasSubEvents}
-                        className={`relative w-10 h-5 rounded-full transition-colors duration-300 ${
-                          hasSubEvents ? 'bg-[#9cb092]' : 'bg-white/15'
-                        }`}
-                        aria-pressed={hasSubEvents}
-                      >
-                        <div
-                          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-300 ${
-                            hasSubEvents ? 'translate-x-[22px]' : 'translate-x-0.5'
-                          }`}
-                        />
-                      </button>
-                    </div>
-                    {!hasSubEvents ? (
-                      <p className="font-display text-[10px] text-[#b2c3b1]/50 leading-relaxed">
-                        {currentEventType === 'marriage'
-                          ? 'Toggle on if your celebration includes Mehendi, Sangeet, Reception, etc.'
-                          : 'Toggle on if your celebration spans multiple events (e.g. Welcome Dinner, Main Event, After-Party).'}
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {Array.from({ length: subEventCount }, (_, i) => (
-                          <div
-                            key={i}
-                            className="p-3 border border-white/5 bg-white/[0.015] space-y-2"
-                          >
-                            <div className="flex items-center justify-between">
-                              <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]/80">
-                                Event {i + 1}
-                              </p>
-                              <button
-                                onClick={() => removeSubEvent(i)}
-                                className="text-[#b2c3b1]/40 hover:text-red-400/80 transition-colors"
-                              >
-                                <span className="material-icons text-sm">close</span>
-                              </button>
-                            </div>
-                            <input
-                              type="text"
-                              value={formData[`sub_${i}_name`] || ''}
-                              onChange={(e) => handleFieldChange(`sub_${i}_name`, e.target.value)}
-                              placeholder="Event name (e.g. Mehendi, Sangeet)"
-                              className="bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-2.5 py-1.5 text-xs rounded-sm w-full outline-none transition-colors"
-                            />
-                            <DateTimePicker
-                              compact
-                              date={formData[`sub_${i}_date`] || ''}
-                              time={formData[`sub_${i}_time`] || ''}
-                              timezone={formData[`sub_${i}_timezone`] || ''}
-                              onChange={(next) => {
-                                if (next.date !== undefined) handleFieldChange(`sub_${i}_date`, next.date);
-                                if (next.time !== undefined) handleFieldChange(`sub_${i}_time`, next.time);
-                                if (next.timezone !== undefined) handleFieldChange(`sub_${i}_timezone`, next.timezone);
-                              }}
-                            />
-                            <input
-                              type="text"
-                              value={formData[`sub_${i}_venue`] || ''}
-                              onChange={(e) => handleFieldChange(`sub_${i}_venue`, e.target.value)}
-                              placeholder="Venue"
-                              className="bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-2.5 py-1.5 text-xs rounded-sm w-full outline-none transition-colors"
-                            />
-                            <input
-                              type="number"
-                              inputMode="numeric"
-                              min={0}
-                              value={formData[`sub_${i}_guestCount`] || ''}
-                              onChange={(e) => handleFieldChange(`sub_${i}_guestCount`, e.target.value)}
-                              placeholder="Approx. # of guests"
-                              className="bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-2.5 py-1.5 text-xs rounded-sm w-full outline-none transition-colors"
-                            />
-                          </div>
-                        ))}
-                        <button
-                          onClick={addSubEvent}
-                          className="w-full py-2 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
-                        >
-                          <span className="material-icons text-sm">add</span>
-                          Add Another Event
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
+            <div className="flex-1 md:flex-1 min-h-0 flex flex-col overflow-hidden">
+              <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-6 md:px-8 pt-6 pb-5 space-y-4">
                 {/* Editor fields — date/time/timezone collapse into one DateTimePicker */}
                 {(() => {
                   const rendered: ReactElement[] = [];
@@ -1164,9 +1122,76 @@ export default function CreateEvite() {
                   }
                   return rendered;
                 })()}
+
+                {/* Sub-events section — shown when multiple events toggle is ON */}
+                {supportsMultipleEvents && hasSubEvents && (
+                  <div className="border-t border-white/[0.07] pt-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]/80 flex items-center gap-1.5">
+                        <span className="material-icons text-sm">celebration</span>
+                        Additional Events
+                      </p>
+                      <button
+                        onClick={addSubEvent}
+                        className="font-display text-[9px] tracking-[0.15em] uppercase text-[#9cb092] hover:text-[#adc4a3] flex items-center gap-1 transition-colors"
+                      >
+                        <span className="material-icons text-sm">add</span>
+                        Add Another Event
+                      </button>
+                    </div>
+                    {Array.from({ length: subEventCount }, (_, i) => (
+                      <div key={i} className="p-3 border border-white/[0.07] bg-white/[0.02] space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]/70">
+                            Event {i + 1}
+                          </p>
+                          <button onClick={() => removeSubEvent(i)} className="text-[#b2c3b1]/30 hover:text-red-400/70 transition-colors">
+                            <span className="material-icons text-sm">close</span>
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          value={formData[`sub_${i}_name`] || ''}
+                          onChange={(e) => handleFieldChange(`sub_${i}_name`, e.target.value)}
+                          placeholder="Event name (e.g. Mehendi, Sangeet)"
+                          className="bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-2.5 h-9 text-xs rounded-sm w-full outline-none transition-colors"
+                        />
+                        <DateTimePicker
+                          compact
+                          date={formData[`sub_${i}_date`] || ''}
+                          time={formData[`sub_${i}_time`] || ''}
+                          timezone={formData[`sub_${i}_timezone`] || ''}
+                          onChange={(next) => {
+                            if (next.date !== undefined) handleFieldChange(`sub_${i}_date`, next.date);
+                            if (next.time !== undefined) handleFieldChange(`sub_${i}_time`, next.time);
+                            if (next.timezone !== undefined) handleFieldChange(`sub_${i}_timezone`, next.timezone);
+                          }}
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={formData[`sub_${i}_venue`] || ''}
+                            onChange={(e) => handleFieldChange(`sub_${i}_venue`, e.target.value)}
+                            placeholder="Venue / Location"
+                            className="bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-2.5 h-9 text-xs rounded-sm w-full outline-none transition-colors"
+                          />
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            value={formData[`sub_${i}_guestCount`] || ''}
+                            onChange={(e) => handleFieldChange(`sub_${i}_guestCount`, e.target.value)}
+                            placeholder="Guest count"
+                            className="bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-2.5 h-9 text-xs rounded-sm w-full outline-none transition-colors"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <div className="flex-shrink-0 px-6 md:px-8 py-5 border-t border-white/[0.06] bg-[#0e1712]">
+              <div className="flex-shrink-0 px-6 md:px-8 py-4 border-t border-white/[0.06] bg-[#0e1712]">
                 <button
                   onClick={proceedFromEditor}
                   disabled={!isEditorValid}
@@ -1176,7 +1201,7 @@ export default function CreateEvite() {
                       : 'bg-white/5 text-white/20 cursor-not-allowed border border-white/10'
                   }`}
                 >
-                  Proceed
+                  Continue
                   <span className="material-icons text-sm">arrow_forward</span>
                 </button>
                 {!isEditorValid && (
@@ -1186,6 +1211,7 @@ export default function CreateEvite() {
                 )}
               </div>
             </div>
+            </div>{/* end two-column body */}
           </div>
         </div>
       )}

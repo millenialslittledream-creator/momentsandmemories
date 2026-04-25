@@ -49,6 +49,11 @@ export const eviteTemplates: EviteTemplate[] = [
   { id: 'bride-6', eventType: 'bridetobe', name: 'Luxe Soirée',     style: 'Elegant & Glamorous',     previewImage: '/templates/bride to be/6.jpg', accent: '#c9b037' },
   { id: 'bride-7', eventType: 'bridetobe', name: 'Bachelorette',    style: 'Bold & Fun',              previewImage: '/templates/bride to be/7.jpg', accent: '#ff6b6b' },
 
+  // ── Housewarming (3 templates) ─────────────────────────────────────────
+  { id: 'house-1', eventType: 'housewarming', name: 'New Beginnings',  style: 'Warm & Inviting',      previewImage: '/templates/housewarming/1.jpg', accent: '#c4a882' },
+  { id: 'house-2', eventType: 'housewarming', name: 'Home Sweet Home', style: 'Rustic & Cozy',         previewImage: '/templates/housewarming/2.jpg', accent: '#b5651d' },
+  { id: 'house-3', eventType: 'housewarming', name: 'Welcome Home',    style: 'Modern & Minimal',      previewImage: '/templates/housewarming/3.jpg', accent: '#9cb092' },
+
   // ── Gender Reveal (8 templates) ────────────────────────────────────────
   { id: 'gender-1', eventType: 'genderreveal', name: 'Pink or Blue',    style: 'Classic & Fun',      previewImage: '/templates/gender reveal/1.jpg', accent: '#b5c7e3' },
   { id: 'gender-2', eventType: 'genderreveal', name: 'Twinkle Stars',   style: 'Celestial & Dreamy', previewImage: '/templates/gender reveal/2.jpg', accent: '#2c3e50' },

@@ -123,14 +123,6 @@ export default function Navigation() {
         </div>
       </nav>
 
-      {/* Shopping Bag — Fixed Bottom Right. Hidden on /create so it doesn't overlap step arrows. */}
-      {!location.pathname.startsWith('/create') && (
-        <div className="fixed bottom-8 right-8 z-50">
-          <button className="bg-primary/20 hover:bg-primary text-white p-4 rounded-full backdrop-blur-md transition-all duration-500 border border-white/10 group">
-            <span className="material-icons text-xl group-hover:rotate-12 transition-transform">shopping_bag</span>
-          </button>
-        </div>
-      )}
     </>
   );
 }

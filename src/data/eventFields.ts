@@ -1,4 +1,4 @@
-export type EventType = 'birthday' | 'marriage' | 'babyshower' | 'bridetobe' | 'genderreveal' | 'custom';
+export type EventType = 'birthday' | 'marriage' | 'babyshower' | 'bridetobe' | 'genderreveal' | 'housewarming' | 'custom';
 
 export interface EventField {
   name: string;
@@ -54,6 +54,13 @@ export const eventTypes: EventTypeInfo[] = [
     color: '#b5c7e3',
   },
   {
+    id: 'housewarming',
+    label: 'Housewarming',
+    description: 'Celebrate your new home with family and friends',
+    icon: 'home',
+    color: '#c4a882',
+  },
+  {
     id: 'custom',
     label: 'Custom Event',
     description: 'Create a personalised invite for any occasion',
@@ -97,6 +104,9 @@ export const eventSpecificFields: Record<EventType, EventField[]> = {
   ],
   genderreveal: [
     { name: 'parentNames', label: "Parent(s) Name(s)", type: 'text', placeholder: "Parent(s) name(s)", required: true },
+  ],
+  housewarming: [
+    { name: 'homeownerName', label: "Homeowner(s) Name", type: 'text', placeholder: "Who's celebrating the new home?", required: true },
   ],
   custom: [
     { name: 'eventName', label: 'Event Name', type: 'text', placeholder: 'e.g. Anniversary, Graduation, Reunion…', required: true },

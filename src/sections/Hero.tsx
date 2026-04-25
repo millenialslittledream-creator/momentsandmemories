@@ -65,13 +65,6 @@ export default function Hero() {
         { opacity: 1, x: 0, scale: 1, duration: 1.2, ease: 'power3.out', delay: 0.5 }
       );
 
-      // ── Seamless scroll transition into the next section ──────
-      // As the user scrolls past the hero we run a scrubbed timeline that:
-      //   1. Gently floats content upward + fades it out
-      //   2. Parallaxes the two phones at different depths (depth illusion)
-      //   3. Scales the right phone cluster slightly inward
-      //   4. Fades a dark bottom gradient in to blend into Timeline's
-      //      `#EADDD7 + #111914/70` overlay color — no hard section cut.
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current,
@@ -88,12 +81,12 @@ export default function Hero() {
       )
         .to(
           phoneFrontRef.current,
-          { y: -90, rotate: -6, scale: 0.94, ease: 'none' },
+          { y: -90, rotate: -10, scale: 0.94, ease: 'none' },
           0
         )
         .to(
           phoneBackRef.current,
-          { y: -50, rotate: 6, scale: 0.96, ease: 'none' },
+          { y: -50, rotate: 10, scale: 0.96, ease: 'none' },
           0
         );
     }, sectionRef);
@@ -187,7 +180,8 @@ export default function Hero() {
           {/* ── FRONT phone — Evite section (left) ── */}
           <div
             ref={phoneFrontRef}
-            className="flex-shrink-0 relative w-[204px] h-[416px] bg-[#0d1210] rounded-[28px] shadow-[0_18px_50px_rgba(0,0,0,0.55)] border border-white/10 p-[3px] rotate-[-4deg] z-10 will-change-transform -mr-3"
+            className="flex-shrink-0 relative w-[204px] h-[416px] bg-[#0d1210] rounded-[28px] shadow-[0_18px_50px_rgba(0,0,0,0.55)] border border-white/10 p-[3px] z-10 will-change-transform"
+            style={{ transform: 'rotate(-15deg)', transformOrigin: 'bottom center' }}
           >
             {/* Notch */}
             <div className="absolute top-[7px] left-1/2 -translate-x-1/2 w-[46px] h-[11px] bg-[#0d1210] rounded-full z-20" />
@@ -260,7 +254,8 @@ export default function Hero() {
           {/* ── BACK phone — Shop section (right) ── same size as left */}
           <div
             ref={phoneBackRef}
-            className="flex-shrink-0 w-[204px] h-[416px] bg-[#0d1210] rounded-[28px] shadow-xl border border-white/10 p-[3px] rotate-[4deg] z-0 will-change-transform"
+            className="flex-shrink-0 w-[204px] h-[416px] bg-[#0d1210] rounded-[28px] shadow-xl border border-white/10 p-[3px] z-0 will-change-transform"
+            style={{ transform: 'rotate(15deg)', transformOrigin: 'bottom center', marginLeft: '-52px' }}
           >
             <div className="w-full h-full rounded-[25px] overflow-hidden bg-[#111914] flex flex-col">
               {/* Status bar */}
