@@ -72,14 +72,6 @@ export default function GuestPopup({
   }, []);
 
   // ── Guest row operations ────────────────────────────────────────────
-  const addGuestAfter = (id: string) => {
-    const idx = guests.findIndex((g) => g.id === id);
-    const next = createGuest();
-    const arr = [...guests];
-    arr.splice(idx + 1, 0, next);
-    onGuestsChange(arr);
-  };
-
   const addGuest = () => onGuestsChange([...guests, createGuest()]);
 
   const removeGuest = (id: string) => {
