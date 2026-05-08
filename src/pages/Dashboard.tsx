@@ -34,6 +34,74 @@ function newModalGuest(): ModalGuest {
   return { id: `mg-${++modalGuestCounter}`, name: '', email: '', phone: '' };
 }
 
+// ── Gift ad data ──────────────────────────────────────────────────────────────
+interface AdProduct { name: string; price: number; image: string }
+interface GiftAd { label: string; headline: string; desc: string; products: [AdProduct, AdProduct]; cta: string }
+
+const GIFT_ADS: Record<string, GiftAd> = {
+  wedding: {
+    label: 'WEDDINGS',
+    headline: 'Celebrate love with meaningful gifts',
+    desc: 'Handcrafted pieces that make lasting memories for the happy couple.',
+    products: [
+      { name: 'Speckled Ceramic Vase', price: 299, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCKXbAh2Ffrblnigc9B5ne5rLeB6kMCvIHjPqbolKY7k3_DI90gXTEHT2Owtc5GAzGBLRHBjqraO65oyAsAEPCnJ-FhF5gXxu19myQ-4nlnQo0AyAXPAITSkbc2yupJpZf-78oj6X9DONdaAAXrcW_pGFmR96xbjgWnajeWxDJeGT5xL5PGtfTUkJ87CO4pHt7MpwdcyisSPK-hig-8CiZ5PW1zrLoWcvjHKzDqXkJ0wh5DsFs42IwW8JWSTmVNf7qlg40Xk_cskrQJ' },
+      { name: 'Bubble Cube Candle', price: 349, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBAscIZcqGph6yS58AlvzkmiILkufMC2Qsyn_kNSTcHu67p2pJ8lKRDQoaaIsRpZGb6R45h9jOn9bfO3N-qMlBNsg-HSOu2c6GxtgBZJTE4-Zrg-blRLRDMFFwFHTKpSDXHFdZHcdMrVyd9gZvhioPy_Xz8XciGFzYN8zA9ivrcu7Pkp6-amSycXRYku1_BOR7HWPy59rLG6vdLPT1zIP9qrbKmea348EV0bPPUMkjTg6ZIHGbN_Ay4Td4DERXapdMYM6Xxb3qnrG4d' },
+    ],
+    cta: 'SHOP WEDDING GIFTS',
+  },
+  marriage: {
+    label: 'WEDDINGS',
+    headline: 'Celebrate love with meaningful gifts',
+    desc: 'Handcrafted pieces that make lasting memories for the happy couple.',
+    products: [
+      { name: 'Speckled Ceramic Vase', price: 299, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCKXbAh2Ffrblnigc9B5ne5rLeB6kMCvIHjPqbolKY7k3_DI90gXTEHT2Owtc5GAzGBLRHBjqraO65oyAsAEPCnJ-FhF5gXxu19myQ-4nlnQo0AyAXPAITSkbc2yupJpZf-78oj6X9DONdaAAXrcW_pGFmR96xbjgWnajeWxDJeGT5xL5PGtfTUkJ87CO4pHt7MpwdcyisSPK-hig-8CiZ5PW1zrLoWcvjHKzDqXkJ0wh5DsFs42IwW8JWSTmVNf7qlg40Xk_cskrQJ' },
+      { name: 'Brass Lotus Diya', price: 559, image: 'https://static.wixstatic.com/media/e64ad3_dacab933ca7647b6b866212ae4fe0f39~mv2.jpg/v1/fill/w_600,h_800,q_90,enc_auto,quality_auto/e64ad3_dacab933ca7647b6b866212ae4fe0f39~mv2.jpg' },
+    ],
+    cta: 'SHOP WEDDING GIFTS',
+  },
+  birthday: {
+    label: 'BIRTHDAYS',
+    headline: 'Make their birthday unforgettable',
+    desc: 'Thoughtful gifts that show you care about every detail.',
+    products: [
+      { name: 'Ceramic Match Cloche', price: 249, image: 'https://static.wixstatic.com/media/e64ad3_c10c7de7620f4b5cbb97d15697f6f654~mv2.jpg/v1/fill/w_600,h_800,q_90,enc_auto,quality_auto/e64ad3_c10c7de7620f4b5cbb97d15697f6f654~mv2.jpg' },
+      { name: 'Stone Incense Holder', price: 199, image: 'https://static.wixstatic.com/media/e64ad3_448702e4dfa34f239c2d2ce6725ec349~mv2.jpg/v1/fill/w_600,h_800,q_90,enc_auto,quality_auto/e64ad3_448702e4dfa34f239c2d2ce6725ec349~mv2.jpg' },
+    ],
+    cta: 'SHOP BIRTHDAY GIFTS',
+  },
+  babyshower: {
+    label: 'BABY SHOWERS',
+    headline: 'Welcome the little one with love',
+    desc: 'Gentle, thoughtful gifts to celebrate a new chapter.',
+    products: [
+      { name: 'Bubble Cube Candle', price: 349, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBAscIZcqGph6yS58AlvzkmiILkufMC2Qsyn_kNSTcHu67p2pJ8lKRDQoaaIsRpZGb6R45h9jOn9bfO3N-qMlBNsg-HSOu2c6GxtgBZJTE4-Zrg-blRLRDMFFwFHTKpSDXHFdZHcdMrVyd9gZvhioPy_Xz8XciGFzYN8zA9ivrcu7Pkp6-amSycXRYku1_BOR7HWPy59rLG6vdLPT1zIP9qrbKmea348EV0bPPUMkjTg6ZIHGbN_Ay4Td4DERXapdMYM6Xxb3qnrG4d' },
+      { name: 'Santal Essential Oil', price: 380, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCKXbAh2Ffrblnigc9B5ne5rLeB6kMCvIHjPqbolKY7k3_DI90gXTEHT2Owtc5GAzGBLRHBjqraO65oyAsAEPCnJ-FhF5gXxu19myQ-4nlnQo0AyAXPAITSkbc2yupJpZf-78oj6X9DONdaAAXrcW_pGFmR96xbjgWnajeWxDJeGT5xL5PGtfTUkJ87CO4pHt7MpwdcyisSPK-hig-8CiZ5PW1zrLoWcvjHKzDqXkJ0wh5DsFs42IwW8JWSTmVNf7qlg40Xk_cskrQJ' },
+    ],
+    cta: 'SHOP BABY SHOWER GIFTS',
+  },
+  engagement: {
+    label: 'ENGAGEMENTS',
+    headline: 'Celebrate the start of forever',
+    desc: 'Elegant gifts for a milestone worth remembering.',
+    products: [
+      { name: 'Speckled Ceramic Vase', price: 299, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCKXbAh2Ffrblnigc9B5ne5rLeB6kMCvIHjPqbolKY7k3_DI90gXTEHT2Owtc5GAzGBLRHBjqraO65oyAsAEPCnJ-FhF5gXxu19myQ-4nlnQo0AyAXPAITSkbc2yupJpZf-78oj6X9DONdaAAXrcW_pGFmR96xbjgWnajeWxDJeGT5xL5PGtfTUkJ87CO4pHt7MpwdcyisSPK-hig-8CiZ5PW1zrLoWcvjHKzDqXkJ0wh5DsFs42IwW8JWSTmVNf7qlg40Xk_cskrQJ' },
+      { name: 'Marble Tray Set', price: 899, image: 'https://static.wixstatic.com/media/e64ad3_7868060089754a74b7376491c2cb8592~mv2.jpg/v1/fill/w_600,h_800,q_90,enc_auto,quality_auto/e64ad3_7868060089754a74b7376491c2cb8592~mv2.jpg' },
+    ],
+    cta: 'SHOP ENGAGEMENT GIFTS',
+  },
+};
+
+const DEFAULT_GIFT_AD: GiftAd = {
+  label: 'GIFTS',
+  headline: 'Find the perfect gift',
+  desc: 'Handcrafted pieces that create lasting memories for every occasion.',
+  products: [
+    { name: 'Speckled Ceramic Vase', price: 299, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCKXbAh2Ffrblnigc9B5ne5rLeB6kMCvIHjPqbolKY7k3_DI90gXTEHT2Owtc5GAzGBLRHBjqraO65oyAsAEPCnJ-FhF5gXxu19myQ-4nlnQo0AyAXPAITSkbc2yupJpZf-78oj6X9DONdaAAXrcW_pGFmR96xbjgWnajeWxDJeGT5xL5PGtfTUkJ87CO4pHt7MpwdcyisSPK-hig-8CiZ5PW1zrLoWcvjHKzDqXkJ0wh5DsFs42IwW8JWSTmVNf7qlg40Xk_cskrQJ' },
+    { name: 'Bubble Cube Candle', price: 349, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBAscIZcqGph6yS58AlvzkmiILkufMC2Qsyn_kNSTcHu67p2pJ8lKRDQoaaIsRpZGb6R45h9jOn9bfO3N-qMlBNsg-HSOu2c6GxtgBZJTE4-Zrg-blRLRDMFFwFHTKpSDXHFdZHcdMrVyd9gZvhioPy_Xz8XciGFzYN8zA9ivrcu7Pkp6-amSycXRYku1_BOR7HWPy59rLG6vdLPT1zIP9qrbKmea348EV0bPPUMkjTg6ZIHGbN_Ay4Td4DERXapdMYM6Xxb3qnrG4d' },
+  ],
+  cta: 'SHOP GIFTS',
+};
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -66,6 +134,9 @@ export default function Dashboard() {
   const upcoming = events.filter(
     (e) => e.status === 'published' && new Date(e.event_date) >= new Date()
   );
+
+  const eventType = (events[0]?.template_id || draft?.event_type || '').toLowerCase();
+  const giftAd = GIFT_ADS[eventType] ?? DEFAULT_GIFT_AD;
 
   const openAddGuests = async (e: React.MouseEvent, event: EventRow) => {
     e.stopPropagation();
@@ -103,7 +174,6 @@ export default function Dashboard() {
           email: c.email || '',
           phone: c.phone || '',
         }));
-        // Functional update: always merges with current state, not stale closure
         setModalGuests((prev) => {
           const existing = prev.filter((g) => g.name.trim());
           return [...existing, ...newGuests];
@@ -178,105 +248,162 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#0d1a10] text-[#e4eee1]">
       <Navigation />
-      <div className="pt-24 px-4 pb-16 max-w-4xl mx-auto">
+      <div className="pt-24 px-4 md:px-8 pb-16 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 lg:gap-12 items-start">
 
-        {/* Header */}
-        <div className="mb-10">
-          <p className="font-display text-[10px] tracking-[0.25em] uppercase text-[#9cb092]/70 mb-2">Welcome back</p>
-          <h1 className="text-3xl md:text-5xl font-serif-exp italic text-[#e4eee1]">
-            {user?.email?.split('@')[0]}
-          </h1>
-        </div>
-
-        {/* Stats bar */}
-        <div className="grid grid-cols-3 gap-px bg-white/5 mb-10 border border-white/5">
-          {[
-            { label: 'Total Evites', value: events.length },
-            { label: 'Upcoming', value: upcoming.length },
-            { label: 'Drafts', value: draft ? 1 : 0 },
-          ].map((s) => (
-            <div key={s.label} className="bg-[#0d1a10] px-6 py-5 text-center">
-              <p className="text-2xl font-serif-exp text-[#9cb092] mb-1">{s.value}</p>
-              <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#b2c3b1]/40">{s.label}</p>
+          {/* ── Left column — dashboard content ── */}
+          <div>
+            {/* Header */}
+            <div className="mb-10">
+              <p className="font-display text-[10px] tracking-[0.25em] uppercase text-[#9cb092]/70 mb-2">Welcome back</p>
+              <h1 className="text-3xl md:text-5xl font-serif-exp italic text-[#e4eee1]">
+                {user?.email?.split('@')[0]}
+              </h1>
             </div>
-          ))}
-        </div>
 
-        {/* Active Draft */}
-        {draft && (
-          <div className="mb-8 border border-[#9cb092]/20 bg-[#9cb092]/5 p-6 flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-4">
-              <span className="material-icons text-[#9cb092] text-2xl">edit_note</span>
-              <div>
-                <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#9cb092] mb-0.5">Draft in progress</p>
-                <p className="text-sm text-[#b2c3b1]/60">
-                  {draft.event_type || 'Evite'} — Step {draft.step + 1}{' · '}Last saved {new Date(draft.updated_at).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => navigate('/create')}
-              className="flex-shrink-0 px-6 py-2 bg-[#9cb092] text-[#0d1a10] font-display text-[10px] tracking-[0.2em] uppercase hover:bg-[#b2c3b1] transition-colors"
-            >
-              Continue
-            </button>
-          </div>
-        )}
-
-        {/* Events list */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-serif-exp text-lg italic text-[#e4eee1]">Your Evites</h2>
-          <button
-            onClick={() => navigate('/create')}
-            className="font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] hover:text-[#b2c3b1] flex items-center gap-1 transition-colors"
-          >
-            <span className="material-icons text-sm">add</span>
-            New Evite
-          </button>
-        </div>
-
-        {events.length === 0 ? (
-          <div className="border border-white/5 bg-white/[0.02] p-12 text-center">
-            <span className="material-icons text-[#9cb092]/30 text-4xl mb-4 block">celebration</span>
-            <p className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/30 mb-6">No evites yet</p>
-            <button
-              onClick={() => navigate('/create')}
-              className="px-8 py-3 bg-[#3d4a35] text-white font-display text-[10px] tracking-[0.2em] uppercase hover:bg-[#4d5a44] transition-colors"
-            >
-              Create Your First Evite
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-px">
-            {events.map((event) => (
-              <div
-                key={event.id}
-                className="flex items-center gap-4 px-5 py-4 bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#e4eee1] truncate">{event.title}</p>
-                  <p className="font-display text-[9px] tracking-[0.1em] uppercase text-[#b2c3b1]/40 mt-0.5">
-                    {new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    {event.location ? ` · ${event.location}` : ''}
-                  </p>
+            {/* Stats bar */}
+            <div className="grid grid-cols-3 gap-px bg-white/5 mb-10 border border-white/5">
+              {[
+                { label: 'Total Evites', value: events.length },
+                { label: 'Upcoming', value: upcoming.length },
+                { label: 'Drafts', value: draft ? 1 : 0 },
+              ].map((s) => (
+                <div key={s.label} className="bg-[#0d1a10] px-4 md:px-6 py-5 text-center">
+                  <p className="text-2xl font-serif-exp text-[#9cb092] mb-1">{s.value}</p>
+                  <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#b2c3b1]/40">{s.label}</p>
                 </div>
-                <span className={`font-display text-[9px] tracking-[0.15em] uppercase px-2 py-1 border flex-shrink-0 ${
-                  event.status === 'published' ? 'border-[#9cb092]/30 text-[#9cb092]' : 'border-white/10 text-[#b2c3b1]/40'
-                }`}>
-                  {event.status}
-                </span>
+              ))}
+            </div>
+
+            {/* Active Draft */}
+            {draft && (
+              <div className="mb-8 border border-[#9cb092]/20 bg-[#9cb092]/5 p-4 md:p-6 flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-4">
+                  <span className="material-icons text-[#9cb092] text-2xl">edit_note</span>
+                  <div>
+                    <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#9cb092] mb-0.5">Draft in progress</p>
+                    <p className="text-sm text-[#b2c3b1]/60">
+                      {draft.event_type || 'Evite'} — Step {draft.step + 1}{' · '}Last saved {new Date(draft.updated_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
                 <button
-                  onClick={(e) => openAddGuests(e, event)}
-                  title="Add guests"
-                  className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
+                  onClick={() => navigate('/create')}
+                  className="flex-shrink-0 px-6 py-2 bg-[#9cb092] text-[#0d1a10] font-display text-[10px] tracking-[0.2em] uppercase hover:bg-[#b2c3b1] transition-colors"
                 >
-                  <span className="material-icons text-sm">person_add</span>
-                  <span className="hidden sm:inline">Add Guests</span>
+                  Continue
                 </button>
               </div>
-            ))}
+            )}
+
+            {/* Events list */}
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-serif-exp text-lg italic text-[#e4eee1]">Your Evites</h2>
+              <button
+                onClick={() => navigate('/create')}
+                className="font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] hover:text-[#b2c3b1] flex items-center gap-1 transition-colors"
+              >
+                <span className="material-icons text-sm">add</span>
+                New Evite
+              </button>
+            </div>
+
+            {events.length === 0 ? (
+              <div className="border border-white/5 bg-white/[0.02] p-12 text-center">
+                <span className="material-icons text-[#9cb092]/30 text-4xl mb-4 block">celebration</span>
+                <p className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/30 mb-6">No evites yet</p>
+                <button
+                  onClick={() => navigate('/create')}
+                  className="px-8 py-3 bg-[#3d4a35] text-white font-display text-[10px] tracking-[0.2em] uppercase hover:bg-[#4d5a44] transition-colors"
+                >
+                  Create Your First Evite
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-px">
+                {events.map((event) => (
+                  <div
+                    key={event.id}
+                    className="flex items-center gap-3 md:gap-4 px-4 md:px-5 py-4 bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#e4eee1] truncate">{event.title}</p>
+                      <p className="font-display text-[9px] tracking-[0.1em] uppercase text-[#b2c3b1]/40 mt-0.5">
+                        {new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {event.location ? ` · ${event.location}` : ''}
+                      </p>
+                    </div>
+                    <span className={`font-display text-[9px] tracking-[0.15em] uppercase px-2 py-1 border flex-shrink-0 ${
+                      event.status === 'published' ? 'border-[#9cb092]/30 text-[#9cb092]' : 'border-white/10 text-[#b2c3b1]/40'
+                    }`}>
+                      {event.status}
+                    </span>
+                    <button
+                      onClick={(e) => openAddGuests(e, event)}
+                      title="Add guests"
+                      className="flex-shrink-0 flex items-center gap-1 px-2 md:px-3 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
+                    >
+                      <span className="material-icons text-sm">person_add</span>
+                      <span className="hidden sm:inline">Add Guests</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* ── Right column — Gift advertisement panel ── */}
+          <div className="lg:sticky lg:top-28">
+            <div className="border border-white/10 bg-[#111914] overflow-hidden">
+              {/* Panel header */}
+              <div className="px-5 py-3.5 border-b border-white/[0.07] bg-white/[0.02] flex items-center justify-between">
+                <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092]/60">Perfect Gifts for</p>
+                <p className="font-display text-[10px] tracking-[0.18em] uppercase text-[#9cb092] font-bold">{giftAd.label}</p>
+              </div>
+
+              {/* Panel content */}
+              <div className="px-5 py-5">
+                <h2 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight mb-2">
+                  {giftAd.headline}
+                </h2>
+                <p className="font-display text-xs text-[#b2c3b1]/55 leading-relaxed mb-5">
+                  {giftAd.desc}
+                </p>
+
+                {/* Product cards */}
+                <div className="grid grid-cols-2 gap-3 mb-5">
+                  {giftAd.products.map((product, i) => (
+                    <button
+                      key={i}
+                      onClick={() => navigate('/shop')}
+                      className="group text-left"
+                    >
+                      <div className="aspect-square overflow-hidden bg-[#192116] border border-white/[0.07] mb-2">
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
+                      <p className="font-serif-exp text-[11px] text-[#e4eee1] leading-tight truncate">{product.name}</p>
+                      <p className="font-display text-[10px] font-semibold text-[#9cb092] mt-0.5">$ {product.price}</p>
+                    </button>
+                  ))}
+                </div>
+
+                {/* CTA */}
+                <button
+                  onClick={() => navigate('/shop')}
+                  className="w-full py-3 bg-[#9cb092] text-[#0d1a10] font-display text-[10px] tracking-[0.2em] uppercase font-bold hover:bg-[#b2c3b1] transition-colors flex items-center justify-center gap-2"
+                >
+                  {giftAd.cta}
+                  <span className="material-icons text-sm">arrow_forward</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
 
       {/* ── Add Guests Modal ── */}
@@ -301,7 +428,6 @@ export default function Dashboard() {
             </div>
 
             {savedCount !== null ? (
-              /* Success state */
               <div className="p-10 text-center">
                 <span className="material-icons text-[#9cb092] text-4xl mb-4 block">check_circle</span>
                 <p className="font-serif-exp text-lg italic text-[#e4eee1] mb-1">
@@ -396,7 +522,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* QR scan modal (Dashboard) */}
+      {/* QR scan modal */}
       {modalQrSession && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="bg-[#1a2418] border border-[#9cb092]/30 p-8 max-w-sm w-full text-center">

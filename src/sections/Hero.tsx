@@ -81,12 +81,12 @@ export default function Hero() {
       )
         .to(
           phoneFrontRef.current,
-          { y: -90, rotate: -10, scale: 0.94, ease: 'none' },
+          { y: -90, rotate: 12, scale: 0.94, ease: 'none' },
           0
         )
         .to(
           phoneBackRef.current,
-          { y: -50, rotate: 10, scale: 0.96, ease: 'none' },
+          { y: -50, rotate: 34, scale: 0.96, ease: 'none' },
           0
         );
     }, sectionRef);
@@ -135,14 +135,14 @@ export default function Hero() {
           <div className="flex flex-wrap gap-3 mt-7">
             <button
               onClick={() => navigate('/create')}
-              className="px-7 py-3 bg-[#2a3328] text-[#e4eee1] font-display text-[11px] tracking-[0.2em] uppercase hover:bg-[#3d4a35] transition-all shadow-lg shadow-[#2a3328]/25 flex items-center gap-2"
+              className="w-44 py-3 bg-[#2a3328] text-[#e4eee1] font-display text-[11px] tracking-[0.2em] uppercase hover:bg-[#3d4a35] transition-all shadow-lg shadow-[#2a3328]/25 flex items-center justify-center gap-2"
             >
               Create Your Evite
               <span className="material-icons text-sm">arrow_forward</span>
             </button>
             <button
               onClick={() => navigate('/shop')}
-              className="px-7 py-3 border-2 border-[#9cb092] text-[#3d4a35] font-display text-[11px] tracking-[0.2em] uppercase hover:bg-[#9cb092]/15 transition-all"
+              className="w-44 py-3 border-2 border-[#9cb092] text-[#3d4a35] font-display text-[11px] tracking-[0.2em] uppercase hover:bg-[#9cb092]/15 transition-all flex items-center justify-center"
             >
               Explore Gifts
             </button>
@@ -181,7 +181,7 @@ export default function Hero() {
           <div
             ref={phoneFrontRef}
             className="flex-shrink-0 relative w-[204px] h-[416px] bg-[#0d1210] rounded-[28px] shadow-[0_18px_50px_rgba(0,0,0,0.55)] border border-white/10 p-[3px] z-10 will-change-transform"
-            style={{ transform: 'rotate(-15deg)', transformOrigin: 'bottom center' }}
+            style={{ transform: 'rotate(6deg)', transformOrigin: 'bottom center' }}
           >
             {/* Notch */}
             <div className="absolute top-[7px] left-1/2 -translate-x-1/2 w-[46px] h-[11px] bg-[#0d1210] rounded-full z-20" />
@@ -255,7 +255,7 @@ export default function Hero() {
           <div
             ref={phoneBackRef}
             className="flex-shrink-0 w-[204px] h-[416px] bg-[#0d1210] rounded-[28px] shadow-xl border border-white/10 p-[3px] z-0 will-change-transform"
-            style={{ transform: 'rotate(15deg)', transformOrigin: 'bottom center', marginLeft: '-52px' }}
+            style={{ transform: 'rotate(28deg)', transformOrigin: 'bottom center', marginLeft: '-52px' }}
           >
             <div className="w-full h-full rounded-[25px] overflow-hidden bg-[#111914] flex flex-col">
               {/* Status bar */}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
@@ -10,6 +11,7 @@ interface GuestPopupProps {
   deliveryPreference: 'email' | 'phone' | 'both';
   onDeliveryPreferenceChange: (pref: 'email' | 'phone' | 'both') => void;
   onBack: () => void;
+  onClose?: () => void;
   onProceed: () => void;
   formData: Record<string, string>;
 }
@@ -30,9 +32,15 @@ export default function GuestPopup({
   deliveryPreference,
   onDeliveryPreferenceChange,
   onBack,
+  onClose,
   onProceed,
   formData,
 }: GuestPopupProps) {
+  const navigate = useNavigate();
+  const handleClose = () => {
+    if (onClose) onClose();
+    else navigate('/');
+  };
   const backdropRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const guestsRef = useRef(guests);
@@ -73,6 +81,13 @@ export default function GuestPopup({
 
   // ── Guest row operations ────────────────────────────────────────────
   const addGuest = () => onGuestsChange([...guests, createGuest()]);
+
+  const addGuestAfter = (id: string) => {
+    const idx = guests.findIndex((g) => g.id === id);
+    const next = [...guests];
+    next.splice(idx + 1, 0, createGuest());
+    onGuestsChange(next);
+  };
 
   const removeGuest = (id: string) => {
     if (guests.length <= 1) {
@@ -364,6 +379,13 @@ export default function GuestPopup({
               <td className="px-1 py-1.5">
                 <div className="flex items-center justify-end gap-1">
                   <button
+                    onClick={() => addGuestAfter(guest.id)}
+                    className="text-[#9cb092]/50 hover:text-[#9cb092] transition-colors"
+                    title="Add row below"
+                  >
+                    <span className="material-icons text-sm">add_circle_outline</span>
+                  </button>
+                  <button
                     onClick={() => removeGuest(guest.id)}
                     className="text-[#b2c3b1]/30 hover:text-red-400/80 transition-colors"
                     title="Remove row"
@@ -394,7 +416,7 @@ export default function GuestPopup({
         onClick={(e) => e.stopPropagation()}
       >
         <button
-          onClick={onBack}
+          onClick={handleClose}
           className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
         >
           <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
@@ -629,16 +651,6 @@ export default function GuestPopup({
 
               {/* Editable / review table */}
               {(activeMethod === 'manual' || importedCount > 0 || activeMethod === 'excel') && guestRows}
-
-              {activeMethod === 'manual' && (
-                <button
-                  onClick={addGuest}
-                  className="w-full py-2.5 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
-                >
-                  <span className="material-icons text-sm">add</span>
-                  Add Row
-                </button>
-              )}
             </div>
 
             <div className="flex-shrink-0 flex items-center justify-between gap-3 px-6 md:px-8 py-4 border-t border-white/[0.06] bg-[#0e1712]">
