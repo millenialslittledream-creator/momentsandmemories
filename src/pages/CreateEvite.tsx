@@ -810,7 +810,7 @@ export default function CreateEvite() {
                   <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#b2c3b1]/55">
                     Upload an image or video for each of your invitations
                   </p>
-                  {invitationSlots.map((slot, idx) => (
+                  {invitationSlots.map((slot) => (
                     <div key={slot.id} className="flex gap-3 items-stretch border border-white/[0.07] bg-white/[0.02] p-3">
                       {/* Upload area */}
                       <div className="flex-shrink-0 w-[100px]">
