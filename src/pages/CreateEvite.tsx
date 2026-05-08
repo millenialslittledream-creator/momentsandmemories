@@ -1088,7 +1088,7 @@ export default function CreateEvite() {
             <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
 
             {/* ── LEFT: image / video preview ─────────────────────── */}
-            <div className="flex-shrink-0 h-[40vh] md:h-auto md:w-1/2 md:min-h-0 flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-white/[0.07]">
+            <div className="flex-shrink-0 h-[40vh] md:h-auto md:w-[30%] md:min-h-0 flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-white/[0.07]">
               <div className="flex-1 relative overflow-hidden bg-[#0d1512] flex items-center justify-center">
                 <div className="relative h-full aspect-[9/16] max-w-full overflow-hidden">
                   {uploadedTemplate ? (
