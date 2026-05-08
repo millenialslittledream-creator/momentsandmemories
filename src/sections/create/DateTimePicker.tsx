@@ -60,34 +60,48 @@ export default function DateTimePicker({
     return `${dStr}${tStr ? ' · ' + tStr : ''}`;
   }, [date, time]);
 
-  const triggerClass = compact
-    ? 'w-full px-2.5 py-2 bg-white/[0.06] border border-white/15 hover:border-[#9cb092]/60 transition-colors text-left rounded-sm'
-    : 'w-full px-3 py-3 bg-white/[0.06] border border-white/15 hover:border-[#9cb092]/60 transition-colors text-left rounded-sm';
+  const compactSummary = useMemo(() => {
+    if (!date) return 'Pick date & time';
+    const dStr = format(new Date(date + 'T00:00:00'), 'MMM d, yyyy');
+    const tStr = time ? format12h(time) : '';
+    const tzStr = timezone ? ' ' + timezone : '';
+    return `${dStr}${tStr ? ' · ' + tStr : ''}${tzStr}`;
+  }, [date, time, timezone]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button type="button" className={triggerClass}>
-          <p className="font-display text-[8px] tracking-[0.22em] uppercase text-[#9cb092] mb-1 flex items-center gap-1">
-            <span className="material-icons text-[#9cb092]" style={{ fontSize: '11px' }}>
+        {compact ? (
+          <button
+            type="button"
+            className="w-full h-9 px-2.5 bg-white/[0.06] border border-white/15 hover:border-[#9cb092]/60 transition-colors text-left rounded-sm flex items-center gap-1.5"
+          >
+            <span className="material-icons text-[#9cb092] flex-shrink-0" style={{ fontSize: '13px' }}>
               calendar_today
             </span>
-            Start
-            {required && <span className="text-[#9cb092] ml-0.5">*</span>}
-          </p>
-          <p
-            className={`font-display ${compact ? 'text-[12px]' : 'text-sm'} ${
-              date ? 'text-[#e4eee1]' : 'text-[#b2c3b1]/40'
-            }`}
-          >
-            {summary}
-          </p>
-          {timezone && (
-            <p className="font-display text-[8px] tracking-[0.22em] uppercase text-[#b2c3b1]/55 mt-1">
-              {timezone}
+            <span className={`font-display text-[11px] truncate flex-1 ${date ? 'text-[#e4eee1]' : 'text-[#b2c3b1]/40'}`}>
+              {compactSummary}
+            </span>
+          </button>
+        ) : (
+          <button type="button" className="w-full px-3 py-3 bg-white/[0.06] border border-white/15 hover:border-[#9cb092]/60 transition-colors text-left rounded-sm">
+            <p className="font-display text-[8px] tracking-[0.22em] uppercase text-[#9cb092] mb-1 flex items-center gap-1">
+              <span className="material-icons text-[#9cb092]" style={{ fontSize: '11px' }}>
+                calendar_today
+              </span>
+              Start
+              {required && <span className="text-[#9cb092] ml-0.5">*</span>}
             </p>
-          )}
-        </button>
+            <p className={`font-display text-sm ${date ? 'text-[#e4eee1]' : 'text-[#b2c3b1]/40'}`}>
+              {summary}
+            </p>
+            {timezone && (
+              <p className="font-display text-[8px] tracking-[0.22em] uppercase text-[#b2c3b1]/55 mt-1">
+                {timezone}
+              </p>
+            )}
+          </button>
+        )}
       </PopoverTrigger>
 
       <PopoverContent

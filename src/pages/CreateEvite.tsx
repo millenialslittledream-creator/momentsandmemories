@@ -31,6 +31,7 @@ interface InvitationSlot {
   type: 'image' | 'video' | null;
   fileName: string;
   name: string;
+  formData?: Record<string, string>;
 }
 
 const FILTERS: { id: EventTypeFilter; label: string }[] = [
@@ -162,6 +163,7 @@ export default function CreateEvite() {
   const [deliveryPreference, setDeliveryPreference] = useState<'email' | 'phone' | 'both'>('email');
   const [hasSubEvents, setHasSubEvents] = useState(false);
   const [multipleInvitations, setMultipleInvitations] = useState(false);
+  const [currentSlotIdx, setCurrentSlotIdx] = useState(0);
   const [invitationSlots, setInvitationSlots] = useState<InvitationSlot[]>([
     { id: 'slot-1', url: '', type: null, fileName: '', name: 'Main Invitation' },
   ]);
@@ -189,7 +191,7 @@ export default function CreateEvite() {
 
   // When working with an uploaded template we treat it as a custom event.
   const currentEventType: EventType | null = uploadedTemplate
-    ? 'custom'
+    ? (multipleInvitations ? activeFilter : 'custom')
     : selectedTemplate?.eventType ?? null;
 
   const editorFields: EventField[] = useMemo(() => {
@@ -360,6 +362,22 @@ export default function CreateEvite() {
   // After event details are captured we ask the user to sign in (so we can save
   // their design + guest list). Already-signed-in users skip straight to guests.
   const proceedFromEditor = useCallback(() => {
+    if (multipleInvitations) {
+      const filled = invitationSlots.filter((s) => s.url && s.type);
+      if (filled.length > 1) {
+        setInvitationSlots((prev) =>
+          prev.map((s) => (s.id === filled[currentSlotIdx]?.id ? { ...s, formData } : s))
+        );
+        if (currentSlotIdx < filled.length - 1) {
+          const nextIdx = currentSlotIdx + 1;
+          const next = filled[nextIdx];
+          setCurrentSlotIdx(nextIdx);
+          setUploadedTemplate({ url: next.url, type: next.type!, fileName: next.fileName });
+          setFormData(next.formData || {});
+          return;
+        }
+      }
+    }
     if (user) {
       setModalPhase('guests');
     } else {
@@ -375,7 +393,7 @@ export default function CreateEvite() {
       }
       setModalPhase('signin');
     }
-  }, [user]);
+  }, [user, multipleInvitations, invitationSlots, currentSlotIdx, formData]);
 
   const backToEditor = useCallback(() => setModalPhase('editor'), []);
   const proceedToPayment = useCallback(() => setModalPhase('payment'), []);
@@ -521,9 +539,11 @@ export default function CreateEvite() {
 
   const proceedFromUpload = useCallback(() => {
     if (multipleInvitations) {
-      const first = invitationSlots.find((s) => s.url && s.type);
-      if (!first) return;
-      setUploadedTemplate({ url: first.url, type: first.type!, fileName: first.fileName });
+      const filled = invitationSlots.filter((s) => s.url && s.type);
+      if (!filled.length) return;
+      setCurrentSlotIdx(0);
+      setUploadedTemplate({ url: filled[0].url, type: filled[0].type!, fileName: filled[0].fileName });
+      setFormData(filled[0].formData || {});
     } else {
       if (!uploadedTemplate) return;
     }
@@ -803,29 +823,26 @@ export default function CreateEvite() {
                             )}
                           </div>
                         ) : (
-                          <label className="cursor-pointer flex flex-col items-center justify-center gap-1 h-full min-h-[80px] border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all p-2">
-                            <span className="material-icons text-[#9cb092] text-xl">
-                              {idx === 0 ? 'image' : 'image'}
-                            </span>
-                            <span className="font-display text-[7px] tracking-[0.12em] uppercase text-[#9cb092] text-center leading-tight">
-                              {idx === 0 ? 'All events' : 'Some events'}
-                            </span>
-                            <span className="font-display text-[7px] text-[#b2c3b1]/40 text-center">
-                              JPG, PNG ≤ 10MB
-                            </span>
-                            <input
-                              type="file"
-                              accept="image/*,video/mp4,video/quicktime"
-                              className="hidden"
-                              onChange={(e) => {
-                                const f = e.target.files?.[0];
-                                if (!f) return;
-                                const kind = f.type.startsWith('video') ? 'video' : 'image';
-                                handleSlotFilePicked(slot.id, f, kind);
-                                e.target.value = '';
-                              }}
-                            />
-                          </label>
+                          <div className="h-full min-h-[80px] flex flex-col gap-1">
+                            <label className="cursor-pointer flex items-center gap-1.5 flex-1 px-2 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all">
+                              <span className="material-icons text-[#9cb092]" style={{ fontSize: '15px' }}>image</span>
+                              <div>
+                                <span className="font-display text-[7px] tracking-[0.12em] uppercase text-[#9cb092] block">Image</span>
+                                <span className="font-display text-[7px] text-[#b2c3b1]/40">JPG, PNG ≤ 10MB</span>
+                              </div>
+                              <input type="file" accept="image/*" className="hidden"
+                                onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; handleSlotFilePicked(slot.id, f, 'image'); e.target.value = ''; }} />
+                            </label>
+                            <label className="cursor-pointer flex items-center gap-1.5 flex-1 px-2 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all">
+                              <span className="material-icons text-[#9cb092]" style={{ fontSize: '15px' }}>movie</span>
+                              <div>
+                                <span className="font-display text-[7px] tracking-[0.12em] uppercase text-[#9cb092] block">Video</span>
+                                <span className="font-display text-[7px] text-[#b2c3b1]/40">MP4, MOV ≤ 50MB</span>
+                              </div>
+                              <input type="file" accept="video/mp4,video/quicktime" className="hidden"
+                                onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; handleSlotFilePicked(slot.id, f, 'video'); e.target.value = ''; }} />
+                            </label>
+                          </div>
                         )}
                       </div>
 
@@ -1033,7 +1050,11 @@ export default function CreateEvite() {
             {/* ── Modal top bar: header + controls ── */}
             <div className="flex-shrink-0 flex items-center justify-between px-6 md:px-8 py-4 border-b border-white/[0.07] bg-[#0e1712]">
               <div>
-                <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092]/50">Create Evite</p>
+                <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092]/50">
+                  {multipleInvitations && invitationSlots.filter(s => s.url && s.type).length > 1
+                    ? `Invitation ${currentSlotIdx + 1} of ${invitationSlots.filter(s => s.url && s.type).length} · ${invitationSlots.filter(s => s.url && s.type)[currentSlotIdx]?.name || 'Enter Details'}`
+                    : 'Create Evite'}
+                </p>
                 <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight mt-0.5">
                   Let's bring your celebration <span className="text-[#9cb092] font-agatho italic">to life</span>
                 </h2>
@@ -1067,7 +1088,7 @@ export default function CreateEvite() {
             <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
 
             {/* ── LEFT: image / video preview ─────────────────────── */}
-            <div className="flex-shrink-0 h-[38vh] md:h-auto md:w-[36%] md:min-h-0 flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-white/[0.07]">
+            <div className="flex-shrink-0 h-[40vh] md:h-auto md:w-1/2 md:min-h-0 flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-white/[0.07]">
               <div className="flex-1 relative overflow-hidden bg-[#0d1512] flex items-center justify-center">
                 <div className="relative h-full aspect-[9/16] max-w-full overflow-hidden">
                   {uploadedTemplate ? (

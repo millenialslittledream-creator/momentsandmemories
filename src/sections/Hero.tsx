@@ -81,7 +81,7 @@ export default function Hero() {
       )
         .to(
           phoneFrontRef.current,
-          { y: -90, rotate: 12, scale: 0.94, ease: 'none' },
+          { y: -90, rotate: 18, scale: 0.94, ease: 'none' },
           0
         )
         .to(
@@ -135,10 +135,9 @@ export default function Hero() {
           <div className="flex flex-wrap gap-3 mt-7">
             <button
               onClick={() => navigate('/create')}
-              className="w-44 py-3 bg-[#2a3328] text-[#e4eee1] font-display text-[11px] tracking-[0.2em] uppercase hover:bg-[#3d4a35] transition-all shadow-lg shadow-[#2a3328]/25 flex items-center justify-center gap-2"
+              className="w-44 py-3 bg-[#2a3328] text-[#e4eee1] font-display text-[11px] tracking-[0.2em] uppercase hover:bg-[#3d4a35] transition-all shadow-lg shadow-[#2a3328]/25 flex items-center justify-center"
             >
               Create Your Evite
-              <span className="material-icons text-sm">arrow_forward</span>
             </button>
             <button
               onClick={() => navigate('/shop')}
@@ -181,7 +180,7 @@ export default function Hero() {
           <div
             ref={phoneFrontRef}
             className="flex-shrink-0 relative w-[204px] h-[416px] bg-[#0d1210] rounded-[28px] shadow-[0_18px_50px_rgba(0,0,0,0.55)] border border-white/10 p-[3px] z-10 will-change-transform"
-            style={{ transform: 'rotate(6deg)', transformOrigin: 'bottom center' }}
+            style={{ transform: 'rotate(12deg)', transformOrigin: 'bottom center' }}
           >
             {/* Notch */}
             <div className="absolute top-[7px] left-1/2 -translate-x-1/2 w-[46px] h-[11px] bg-[#0d1210] rounded-full z-20" />
