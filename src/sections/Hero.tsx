@@ -81,12 +81,12 @@ export default function Hero() {
       )
         .to(
           phoneFrontRef.current,
-          { y: -90, rotate: 18, scale: 0.94, ease: 'none' },
+          { y: -90, rotate: -16, scale: 0.94, ease: 'none' },
           0
         )
         .to(
           phoneBackRef.current,
-          { y: -50, rotate: 34, scale: 0.96, ease: 'none' },
+          { y: -50, rotate: 20, scale: 0.96, ease: 'none' },
           0
         );
     }, sectionRef);
@@ -180,7 +180,7 @@ export default function Hero() {
           <div
             ref={phoneFrontRef}
             className="flex-shrink-0 relative w-[204px] h-[416px] bg-[#0d1210] rounded-[28px] shadow-[0_18px_50px_rgba(0,0,0,0.55)] border border-white/10 p-[3px] z-10 will-change-transform"
-            style={{ transform: 'rotate(12deg)', transformOrigin: 'bottom center' }}
+            style={{ transform: 'rotate(-10deg)', transformOrigin: 'bottom center' }}
           >
             {/* Notch */}
             <div className="absolute top-[7px] left-1/2 -translate-x-1/2 w-[46px] h-[11px] bg-[#0d1210] rounded-full z-20" />
@@ -254,7 +254,7 @@ export default function Hero() {
           <div
             ref={phoneBackRef}
             className="flex-shrink-0 w-[204px] h-[416px] bg-[#0d1210] rounded-[28px] shadow-xl border border-white/10 p-[3px] z-0 will-change-transform"
-            style={{ transform: 'rotate(28deg)', transformOrigin: 'bottom center', marginLeft: '-52px' }}
+            style={{ transform: 'rotate(14deg)', transformOrigin: 'bottom center', marginLeft: '-72px' }}
           >
             <div className="w-full h-full rounded-[25px] overflow-hidden bg-[#111914] flex flex-col">
               {/* Status bar */}
