@@ -509,11 +509,6 @@ export default function CreateEvite() {
     );
   };
 
-  const resetSlot = (id: string) => {
-    setInvitationSlots((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, url: '', type: null, fileName: '' } : s))
-    );
-  };
 
   // ── Upload handler ───────────────────────────────────────────────
   const handleFilePicked = useCallback(

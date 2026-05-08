@@ -80,8 +80,6 @@ export default function GuestPopup({
   }, []);
 
   // ── Guest row operations ────────────────────────────────────────────
-  const addGuest = () => onGuestsChange([...guests, createGuest()]);
-
   const addGuestAfter = (id: string) => {
     const idx = guests.findIndex((g) => g.id === id);
     const next = [...guests];
