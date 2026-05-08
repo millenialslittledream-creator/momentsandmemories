@@ -637,7 +637,7 @@ export default function CreateEvite() {
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5 flex-wrap justify-end">
+            <div className="flex items-center gap-1.5 flex-wrap justify-end ml-auto">
               {FILTERS.map((f) => (
                 <button
                   key={f.id}
