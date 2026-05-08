@@ -22,9 +22,15 @@ type ModalPhase = 'upload' | 'editor' | 'signin' | 'guests' | 'payment' | 'sent'
 interface UploadedTemplate {
   url: string;
   type: 'image' | 'video';
-  audioUrl?: string;
-  audioName?: string;
   fileName?: string;
+}
+
+interface InvitationSlot {
+  id: string;
+  url: string;
+  type: 'image' | 'video' | null;
+  fileName: string;
+  name: string;
 }
 
 const FILTERS: { id: EventTypeFilter; label: string }[] = [
@@ -155,6 +161,10 @@ export default function CreateEvite() {
   const [guests, setGuests] = useState<Guest[]>([createGuest()]);
   const [deliveryPreference, setDeliveryPreference] = useState<'email' | 'phone' | 'both'>('email');
   const [hasSubEvents, setHasSubEvents] = useState(false);
+  const [multipleInvitations, setMultipleInvitations] = useState(false);
+  const [invitationSlots, setInvitationSlots] = useState<InvitationSlot[]>([
+    { id: 'slot-1', url: '', type: null, fileName: '', name: 'Main Invitation' },
+  ]);
 
   // ── Derived state ────────────────────────────────────────────────
   const selectedTemplate = useMemo(
@@ -319,6 +329,10 @@ export default function CreateEvite() {
     });
   }, []);
 
+  const closeToHome = useCallback(() => {
+    navigate('/');
+  }, [navigate]);
+
   const prevTemplate = useCallback(() => {
     if (uploadedTemplate || currentIdx <= 0) return;
     setSelectedTemplateId(visibleTemplates[currentIdx - 1].id);
@@ -472,6 +486,35 @@ export default function CreateEvite() {
     }
   };
 
+  // ── Invitation slots helpers (multiple invitations in upload) ───
+  const addInvitationSlot = () => {
+    setInvitationSlots((prev) => [
+      ...prev,
+      { id: `slot-${Date.now()}`, url: '', type: null, fileName: '', name: '' },
+    ]);
+  };
+
+  const removeInvitationSlot = (id: string) => {
+    setInvitationSlots((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const updateSlotName = (id: string, name: string) => {
+    setInvitationSlots((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
+  };
+
+  const handleSlotFilePicked = (id: string, file: File, kind: 'image' | 'video') => {
+    const url = URL.createObjectURL(file);
+    setInvitationSlots((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, url, type: kind, fileName: file.name } : s))
+    );
+  };
+
+  const resetSlot = (id: string) => {
+    setInvitationSlots((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, url: '', type: null, fileName: '' } : s))
+    );
+  };
+
   // ── Upload handler ───────────────────────────────────────────────
   const handleFilePicked = useCallback(
     (file: File, kind: 'image' | 'video') => {
@@ -481,18 +524,16 @@ export default function CreateEvite() {
     []
   );
 
-  const handleAudioPicked = useCallback((file: File) => {
-    setUploadedTemplate((prev) =>
-      prev
-        ? { ...prev, audioUrl: URL.createObjectURL(file), audioName: file.name }
-        : prev
-    );
-  }, []);
-
   const proceedFromUpload = useCallback(() => {
-    if (!uploadedTemplate) return;
+    if (multipleInvitations) {
+      const first = invitationSlots.find((s) => s.url && s.type);
+      if (!first) return;
+      setUploadedTemplate({ url: first.url, type: first.type!, fileName: first.fileName });
+    } else {
+      if (!uploadedTemplate) return;
+    }
     setModalPhase('editor');
-  }, [uploadedTemplate]);
+  }, [multipleInvitations, invitationSlots, uploadedTemplate]);
 
   // ── Escape closes modal ──────────────────────────────────────────
   useEffect(() => {
@@ -633,7 +674,7 @@ export default function CreateEvite() {
                     Upload Your Own Design
                   </p>
                   <p className="font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 leading-relaxed">
-                    Image · Video · Image + Music
+                    Image · Video
                   </p>
                 </div>
                 <div className="px-2.5 py-2">
@@ -701,148 +742,241 @@ export default function CreateEvite() {
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              onClick={closeAnyModal}
+              onClick={closeToHome}
               className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
             >
               <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
             </button>
 
             <div className="px-6 md:px-10 pt-8 pb-4 border-b border-white/[0.06]">
-              <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092]/50 mb-2">
-                Custom Upload
-              </p>
-              <h2 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
-                Upload Your Own <span className="text-[#9cb092] font-agatho italic">Design</span>
-              </h2>
-              <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/50 mt-3">
-                Image, video, or an image with background music
-              </p>
+              <div className="flex items-start justify-between gap-4 pr-10">
+                <div>
+                  <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092]/50 mb-2">
+                    Custom Upload
+                  </p>
+                  <h2 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
+                    Upload Your Own <span className="text-[#9cb092] font-agatho italic">Design</span>
+                  </h2>
+                  <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/50 mt-3">
+                    Image or video
+                  </p>
+                </div>
+
+                {/* Multiple Invitations toggle — wedding & custom only */}
+                {SUPPORTS_MULTI_EVENTS.includes(activeFilter) && (
+                  <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-display text-[9px] tracking-[0.12em] uppercase text-[#b2c3b1]/60 text-right">
+                        Multiple Invitations
+                      </span>
+                      <button
+                        onClick={() => setMultipleInvitations((v) => !v)}
+                        className={`relative w-10 h-5 rounded-full transition-colors duration-300 ${multipleInvitations ? 'bg-[#9cb092]' : 'bg-white/15'}`}
+                        aria-pressed={multipleInvitations}
+                      >
+                        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-300 ${multipleInvitations ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+                      </button>
+                    </div>
+                    {multipleInvitations && (
+                      <p className="font-display text-[8px] text-[#b2c3b1]/45 leading-relaxed text-right max-w-[200px]">
+                        Use this option if your celebration includes multiple events and you'd like to send specific invitations to different guest groups.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div data-lenis-prevent className="px-6 md:px-10 py-6 space-y-5 max-h-[60vh] overflow-y-auto scrollbar-subtle">
-              {/* Asset preview / chooser */}
-              {!uploadedTemplate ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <label className="cursor-pointer flex flex-col items-center justify-center gap-2 p-6 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all">
-                    <span className="material-icons text-[#9cb092] text-3xl">image</span>
-                    <span className="font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092]">
-                      Upload Image
-                    </span>
-                    <span className="font-display text-[9px] text-[#b2c3b1]/50">
-                      JPG, PNG (≤ 10MB)
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) handleFilePicked(f, 'image');
-                        e.target.value = '';
-                      }}
-                    />
-                  </label>
-                  <label className="cursor-pointer flex flex-col items-center justify-center gap-2 p-6 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all">
-                    <span className="material-icons text-[#9cb092] text-3xl">movie</span>
-                    <span className="font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092]">
-                      Upload Video
-                    </span>
-                    <span className="font-display text-[9px] text-[#b2c3b1]/50">
-                      MP4, MOV (≤ 50MB)
-                    </span>
-                    <input
-                      type="file"
-                      accept="video/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) handleFilePicked(f, 'video');
-                        e.target.value = '';
-                      }}
-                    />
-                  </label>
+
+              {/* ── Multiple invitations: list of slots ── */}
+              {multipleInvitations ? (
+                <div className="space-y-3">
+                  <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#b2c3b1]/55">
+                    Upload an image or video for each of your invitations
+                  </p>
+                  {invitationSlots.map((slot, idx) => (
+                    <div key={slot.id} className="flex gap-3 items-stretch border border-white/[0.07] bg-white/[0.02] p-3">
+                      {/* Upload area */}
+                      <div className="flex-shrink-0 w-[100px]">
+                        {slot.url ? (
+                          <div className="relative h-full min-h-[80px] bg-[#0d1512] border border-white/10 overflow-hidden flex items-center justify-center">
+                            {slot.type === 'image' ? (
+                              <img src={slot.url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <video src={slot.url} muted className="w-full h-full object-cover" />
+                            )}
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer flex flex-col items-center justify-center gap-1 h-full min-h-[80px] border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all p-2">
+                            <span className="material-icons text-[#9cb092] text-xl">
+                              {idx === 0 ? 'image' : 'image'}
+                            </span>
+                            <span className="font-display text-[7px] tracking-[0.12em] uppercase text-[#9cb092] text-center leading-tight">
+                              {idx === 0 ? 'All events' : 'Some events'}
+                            </span>
+                            <span className="font-display text-[7px] text-[#b2c3b1]/40 text-center">
+                              JPG, PNG ≤ 10MB
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/*,video/mp4,video/quicktime"
+                              className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (!f) return;
+                                const kind = f.type.startsWith('video') ? 'video' : 'image';
+                                handleSlotFilePicked(slot.id, f, kind);
+                                e.target.value = '';
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
+
+                      {/* Name + controls */}
+                      <div className="flex-1 flex flex-col gap-2 justify-between">
+                        <div className="space-y-1">
+                          <label className="font-display text-[8px] tracking-[0.15em] uppercase text-[#b2c3b1]/55">
+                            Template Name (for your reference)
+                          </label>
+                          <input
+                            type="text"
+                            value={slot.name}
+                            onChange={(e) => updateSlotName(slot.id, e.target.value)}
+                            placeholder="e.g. Main Wedding Invitation"
+                            className="bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-3 h-9 text-xs rounded-sm w-full outline-none transition-colors"
+                          />
+                          {slot.url && (
+                            <p className="font-display text-[8px] text-[#b2c3b1]/40">
+                              {slot.type === 'image' ? 'JPG, PNG (≤ 10MB)' : 'MP4, MOV (≤ 50MB)'} · {slot.fileName}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {slot.url && (
+                            <label className="cursor-pointer font-display text-[9px] tracking-[0.15em] uppercase text-[#9cb092] hover:text-[#adc4a3] transition-colors flex items-center gap-1 border border-white/15 px-2.5 py-1.5 hover:border-[#9cb092]/40">
+                              <span className="material-icons text-sm">refresh</span>
+                              Replace
+                              <input
+                                type="file"
+                                accept="image/*,video/mp4,video/quicktime"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (!f) return;
+                                  const kind = f.type.startsWith('video') ? 'video' : 'image';
+                                  handleSlotFilePicked(slot.id, f, kind);
+                                  e.target.value = '';
+                                }}
+                              />
+                            </label>
+                          )}
+                          {invitationSlots.length > 1 && (
+                            <button
+                              onClick={() => removeInvitationSlot(slot.id)}
+                              className="w-7 h-7 flex items-center justify-center border border-white/10 text-[#b2c3b1]/40 hover:text-red-400/80 hover:border-red-400/30 transition-all"
+                            >
+                              <span className="material-icons text-sm">delete_outline</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={addInvitationSlot}
+                    className="w-full py-2.5 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
+                  >
+                    <span className="material-icons text-sm">add</span>
+                    Add Another Invitation
+                  </button>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="relative bg-[#0d1512] border border-white/10 overflow-hidden flex items-center justify-center">
-                    <div className="aspect-[9/16] max-h-[40vh] w-auto">
-                      {uploadedTemplate.type === 'image' ? (
-                        <img
-                          src={uploadedTemplate.url}
-                          alt="Uploaded design"
-                          className="h-full w-full object-cover"
+                /* ── Single upload ── */
+                <>
+                  {!uploadedTemplate ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <label className="cursor-pointer flex flex-col items-center justify-center gap-2 p-6 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all">
+                        <span className="material-icons text-[#9cb092] text-3xl">image</span>
+                        <span className="font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092]">
+                          Upload Image
+                        </span>
+                        <span className="font-display text-[9px] text-[#b2c3b1]/50">
+                          JPG, PNG (≤ 10MB)
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) handleFilePicked(f, 'image');
+                            e.target.value = '';
+                          }}
                         />
-                      ) : (
-                        <video
-                          src={uploadedTemplate.url}
-                          controls
-                          className="h-full w-full object-cover"
+                      </label>
+                      <label className="cursor-pointer flex flex-col items-center justify-center gap-2 p-6 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all">
+                        <span className="material-icons text-[#9cb092] text-3xl">movie</span>
+                        <span className="font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092]">
+                          Upload Video
+                        </span>
+                        <span className="font-display text-[9px] text-[#b2c3b1]/50">
+                          MP4, MOV (≤ 50MB)
+                        </span>
+                        <input
+                          type="file"
+                          accept="video/mp4,video/quicktime"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) handleFilePicked(f, 'video');
+                            e.target.value = '';
+                          }}
                         />
-                      )}
+                      </label>
                     </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/70 truncate flex items-center gap-2">
-                      <span className="material-icons text-[#9cb092] text-base">
-                        {uploadedTemplate.type === 'image' ? 'image' : 'movie'}
-                      </span>
-                      {uploadedTemplate.fileName || 'Your design'}
-                    </p>
-                    <button
-                      onClick={() => setUploadedTemplate(null)}
-                      className="font-display text-[9px] tracking-[0.2em] uppercase text-[#b2c3b1]/55 hover:text-red-400/80 transition-colors flex items-center gap-1.5"
-                    >
-                      <span className="material-icons text-sm">refresh</span>
-                      Replace
-                    </button>
-                  </div>
-
-                  {/* Optional audio for image uploads */}
-                  {uploadedTemplate.type === 'image' && (
-                    <div className="border border-white/10 bg-white/[0.02] p-4 space-y-3">
-                      <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#9cb092]/80 flex items-center gap-2">
-                        <span className="material-icons text-[#9cb092] text-base">music_note</span>
-                        Background music (optional)
-                      </p>
-                      {uploadedTemplate.audioUrl ? (
-                        <div className="flex items-center justify-between gap-3 flex-wrap">
-                          <p className="font-display text-[10px] text-[#b2c3b1]/70 truncate">
-                            {uploadedTemplate.audioName || 'Audio attached'}
-                          </p>
-                          <audio src={uploadedTemplate.audioUrl} controls className="h-8" />
-                          <button
-                            onClick={() =>
-                              setUploadedTemplate((prev) =>
-                                prev ? { ...prev, audioUrl: undefined, audioName: undefined } : prev
-                              )
-                            }
-                            className="font-display text-[9px] tracking-[0.2em] uppercase text-[#b2c3b1]/55 hover:text-red-400/80 transition-colors"
-                          >
-                            Remove
-                          </button>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="relative bg-[#0d1512] border border-white/10 overflow-hidden flex items-center justify-center">
+                        <div className="aspect-[9/16] max-h-[40vh] w-auto">
+                          {uploadedTemplate.type === 'image' ? (
+                            <img
+                              src={uploadedTemplate.url}
+                              alt="Uploaded design"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <video
+                              src={uploadedTemplate.url}
+                              controls
+                              className="h-full w-full object-cover"
+                            />
+                          )}
                         </div>
-                      ) : (
-                        <label className="cursor-pointer flex items-center justify-center gap-2 py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all">
-                          <span className="material-icons text-[#9cb092] text-base">upload</span>
-                          <span className="font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092]">
-                            Choose audio file
+                      </div>
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/70 truncate flex items-center gap-2">
+                          <span className="material-icons text-[#9cb092] text-base">
+                            {uploadedTemplate.type === 'image' ? 'image' : 'movie'}
                           </span>
-                          <input
-                            type="file"
-                            accept="audio/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const f = e.target.files?.[0];
-                              if (f) handleAudioPicked(f);
-                              e.target.value = '';
-                            }}
-                          />
-                        </label>
-                      )}
+                          {uploadedTemplate.fileName || 'Your design'}
+                          <span className="text-[#b2c3b1]/30">
+                            · {uploadedTemplate.type === 'image' ? 'JPG/PNG ≤ 10MB' : 'MP4/MOV ≤ 50MB'}
+                          </span>
+                        </p>
+                        <button
+                          onClick={() => setUploadedTemplate(null)}
+                          className="font-display text-[9px] tracking-[0.2em] uppercase text-[#b2c3b1]/55 hover:text-red-400/80 transition-colors flex items-center gap-1.5"
+                        >
+                          <span className="material-icons text-sm">refresh</span>
+                          Replace
+                        </button>
+                      </div>
                     </div>
                   )}
-                </div>
+                </>
               )}
 
               <p className="font-display text-[10px] text-[#b2c3b1]/55 leading-relaxed border-t border-white/[0.06] pt-4">
@@ -860,18 +994,25 @@ export default function CreateEvite() {
                 <span className="material-icons text-sm">arrow_back</span>
                 Back
               </button>
-              <button
-                onClick={proceedFromUpload}
-                disabled={!uploadedTemplate}
-                className={`py-3 px-8 font-display text-[11px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center gap-2 ${
-                  uploadedTemplate
-                    ? 'bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]'
-                    : 'bg-white/5 text-white/20 cursor-not-allowed border border-white/10'
-                }`}
-              >
-                Continue
-                <span className="material-icons text-sm">arrow_forward</span>
-              </button>
+              {(() => {
+                const canProceed = multipleInvitations
+                  ? invitationSlots.some((s) => s.url)
+                  : !!uploadedTemplate;
+                return (
+                  <button
+                    onClick={proceedFromUpload}
+                    disabled={!canProceed}
+                    className={`py-3 px-8 font-display text-[11px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center gap-2 ${
+                      canProceed
+                        ? 'bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]'
+                        : 'bg-white/5 text-white/20 cursor-not-allowed border border-white/10'
+                    }`}
+                  >
+                    Continue
+                    <span className="material-icons text-sm">arrow_forward</span>
+                  </button>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -904,30 +1045,6 @@ export default function CreateEvite() {
               </div>
 
               <div className="flex items-center gap-4">
-                {/* Step indicator */}
-                <div className="hidden md:flex items-center gap-2">
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full bg-[#9cb092] flex items-center justify-center">
-                      <span className="material-icons text-[#111914] text-[15px]">event</span>
-                    </div>
-                    <span className="font-display text-[7px] tracking-[0.08em] uppercase text-[#9cb092] mt-1 whitespace-nowrap">Event Details</span>
-                  </div>
-                  <div className="w-8 h-px bg-white/20 mb-3" />
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center">
-                      <span className="material-icons text-[#b2c3b1]/40 text-[15px]">mail</span>
-                    </div>
-                    <span className="font-display text-[7px] tracking-[0.08em] uppercase text-[#b2c3b1]/40 mt-1">Message</span>
-                  </div>
-                  <div className="w-8 h-px bg-white/20 mb-3" />
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center">
-                      <span className="material-icons text-[#b2c3b1]/40 text-[15px]">preview</span>
-                    </div>
-                    <span className="font-display text-[7px] tracking-[0.08em] uppercase text-[#b2c3b1]/40 mt-1">Preview</span>
-                  </div>
-                </div>
-
                 {/* Multiple Events toggle — visible only for wedding/custom */}
                 {supportsMultipleEvents && (
                   <div className="flex items-center gap-2">
@@ -943,7 +1060,7 @@ export default function CreateEvite() {
                 )}
 
                 <button
-                  onClick={closeAnyModal}
+                  onClick={closeToHome}
                   className="w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
                 >
                   <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
@@ -1080,113 +1197,141 @@ export default function CreateEvite() {
 
             {/* ── RIGHT: form (scrollable) ────────────────────────── */}
             <div className="flex-1 md:flex-1 min-h-0 flex flex-col overflow-hidden">
-              <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-6 md:px-8 pt-6 pb-5 space-y-4">
-                {/* Editor fields — date/time/timezone collapse into one DateTimePicker */}
-                {(() => {
-                  const rendered: ReactElement[] = [];
-                  for (let idx = 0; idx < editorFields.length; idx++) {
-                    const field = editorFields[idx];
-                    if (field.name === 'eventDate') {
-                      rendered.push(
-                        <div key="datetime-group" className="space-y-1.5">
+              <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-6 md:px-8 pt-6 pb-5">
+                {/* Editor fields — 2-column grid. Venue + textareas span full width. */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+                  {(() => {
+                    const items: ReactElement[] = [];
+                    for (let idx = 0; idx < editorFields.length; idx++) {
+                      const field = editorFields[idx];
+                      if (field.name === 'eventDate') {
+                        items.push(
+                          <div key="datetime-group" className="space-y-1.5">
+                            <label className="block font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]">
+                              Date &amp; Time
+                              <span className="text-[#9cb092] ml-1">*</span>
+                            </label>
+                            <DateTimePicker
+                              date={formData.eventDate || ''}
+                              time={formData.eventTime || ''}
+                              timezone={formData.timezone || ''}
+                              onChange={(next) => {
+                                if (next.date !== undefined) handleFieldChange('eventDate', next.date);
+                                if (next.time !== undefined) handleFieldChange('eventTime', next.time);
+                                if (next.timezone !== undefined) handleFieldChange('timezone', next.timezone);
+                              }}
+                              required
+                            />
+                          </div>
+                        );
+                        continue;
+                      }
+                      if (field.name === 'eventTime' || field.name === 'timezone') continue;
+
+                      const isFullWidth = field.type === 'textarea' || field.name === 'venue';
+                      items.push(
+                        <div key={field.name} className={`space-y-1.5${isFullWidth ? ' sm:col-span-2' : ''}`}>
                           <label className="block font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]">
-                            When is the event?
-                            <span className="text-[#9cb092] ml-1">*</span>
+                            {field.label}
+                            {field.required && <span className="text-[#9cb092] ml-1">*</span>}
                           </label>
-                          <DateTimePicker
-                            date={formData.eventDate || ''}
-                            time={formData.eventTime || ''}
-                            timezone={formData.timezone || ''}
-                            onChange={(next) => {
-                              if (next.date !== undefined) handleFieldChange('eventDate', next.date);
-                              if (next.time !== undefined) handleFieldChange('eventTime', next.time);
-                              if (next.timezone !== undefined) handleFieldChange('timezone', next.timezone);
-                            }}
-                            required
-                          />
+                          {renderEditorField(field, formData[field.name] || '', handleFieldChange)}
                         </div>
                       );
-                      continue;
                     }
-                    if (field.name === 'eventTime' || field.name === 'timezone') continue;
+                    return items;
+                  })()}
+                </div>
 
-                    rendered.push(
-                      <div key={field.name} className="space-y-1.5">
-                        <label className="block font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]">
-                          {field.label}
-                          {field.required && <span className="text-[#9cb092] ml-1">*</span>}
-                        </label>
-                        {renderEditorField(field, formData[field.name] || '', handleFieldChange)}
-                      </div>
-                    );
-                  }
-                  return rendered;
-                })()}
-
-                {/* Sub-events section — shown when multiple events toggle is ON */}
+                {/* Sub-events section — horizontal table layout when multiple events ON */}
                 {supportsMultipleEvents && hasSubEvents && (
-                  <div className="border-t border-white/[0.07] pt-4 space-y-3">
-                    <div className="flex items-center justify-between">
+                  <div className="border-t border-white/[0.07] pt-4 mt-4 space-y-2">
+                    <div className="flex items-center justify-between mb-1">
                       <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]/80 flex items-center gap-1.5">
                         <span className="material-icons text-sm">celebration</span>
                         Additional Events
                       </p>
                       <button
                         onClick={addSubEvent}
-                        className="font-display text-[9px] tracking-[0.15em] uppercase text-[#9cb092] hover:text-[#adc4a3] flex items-center gap-1 transition-colors"
+                        className="font-display text-[9px] tracking-[0.15em] uppercase text-[#9cb092] hover:text-[#adc4a3] flex items-center gap-1 transition-colors border border-[#9cb092]/30 px-2.5 py-1 hover:border-[#9cb092]/60"
                       >
                         <span className="material-icons text-sm">add</span>
                         Add Another Event
                       </button>
                     </div>
-                    {Array.from({ length: subEventCount }, (_, i) => (
-                      <div key={i} className="p-3 border border-white/[0.07] bg-white/[0.02] space-y-2">
-                        <div className="flex items-center justify-between">
-                          <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]/70">
-                            Event {i + 1}
-                          </p>
-                          <button onClick={() => removeSubEvent(i)} className="text-[#b2c3b1]/30 hover:text-red-400/70 transition-colors">
-                            <span className="material-icons text-sm">close</span>
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          value={formData[`sub_${i}_name`] || ''}
-                          onChange={(e) => handleFieldChange(`sub_${i}_name`, e.target.value)}
-                          placeholder="Event name (e.g. Mehendi, Sangeet)"
-                          className="bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-2.5 h-9 text-xs rounded-sm w-full outline-none transition-colors"
-                        />
-                        <DateTimePicker
-                          compact
-                          date={formData[`sub_${i}_date`] || ''}
-                          time={formData[`sub_${i}_time`] || ''}
-                          timezone={formData[`sub_${i}_timezone`] || ''}
-                          onChange={(next) => {
-                            if (next.date !== undefined) handleFieldChange(`sub_${i}_date`, next.date);
-                            if (next.time !== undefined) handleFieldChange(`sub_${i}_time`, next.time);
-                            if (next.timezone !== undefined) handleFieldChange(`sub_${i}_timezone`, next.timezone);
-                          }}
-                        />
-                        <div className="grid grid-cols-2 gap-2">
-                          <input
-                            type="text"
-                            value={formData[`sub_${i}_venue`] || ''}
-                            onChange={(e) => handleFieldChange(`sub_${i}_venue`, e.target.value)}
-                            placeholder="Venue / Location"
-                            className="bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-2.5 h-9 text-xs rounded-sm w-full outline-none transition-colors"
-                          />
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            min={0}
-                            value={formData[`sub_${i}_guestCount`] || ''}
-                            onChange={(e) => handleFieldChange(`sub_${i}_guestCount`, e.target.value)}
-                            placeholder="Guest count"
-                            className="bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-2.5 h-9 text-xs rounded-sm w-full outline-none transition-colors"
-                          />
-                        </div>
-                      </div>
-                    ))}
+
+                    {/* Table header */}
+                    <div className="overflow-x-auto border border-white/[0.06]">
+                      <table className="w-full min-w-[520px] border-collapse">
+                        <thead>
+                          <tr className="border-b border-white/[0.07] bg-white/[0.02]">
+                            <th className="px-2 py-2 text-left font-display text-[8px] tracking-[0.15em] uppercase text-[#9cb092]/70 w-8">#</th>
+                            <th className="px-2 py-2 text-left font-display text-[8px] tracking-[0.15em] uppercase text-[#9cb092]/70 min-w-[120px]">Event Name <span className="text-[#9cb092]">*</span></th>
+                            <th className="px-2 py-2 text-left font-display text-[8px] tracking-[0.15em] uppercase text-[#9cb092]/70 min-w-[140px]">Date &amp; Time <span className="text-[#9cb092]">*</span></th>
+                            <th className="px-2 py-2 text-left font-display text-[8px] tracking-[0.15em] uppercase text-[#9cb092]/70 min-w-[120px]">Venue / Location <span className="text-[#9cb092]">*</span></th>
+                            <th className="px-2 py-2 text-left font-display text-[8px] tracking-[0.15em] uppercase text-[#9cb092]/70 w-20">Guest Count</th>
+                            <th className="w-8" />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Array.from({ length: subEventCount }, (_, i) => {
+                            const subInputClass = 'bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-2 h-9 text-xs rounded-sm w-full outline-none transition-colors';
+                            return (
+                              <tr key={i} className="border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.015] transition-colors">
+                                <td className="px-2 py-1.5 text-center font-display text-[10px] text-[#9cb092]/60">{i + 1}</td>
+                                <td className="px-2 py-1.5">
+                                  <input
+                                    type="text"
+                                    value={formData[`sub_${i}_name`] || ''}
+                                    onChange={(e) => handleFieldChange(`sub_${i}_name`, e.target.value)}
+                                    placeholder="e.g. Mehendi, Sangeet"
+                                    className={subInputClass}
+                                  />
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <DateTimePicker
+                                    compact
+                                    date={formData[`sub_${i}_date`] || ''}
+                                    time={formData[`sub_${i}_time`] || ''}
+                                    timezone={formData[`sub_${i}_timezone`] || ''}
+                                    onChange={(next) => {
+                                      if (next.date !== undefined) handleFieldChange(`sub_${i}_date`, next.date);
+                                      if (next.time !== undefined) handleFieldChange(`sub_${i}_time`, next.time);
+                                      if (next.timezone !== undefined) handleFieldChange(`sub_${i}_timezone`, next.timezone);
+                                    }}
+                                  />
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <input
+                                    type="text"
+                                    value={formData[`sub_${i}_venue`] || ''}
+                                    onChange={(e) => handleFieldChange(`sub_${i}_venue`, e.target.value)}
+                                    placeholder="Venue"
+                                    className={subInputClass}
+                                  />
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    min={0}
+                                    value={formData[`sub_${i}_guestCount`] || ''}
+                                    onChange={(e) => handleFieldChange(`sub_${i}_guestCount`, e.target.value)}
+                                    placeholder="e.g. 50"
+                                    className={subInputClass}
+                                  />
+                                </td>
+                                <td className="px-1 py-1.5 text-center">
+                                  <button onClick={() => removeSubEvent(i)} className="text-[#b2c3b1]/30 hover:text-red-400/70 transition-colors">
+                                    <span className="material-icons text-sm">close</span>
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1232,7 +1377,7 @@ export default function CreateEvite() {
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              onClick={backToEditor}
+              onClick={closeToHome}
               className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
             >
               <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
@@ -1277,6 +1422,7 @@ export default function CreateEvite() {
           deliveryPreference={deliveryPreference}
           onDeliveryPreferenceChange={setDeliveryPreference}
           onBack={backToEditor}
+          onClose={closeToHome}
           onProceed={proceedToPayment}
           formData={formData}
         />

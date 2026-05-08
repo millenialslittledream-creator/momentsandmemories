@@ -91,7 +91,7 @@ export default function DateTimePicker({
       </PopoverTrigger>
 
       <PopoverContent
-        align="start"
+        align="center"
         className="w-auto p-0 bg-[#1a2418] border-white/15 backdrop-blur-xl shadow-2xl"
       >
         <div className="flex">
