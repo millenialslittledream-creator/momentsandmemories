@@ -95,7 +95,7 @@ export default function Navigation() {
           <img
             src="/logo.png"
             alt="Moments & Memories"
-            className="h-11 md:h-13 w-auto object-contain"
+            className="h-14 md:h-16 w-auto object-contain"
           />
         </button>
 
