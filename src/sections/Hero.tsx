@@ -176,6 +176,8 @@ export default function Hero() {
           ref={rightRef}
           className="hidden md:flex items-center justify-center h-[520px] w-full"
         >
+          {/* Group wrapper — rotates both phones together as one object */}
+          <div style={{ transform: 'rotate(20deg)', transformOrigin: 'center center' }} className="flex items-center">
           {/* ── FRONT phone — Evite section (left) ── */}
           <div
             ref={phoneFrontRef}
@@ -316,6 +318,7 @@ export default function Hero() {
               </div>
             </div>
           </div>
+          </div>{/* end group wrapper */}
         </div>
       </div>
 
