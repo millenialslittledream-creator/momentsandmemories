@@ -27,7 +27,7 @@ def test_create_event(mock_db):
 
 
 def test_list_events(mock_db):
-    mock_db.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = MagicMock(
+    mock_db.table.return_value.select.return_value.eq.return_value.order.return_value.limit.return_value.offset.return_value.execute.return_value = MagicMock(
         data=[{"id": "event-1"}, {"id": "event-2"}]
     )
 

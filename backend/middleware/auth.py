@@ -1,6 +1,7 @@
 from fastapi import Depends, HTTPException, Header, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import database
+from jose import jwt, JWTError
+from config import settings
 
 security = HTTPBearer(auto_error=False)
 
@@ -15,19 +16,24 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     try:
-        db = database.get_db()
-        response = db.auth.get_user(credentials.credentials)
-        user = response.user
-        if not user:
+        payload = jwt.decode(
+            credentials.credentials,
+            settings.jwt_secret,
+            algorithms=["HS256"],
+            options={"verify_aud": False},
+        )
+        user_id = payload.get("sub")
+        email = payload.get("email")
+        if not user_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid or expired token",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        return {"sub": user.id, "email": user.email}
+        return {"sub": user_id, "email": email}
     except HTTPException:
         raise
-    except Exception:
+    except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
