@@ -1,12 +1,15 @@
 import urllib.parse
 from datetime import datetime, timezone
+from typing import List, Optional
+import boto3
+from botocore.exceptions import ClientError
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from twilio.rest import Client
 import database
 from config import settings
 from middleware.logging import log_event as _log
-from notifications.schemas import SendNotificationRequest
+from notifications.schemas import SendNotificationRequest, BulkRecipient
 
 
 def _save_notification(data: SendNotificationRequest) -> str:
@@ -82,6 +85,84 @@ def send_notification(data: SendNotificationRequest) -> dict:
 def get_whatsapp_link(message: str) -> str:
     encoded = urllib.parse.quote(message)
     return f"https://wa.me/?text={encoded}"
+
+
+# ── Bulk messaging (Amazon SES for email, Twilio for SMS) ─────────────────────
+
+def bulk_send(
+    event_id: Optional[str],
+    recipients: Optional[List[BulkRecipient]],
+    channel: str,
+    subject: str,
+    body: str,
+    background_tasks,
+) -> dict:
+    """Queue a bulk send and return immediately. Actual delivery runs in background."""
+    if event_id and not recipients:
+        db = database.get_db()
+        rows = db.table("event_invitees").select("*").eq("event_id", event_id).execute().data
+        recipients = [
+            BulkRecipient(
+                email=r.get("email"),
+                phone=r.get("phone"),
+                name=r.get("name", ""),
+            )
+            for r in rows
+        ]
+
+    recipients = recipients or []
+    background_tasks.add_task(_do_bulk_send, recipients, channel, subject, body)
+    return {"total": len(recipients), "status": "processing"}
+
+
+def _do_bulk_send(
+    recipients: List[BulkRecipient],
+    channel: str,
+    subject: str,
+    body: str,
+) -> None:
+    """Background task — sends one message per recipient and logs each attempt."""
+    if channel == "email":
+        ses = boto3.client(
+            "ses",
+            region_name=settings.aws_region,
+            aws_access_key_id=settings.aws_access_key_id or None,
+            aws_secret_access_key=settings.aws_secret_access_key or None,
+        )
+        for r in recipients:
+            if not r.email:
+                continue
+            personalized = body.replace("{name}", r.name)
+            try:
+                ses.send_email(
+                    Source=settings.ses_from_email,
+                    Destination={"ToAddresses": [r.email]},
+                    Message={
+                        "Subject": {"Data": subject, "Charset": "UTF-8"},
+                        "Body": {"Html": {"Data": personalized, "Charset": "UTF-8"}},
+                    },
+                )
+                _log("notifications", "bulk.email.sent", metadata={"to": r.email})
+            except ClientError as exc:
+                _log("notifications", "bulk.email.failed", level="error",
+                     metadata={"to": r.email, "error": str(exc)})
+
+    elif channel == "sms":
+        twilio = Client(settings.twilio_account_sid, settings.twilio_auth_token)
+        for r in recipients:
+            if not r.phone:
+                continue
+            personalized = body.replace("{name}", r.name)
+            try:
+                twilio.messages.create(
+                    body=f"{subject}: {personalized}",
+                    from_=settings.twilio_from_number,
+                    to=r.phone,
+                )
+                _log("notifications", "bulk.sms.sent", metadata={"to": r.phone})
+            except Exception as exc:
+                _log("notifications", "bulk.sms.failed", level="error",
+                     metadata={"to": r.phone, "error": str(exc)})
 
 
 def list_notifications(user_id: str, limit: int = 50, offset: int = 0) -> list:

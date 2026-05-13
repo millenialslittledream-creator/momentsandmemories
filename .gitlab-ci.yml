@@ -42,6 +42,12 @@ build:
     key: "$CI_COMMIT_REF_SLUG-node"
     paths:
       - node_modules/
+  variables:
+    # Set these in GitLab: Settings -> CI/CD -> Variables
+    # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL
+    VITE_SUPABASE_URL: "$VITE_SUPABASE_URL"
+    VITE_SUPABASE_ANON_KEY: "$VITE_SUPABASE_ANON_KEY"
+    VITE_API_URL: "$VITE_API_URL"
   script:
     - npm ci
     - npm run build

@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:5173"
     backend_url: str = ""
     admin_secret: str = ""
+    # Amazon SES (bulk email)
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
+    aws_region: str = "ap-southeast-2"
+    ses_from_email: str = ""
 
     class Config:
         env_file = ".env"
