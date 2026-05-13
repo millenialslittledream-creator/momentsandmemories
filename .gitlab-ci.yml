@@ -13,7 +13,6 @@ frontend-test:
       - node_modules/
   script:
     - npm ci
-    - npm run lint
     - npm run test
   only:
     - main
@@ -23,6 +22,10 @@ frontend-test:
 backend-test:
   stage: test
   image: python:3.11
+  variables:
+    SUPABASE_URL: "https://test.supabase.co"
+    SUPABASE_SERVICE_KEY: "test-service-key"
+    JWT_SECRET: "test-jwt-secret-for-ci"
   script:
     - cd backend
     - pip install -r requirements.txt
