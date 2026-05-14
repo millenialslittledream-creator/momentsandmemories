@@ -1,4 +1,4 @@
-export type EventType = 'birthday' | 'marriage' | 'babyshower' | 'bridetobe' | 'genderreveal' | 'housewarming' | 'custom';
+export type EventType = 'birthday' | 'marriage' | 'babyshower' | 'bridetobe' | 'genderreveal' | 'housewarming' | 'flier' | 'custom';
 
 export interface EventField {
   name: string;
@@ -61,6 +61,13 @@ export const eventTypes: EventTypeInfo[] = [
     color: '#c4a882',
   },
   {
+    id: 'flier',
+    label: 'Flier / Poster',
+    description: 'Marketing flier, event poster, or announcement piece',
+    icon: 'campaign',
+    color: '#7d9b76',
+  },
+  {
     id: 'custom',
     label: 'Custom Event',
     description: 'Create a personalised invite for any occasion',
@@ -107,6 +114,11 @@ export const eventSpecificFields: Record<EventType, EventField[]> = {
   ],
   housewarming: [
     { name: 'homeownerName', label: "Homeowner(s) Name", type: 'text', placeholder: "Who's celebrating the new home?", required: true },
+  ],
+  flier: [
+    { name: 'eventName', label: 'Flier Title', type: 'text', placeholder: 'Main headline', required: true },
+    { name: 'subtitle', label: 'Subtitle / Tagline', type: 'text', placeholder: 'Supporting line (optional)', required: false },
+    { name: 'cta', label: 'Call to action', type: 'text', placeholder: 'e.g. Get tickets · Learn more', required: false },
   ],
   custom: [
     { name: 'eventName', label: 'Event Name', type: 'text', placeholder: 'e.g. Anniversary, Graduation, Reunion…', required: true },

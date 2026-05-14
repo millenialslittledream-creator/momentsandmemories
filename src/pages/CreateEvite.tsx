@@ -15,6 +15,10 @@ import { createGuest, type Guest } from '@/sections/create/GuestDetails';
 import GuestPopup from '@/sections/create/GuestPopup';
 import PaymentModal from '@/sections/create/PaymentModal';
 import DateTimePicker from '@/sections/create/DateTimePicker';
+import TemplateOverlay from '@/sections/create/TemplateOverlay';
+import MessageOverflow from '@/sections/create/MessageOverflow';
+import { useAllTemplateLayouts, useTemplateLayout } from '@/lib/templateLayouts';
+import { capacityFor } from '@/lib/templateCapacity';
 
 type EventTypeFilter = EventType;
 type ModalPhase = 'upload' | 'editor' | 'signin' | 'guests' | 'payment' | 'sent' | null;
@@ -41,6 +45,7 @@ const FILTERS: { id: EventTypeFilter; label: string }[] = [
   { id: 'bridetobe',    label: 'Pre-Wedding Party' },
   { id: 'genderreveal', label: 'Gender Reveal' },
   { id: 'housewarming', label: 'Housewarming' },
+  { id: 'flier',        label: 'Flier / Poster' },
   { id: 'custom',       label: 'Custom' },
 ];
 
@@ -50,7 +55,8 @@ const SUPPORTS_MULTI_EVENTS: EventType[] = ['marriage', 'custom'];
 function renderEditorField(
   field: EventField,
   value: string,
-  onChange: (name: string, value: string) => void
+  onChange: (name: string, value: string) => void,
+  textareaMax = 200
 ) {
   const baseInputClass =
     'bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-3 h-10 text-sm rounded-sm w-full outline-none transition-colors';
@@ -86,23 +92,31 @@ function renderEditorField(
           className={baseInputClass}
         />
       );
-    case 'textarea':
+    case 'textarea': {
+      // Hard cap = template cap + 50 so user can type slightly over and see the
+      // warning instead of being silently blocked at the template limit.
+      const hardCap = Math.max(textareaMax + 50, 200);
       return (
         <div className="space-y-1">
           <textarea
             value={value}
             onChange={(e) => {
-              if (e.target.value.length <= 200) onChange(field.name, e.target.value);
+              if (e.target.value.length <= hardCap) onChange(field.name, e.target.value);
             }}
             placeholder={field.placeholder}
-            maxLength={200}
+            maxLength={hardCap}
             className={`${baseInputClass} min-h-[70px] resize-none`}
           />
-          <p className="text-[8px] font-display text-[#b2c3b1]/40 text-right">
-            {value.length}/200
+          <p
+            className={`text-[8px] font-display text-right ${
+              value.length > textareaMax ? 'text-yellow-400/80' : 'text-[#b2c3b1]/40'
+            }`}
+          >
+            {value.length}/{textareaMax}
           </p>
         </div>
       );
+    }
     case 'select':
       return (
         <div className="relative">
@@ -205,66 +219,55 @@ export default function CreateEvite() {
   // (GuestPopup multi-event checkboxes) can read it.
   const subEventCount = parseInt(formData['sub_events_count'] || '0', 10) || 0;
 
-  // ── Local draft backup ───────────────────────────────────────────
-  // Resumes the flow after a sign-in redirect: restores form state and
-  // re-opens the modal at the saved phase if the user is now signed in.
+  // ── Sign-in round-trip resume (PII-safe) ──────────────────────────
+  // We do NOT persist anonymous form data anywhere. Data lives in React
+  // state only; closing the tab discards it. The sole exception is a
+  // sign-in redirect: when the user is sent to sign-in, we snapshot the
+  // current form into sessionStorage so they don't lose it on the way back.
+  // sessionStorage is tab-scoped and ephemeral, and we clear it the
+  // moment the resume completes — or on logout — so a logged-out user
+  // never sees anyone else's data, on this tab or any other.
   useEffect(() => {
+    // One-time wipe: clear any pre-existing localStorage draft left by
+    // the old buggy auto-save behavior. Safe to remove after a release.
     try {
-      const saved = localStorage.getItem('mm_evite_draft');
+      localStorage.removeItem('mm_evite_draft');
+    } catch {
+      /* ignore */
+    }
+
+    // Resume only happens when (a) there's a pending phase set right
+    // before a sign-in redirect, AND (b) the user is now signed in.
+    if (!user) return;
+    try {
+      const saved = sessionStorage.getItem('mm_evite_resume');
       if (!saved) return;
       const parsed = JSON.parse(saved);
+      if (!parsed.pendingPhase) return;
       if (parsed.formData) setFormData(parsed.formData);
       if (parsed.guests?.length) setGuests(parsed.guests);
       if (parsed.deliveryPreference) setDeliveryPreference(parsed.deliveryPreference);
       if (parsed.selectedTemplateId) setSelectedTemplateId(parsed.selectedTemplateId);
       if (parsed.uploadedTemplate) setUploadedTemplate(parsed.uploadedTemplate);
       if (parsed.hasSubEvents) setHasSubEvents(!!parsed.hasSubEvents);
-      if (parsed.pendingPhase && user) {
-        setModalPhase(parsed.pendingPhase);
-        localStorage.setItem(
-          'mm_evite_draft',
-          JSON.stringify({ ...parsed, pendingPhase: null })
-        );
-      }
+      setModalPhase(parsed.pendingPhase);
+      sessionStorage.removeItem('mm_evite_resume');
     } catch {
-      /* ignore */
+      sessionStorage.removeItem('mm_evite_resume');
     }
   }, [user]);
 
-  // Don't overwrite a saved draft with our untouched initial state — only
-  // persist after the user starts interacting (formData has any keys,
-  // a template is selected, or guests beyond the empty seed exist).
+  // On sign-out from any other tab/page, drop the resume snapshot so the
+  // next visitor on this tab can't see whatever was in flight.
   useEffect(() => {
-    const hasUserContent =
-      Object.keys(formData).length > 0 ||
-      !!selectedTemplateId ||
-      !!uploadedTemplate ||
-      hasSubEvents ||
-      guests.some((g) => g.name.trim() || g.email.trim() || g.phone.trim());
-    if (!hasUserContent) return;
-    try {
-      const existing = localStorage.getItem('mm_evite_draft');
-      const parsed = existing ? JSON.parse(existing) : {};
-      const safeUploaded =
-        uploadedTemplate && !uploadedTemplate.url.startsWith('blob:')
-          ? uploadedTemplate
-          : null;
-      localStorage.setItem(
-        'mm_evite_draft',
-        JSON.stringify({
-          ...parsed,
-          formData,
-          guests,
-          deliveryPreference,
-          selectedTemplateId,
-          uploadedTemplate: safeUploaded,
-          hasSubEvents,
-        })
-      );
-    } catch {
-      /* ignore */
+    if (!user) {
+      try {
+        sessionStorage.removeItem('mm_evite_resume');
+      } catch {
+        /* ignore */
+      }
     }
-  }, [formData, guests, deliveryPreference, selectedTemplateId, uploadedTemplate, hasSubEvents]);
+  }, [user]);
 
   // ── Handlers ─────────────────────────────────────────────────────
   const handleFieldChange = useCallback((name: string, value: string) => {
@@ -381,19 +384,31 @@ export default function CreateEvite() {
     if (user) {
       setModalPhase('guests');
     } else {
+      // Anonymous → sign-in. Snapshot to sessionStorage so the form
+      // round-trips through sign-in without loss. Cleared on resume.
       try {
-        const existing = localStorage.getItem('mm_evite_draft');
-        const parsed = existing ? JSON.parse(existing) : {};
-        localStorage.setItem(
-          'mm_evite_draft',
-          JSON.stringify({ ...parsed, pendingPhase: 'guests' })
+        const safeUploaded =
+          uploadedTemplate && !uploadedTemplate.url.startsWith('blob:')
+            ? uploadedTemplate
+            : null;
+        sessionStorage.setItem(
+          'mm_evite_resume',
+          JSON.stringify({
+            pendingPhase: 'guests',
+            formData,
+            guests,
+            deliveryPreference,
+            selectedTemplateId,
+            uploadedTemplate: safeUploaded,
+            hasSubEvents,
+          })
         );
       } catch {
         /* ignore */
       }
       setModalPhase('signin');
     }
-  }, [user, multipleInvitations, invitationSlots, currentSlotIdx, formData]);
+  }, [user, multipleInvitations, invitationSlots, currentSlotIdx, formData, guests, deliveryPreference, selectedTemplateId, uploadedTemplate, hasSubEvents]);
 
   const backToEditor = useCallback(() => setModalPhase('editor'), []);
   const proceedToPayment = useCallback(() => setModalPhase('payment'), []);
@@ -429,7 +444,7 @@ export default function CreateEvite() {
       }
 
       try {
-        localStorage.removeItem('mm_evite_draft');
+        sessionStorage.removeItem('mm_evite_resume');
       } catch {
         /* ignore */
       }
@@ -449,17 +464,27 @@ export default function CreateEvite() {
   // Sign-in modal action — store pending phase + redirect.
   const goToSignIn = useCallback(() => {
     try {
-      const existing = localStorage.getItem('mm_evite_draft');
-      const parsed = existing ? JSON.parse(existing) : {};
-      localStorage.setItem(
-        'mm_evite_draft',
-        JSON.stringify({ ...parsed, pendingPhase: 'guests' })
+      const safeUploaded =
+        uploadedTemplate && !uploadedTemplate.url.startsWith('blob:')
+          ? uploadedTemplate
+          : null;
+      sessionStorage.setItem(
+        'mm_evite_resume',
+        JSON.stringify({
+          pendingPhase: 'guests',
+          formData,
+          guests,
+          deliveryPreference,
+          selectedTemplateId,
+          uploadedTemplate: safeUploaded,
+          hasSubEvents,
+        })
       );
     } catch {
       /* ignore */
     }
     navigate(`/sign-in?redirect=${encodeURIComponent('/create')}`);
-  }, [navigate]);
+  }, [navigate, formData, guests, deliveryPreference, selectedTemplateId, uploadedTemplate, hasSubEvents]);
 
   // ── Sub-event helpers ────────────────────────────────────────────
   const addSubEvent = () => {
@@ -619,6 +644,11 @@ export default function CreateEvite() {
       : displayName
       ? `${displayName}'s ${eventInfo?.label ?? ''}`
       : eventInfo?.label ?? 'Your Event';
+
+  // Saved per-template layout (undefined for uploaded designs / un-annotated templates).
+  const liveLayout = useTemplateLayout(selectedTemplate?.id);
+  const allLayouts = useAllTemplateLayouts();
+  const messageCap = capacityFor(liveLayout, 'custom_message', 200);
 
   // ── Render ───────────────────────────────────────────────────────
   return (
@@ -1120,66 +1150,13 @@ export default function CreateEvite() {
 
                   {/* Live overlay — only for stock templates, never on uploaded designs */}
                   {!uploadedTemplate && selectedTemplate && (
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-end p-4 md:p-6 pointer-events-none">
-                      <p className="font-display text-[8px] tracking-[0.25em] uppercase text-white/55 mb-1">
-                        You're invited to
-                      </p>
-                      <h4 className="font-serif-exp text-lg md:text-2xl text-white leading-tight">
-                        {eventTitle}
-                      </h4>
-                      <div className="space-y-1 mt-2">
-                        {displayDate && (
-                          <p className="font-display text-[9px] md:text-[10px] text-white/75 flex items-center gap-1.5">
-                            <span
-                              className="material-icons text-[#9cb092]"
-                              style={{ fontSize: '11px' }}
-                            >
-                              calendar_today
-                            </span>
-                            {displayDate}
-                          </p>
-                        )}
-                        {formData.eventTime && (
-                          <p className="font-display text-[9px] md:text-[10px] text-white/75 flex items-center gap-1.5">
-                            <span
-                              className="material-icons text-[#9cb092]"
-                              style={{ fontSize: '11px' }}
-                            >
-                              schedule
-                            </span>
-                            {formData.eventTime}
-                            {formData.timezone && ` · ${formData.timezone}`}
-                          </p>
-                        )}
-                        {formData.venue && (
-                          <p className="font-display text-[9px] md:text-[10px] text-white/75 flex items-center gap-1.5">
-                            <span
-                              className="material-icons text-[#9cb092]"
-                              style={{ fontSize: '11px' }}
-                            >
-                              location_on
-                            </span>
-                            {formData.venue}
-                          </p>
-                        )}
-                        {formData.rsvpContact && (
-                          <p className="font-display text-[9px] md:text-[10px] text-white/75 flex items-center gap-1.5">
-                            <span
-                              className="material-icons text-[#9cb092]"
-                              style={{ fontSize: '11px' }}
-                            >
-                              mail
-                            </span>
-                            RSVP: {formData.rsvpContact}
-                          </p>
-                        )}
-                      </div>
-                      {formData.customMessage && (
-                        <p className="font-serif-exp italic text-[10px] md:text-xs text-white/65 mt-3 border-t border-white/10 pt-2">
-                          "{formData.customMessage}"
-                        </p>
-                      )}
-                    </div>
+                    <TemplateOverlay
+                      layout={liveLayout}
+                      formData={formData}
+                      eventTitle={eventTitle}
+                      displayDate={displayDate}
+                      eventInfoLabel={eventInfo?.label}
+                    />
                   )}
                 </div>
 
@@ -1245,13 +1222,28 @@ export default function CreateEvite() {
                       if (field.name === 'eventTime' || field.name === 'timezone') continue;
 
                       const isFullWidth = field.type === 'textarea' || field.name === 'venue';
+                      const isMessage = field.name === 'customMessage';
                       items.push(
                         <div key={field.name} className={`space-y-1.5${isFullWidth ? ' sm:col-span-2' : ''}`}>
                           <label className="block font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]">
                             {field.label}
                             {field.required && <span className="text-[#9cb092] ml-1">*</span>}
                           </label>
-                          {renderEditorField(field, formData[field.name] || '', handleFieldChange)}
+                          {renderEditorField(
+                            field,
+                            formData[field.name] || '',
+                            handleFieldChange,
+                            isMessage ? messageCap : 200
+                          )}
+                          {isMessage && selectedTemplate && (
+                            <MessageOverflow
+                              currentLength={(formData.customMessage || '').length}
+                              maxChars={messageCap}
+                              currentTemplateId={selectedTemplate.id}
+                              layouts={allLayouts}
+                              onPickTemplate={(id) => setSelectedTemplateId(id)}
+                            />
+                          )}
                         </div>
                       );
                     }

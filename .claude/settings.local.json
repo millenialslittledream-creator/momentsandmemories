@@ -13,7 +13,23 @@
       "Bash(cp -r \"templates/wedding\" public/templates/)",
       "Bash(npx vite *)",
       "mcp__playwright__browser_resize",
-      "Bash(curl -sf -o /dev/null -w \"%{http_code}\" http://localhost:5189/create)"
+      "Bash(curl -sf -o /dev/null -w \"%{http_code}\" http://localhost:5189/create)",
+      "Bash(npx tsc *)",
+      "Bash(python -c \"from admin.router import admin_router, public_router; from admin.schemas import Zone, Palette, TemplateLayout; from admin import service; print\\('admin module OK'\\)\")",
+      "Bash(SUPABASE_URL=x SUPABASE_SERVICE_KEY=x JWT_SECRET=x python -c \"from admin.router import admin_router, public_router; from admin.schemas import Zone, Palette, TemplateLayout; from admin import service; print\\('admin module OK'\\); print\\('routes:', [r.path for r in admin_router.routes + public_router.routes]\\)\")",
+      "Bash(npx --no-install tsc -b)",
+      "Bash(node node_modules/typescript/bin/tsc -b)",
+      "WebSearch",
+      "Bash(./node_modules/.bin/tsc -b)",
+      "Bash(curl -s -o /dev/null -w \"health: %{http_code}\\\\n\" http://127.0.0.1:8000/health)",
+      "Bash(curl -s http://127.0.0.1:8000/templates/layouts)",
+      "Bash(.venv/Scripts/python.exe -m uvicorn main:app --reload --host 127.0.0.1 --port 8000)",
+      "Bash(.venv/Scripts/python.exe -m pip install 'anthropic==0.40.0' --quiet)",
+      "Bash(SUPABASE_URL=x SUPABASE_SERVICE_KEY=x JWT_SECRET=x ADMIN_SECRET=test123 .venv/Scripts/python.exe -c ' *)",
+      "Bash(curl -s -X POST -H \"X-Admin-Secret: test123\" -H \"Content-Type: application/json\" -d '{\"provider\":\"anthropic\",\"image_url\":\"http://localhost:5173/templates/birthday/1.jpg\",\"prompt\":\"test\",\"api_key\":\"\"}' http://127.0.0.1:8000/_studio/api/llm/suggest)",
+      "Bash(curl -s -o /dev/null -w \"no secret: %{http_code}\\\\n\" -X POST http://127.0.0.1:8000/_studio/api/llm/suggest)",
+      "Bash(curl -s -o /dev/null -w \"wrong secret: %{http_code}\\\\n\" -X POST -H \"X-Admin-Secret: nope\" http://127.0.0.1:8000/_studio/api/llm/suggest)",
+      "Bash(curl -s -X POST -H \"X-Admin-Secret: test123\" -H \"Content-Type: application/json\" -d '{\"provider\":\"anthropic\",\"image_url\":\"http://localhost:5173/templates/birthday/1.jpg\",\"prompt\":\"test\"}' http://127.0.0.1:8000/_studio/api/llm/suggest)"
     ]
   }
 }

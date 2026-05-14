@@ -5,3 +5,8 @@ dist
 .vercel
 *.log
 .claude/worktrees/
+
+# Python venv + caches
+backend/.venv/
+**/__pycache__/
+*.pyc

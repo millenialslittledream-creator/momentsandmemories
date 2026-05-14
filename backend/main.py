@@ -10,6 +10,8 @@ from shop.router import router as shop_router
 from notifications.router import router as notifications_router
 from analytics.router import router as analytics_router
 from drafts.router import router as drafts_router
+# admin module (removable — delete folder + these two lines)
+from admin.router import admin_router, public_router as templates_public_router
 
 app = FastAPI(title="Moments & Memories API", version="1.0.0")
 
@@ -30,6 +32,9 @@ app.include_router(shop_router)
 app.include_router(notifications_router)
 app.include_router(analytics_router)
 app.include_router(drafts_router)
+# admin module (removable)
+app.include_router(admin_router)
+app.include_router(templates_public_router)
 
 
 @app.get("/health")

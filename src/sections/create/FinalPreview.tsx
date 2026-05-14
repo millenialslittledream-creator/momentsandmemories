@@ -3,6 +3,8 @@ import gsap from 'gsap';
 import { eviteTemplates } from '@/data/eviteTemplates';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useTemplateLayout } from '@/lib/templateLayouts';
+import TemplateOverlay from './TemplateOverlay';
 import {
   eventTypes,
   commonFields,
@@ -36,6 +38,9 @@ export default function FinalPreview({
     : null;
   const previewImage = template?.previewImage ?? customImageUrl ?? '';
 
+  // Saved per-template layout (undefined for uploaded designs / un-annotated templates).
+  const layout = useTemplateLayout(template?.id);
+
   const allFields = [...eventSpecificFields[eventType], ...commonFields];
 
   const displayName =
@@ -53,7 +58,7 @@ export default function FinalPreview({
         year: 'numeric',
       })
     : 'Event Date';
-  const displayVenue = formData.venue || 'Venue';
+  // (displayVenue removed — overlay now reads venue directly from formData)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -122,45 +127,19 @@ export default function FinalPreview({
                 alt={template?.name ?? 'Custom design'}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-5">
-                <p className="font-display text-[8px] tracking-[0.25em] uppercase text-white/50 mb-1">
-                  You're invited to
-                </p>
-                <h4 className="font-serif-exp text-xl text-white leading-tight">
-                  {eventInfo?.label === 'Wedding'
+              <TemplateOverlay
+                layout={layout}
+                formData={formData}
+                eventTitle={
+                  eventInfo?.label === 'Wedding'
                     ? `${formData.brideName || 'Bride'} & ${formData.groomName || 'Groom'}`
                     : eventType === 'custom'
                     ? formData.eventName || displayName || 'Your Event'
-                    : `${displayName}'s ${eventInfo?.label}`}
-                </h4>
-                <div className="space-y-1 mt-3">
-                  <p className="font-display text-[9px] tracking-wide text-white/80 flex items-center gap-1.5">
-                    <span className="material-icons text-[#9cb092] text-[10px]">calendar_today</span>
-                    {displayDate}
-                  </p>
-                  {formData.eventTime && (
-                    <p className="font-display text-[9px] tracking-wide text-white/80 flex items-center gap-1.5">
-                      <span className="material-icons text-[#9cb092] text-[10px]">schedule</span>
-                      {formData.eventTime}
-                    </p>
-                  )}
-                  <p className="font-display text-[9px] tracking-wide text-white/80 flex items-center gap-1.5">
-                    <span className="material-icons text-[#9cb092] text-[10px]">location_on</span>
-                    {displayVenue}
-                  </p>
-                  {formData.rsvpContact && (
-                    <p className="font-display text-[9px] tracking-wide text-white/80 flex items-center gap-1.5">
-                      <span className="material-icons text-[#9cb092] text-[10px]">mail</span>
-                      RSVP: {formData.rsvpContact}
-                    </p>
-                  )}
-                </div>
-                {formData.customMessage && (
-                  <p className="font-serif-exp text-xs text-white/60 mt-3 border-t border-white/10 pt-2">
-                    "{formData.customMessage}"
-                  </p>
-                )}
-              </div>
+                    : `${displayName}'s ${eventInfo?.label}`
+                }
+                displayDate={displayDate}
+                eventInfoLabel={eventInfo?.label}
+              />
             </div>
           </div>
         </div>

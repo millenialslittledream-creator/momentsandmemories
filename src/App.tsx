@@ -19,6 +19,8 @@ const SignUp = lazy(() => import('./pages/SignUp'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+// admin module (removable — delete src/admin/ and the route below)
+const AdminRoutes = lazy(() => import('./admin'));
 
 // Register GSAP plugins globally
 gsap.registerPlugin(ScrollTrigger);
@@ -64,6 +66,8 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
+              {/* admin module (removable) */}
+              <Route path="/_studio/*" element={<AdminRoutes />} />
             </Routes>
           </Suspense>
           <Toaster position="top-center" richColors />
