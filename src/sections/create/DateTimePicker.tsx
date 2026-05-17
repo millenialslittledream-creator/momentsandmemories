@@ -74,12 +74,12 @@ export default function DateTimePicker({
         {compact ? (
           <button
             type="button"
-            className="w-full h-9 px-2.5 bg-white/[0.06] border border-white/15 hover:border-[#9cb092]/60 transition-colors text-left rounded-sm flex items-center gap-1.5"
+            className="w-full h-12 px-4 bg-white/[0.06] border border-white/15 hover:border-[#9cb092]/60 focus:border-[#9cb092] transition-colors text-left rounded-sm flex items-center gap-2 outline-none"
           >
-            <span className="material-icons text-[#9cb092] flex-shrink-0" style={{ fontSize: '13px' }}>
+            <span className="material-icons text-[#9cb092] flex-shrink-0" style={{ fontSize: '16px' }}>
               calendar_today
             </span>
-            <span className={`font-display text-[11px] truncate flex-1 ${date ? 'text-[#e4eee1]' : 'text-[#b2c3b1]/40'}`}>
+            <span className={`font-display text-sm truncate flex-1 ${date ? 'text-[#e4eee1]' : 'text-[#b2c3b1]/40'}`}>
               {compactSummary}
             </span>
           </button>

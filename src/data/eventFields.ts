@@ -114,7 +114,7 @@ export const eventSpecificFields: Record<EventType, EventField[]> = {
 };
 
 // Event types that ask for an RSVP contact in the editor.
-const EVENTS_WITH_RSVP: EventType[] = ['marriage', 'bridetobe', 'custom'];
+const EVENTS_WITH_RSVP: EventType[] = ['marriage', 'bridetobe', 'custom', 'housewarming'];
 
 /**
  * Build the ordered list of editor fields for a given event type.
@@ -129,11 +129,18 @@ export function getEditorFields(eventType: EventType): EventField[] {
     find('eventDate'),
     find('eventTime'),
     find('timezone'),
-    find('venue'),
   ];
-  if (EVENTS_WITH_RSVP.includes(eventType)) fields.push(find('rsvpContact'));
+  // Pair the slot next to Date & Time: with RSVP if the event collects it,
+  // otherwise with Guest Count — so the second column never sits empty.
+  if (EVENTS_WITH_RSVP.includes(eventType)) {
+    fields.push(find('rsvpContact'));
+    fields.push(find('venue'));
+    fields.push(find('guestCount'));
+  } else {
+    fields.push(find('guestCount'));
+    fields.push(find('venue'));
+  }
   fields.push(find('customMessage'));
-  fields.push(find('guestCount'));
   return fields;
 }
 

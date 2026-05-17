@@ -1,5 +1,34 @@
 import type { EventType } from './eventFields';
 
+export interface TemplateFieldLayout {
+  formKey?: string;
+  text?: string;
+  prefix?: string;
+  suffix?: string;
+  format?: 'longDate' | 'longDateUpper' | 'time' | 'time12' | 'raw';
+  iconBefore?: string;
+  iconSize?: number;
+  iconGap?: number;
+  iconColor?: string;
+  x: number;
+  y: number;
+  fontFamily: string;
+  fontSize: number;
+  fontWeight?: string;
+  fontStyle?: 'normal' | 'italic';
+  letterSpacing?: number;
+  color: string;
+  align: 'left' | 'center' | 'right';
+  lineHeight?: number;
+  maxWidth?: number;
+}
+
+export interface TemplateLayout {
+  naturalWidth: number;
+  naturalHeight: number;
+  fields: TemplateFieldLayout[];
+}
+
 export interface EviteTemplate {
   id: string;
   eventType: EventType;
@@ -7,6 +36,7 @@ export interface EviteTemplate {
   style: string;
   previewImage: string;
   accent: string;
+  layout?: TemplateLayout;
 }
 
 export const eviteTemplates: EviteTemplate[] = [
@@ -53,6 +83,39 @@ export const eviteTemplates: EviteTemplate[] = [
   { id: 'house-1', eventType: 'housewarming', name: 'New Beginnings',  style: 'Warm & Inviting',      previewImage: '/templates/housewarming/1.jpg', accent: '#c4a882' },
   { id: 'house-2', eventType: 'housewarming', name: 'Home Sweet Home', style: 'Rustic & Cozy',         previewImage: '/templates/housewarming/2.jpg', accent: '#b5651d' },
   { id: 'house-3', eventType: 'housewarming', name: 'Welcome Home',    style: 'Modern & Minimal',      previewImage: '/templates/housewarming/3.jpg', accent: '#9cb092' },
+  {
+    id: 'house-gruhapravesam',
+    eventType: 'housewarming',
+    name: 'Gruhapravesam',
+    style: 'Traditional & Sacred',
+    previewImage: '/templates/housewarming/gruhapravesam.png',
+    accent: '#A62D58',
+    layout: {
+      // 2:3 layout (408x612 logical units) calibrated to the cleaned template
+      // image. The image (1024x1536) scales proportionally to fill the renderer.
+      naturalWidth: 408,
+      naturalHeight: 612,
+      fields: [
+        // Names
+        { formKey: 'homeownerName', x: 190, y: 208, fontFamily: 'Great Vibes', fontSize: 34, color: '#A62D58', align: 'center' },
+
+        // Date — to the right of the calendar icon
+        { formKey: 'eventDate', format: 'longDateUpper', x: 135, y: 325, fontFamily: 'Montserrat', fontSize: 10, fontWeight: '700', color: '#4A3728', align: 'left' },
+
+        // Time — to the right of the clock icon
+        { formKey: 'eventTime', format: 'time12', prefix: 'MUHURTHAM: ', x: 135, y: 354, fontFamily: 'Montserrat', fontSize: 10, fontWeight: '700', color: '#4A3728', align: 'left' },
+
+        // Venue (multi-line via \n)
+        { formKey: 'venue', x: 135, y: 382, fontFamily: 'Cormorant Garamond', fontSize: 13, lineHeight: 20, color: '#3E2D23', align: 'left' },
+
+        // Custom message
+        { formKey: 'customMessage', x: 195, y: 420, fontFamily: 'Cormorant Garamond', fontSize: 15, fontStyle: 'italic', color: '#A62D58', align: 'center' },
+
+        // RSVP phone
+        { formKey: 'rsvpContact', x: 193, y: 470, fontFamily: 'Cormorant Garamond', fontSize: 11, color: '#3E2D23', align: 'center' },
+      ],
+    },
+  },
 
   // ── Gender Reveal (8 templates) ────────────────────────────────────────
   { id: 'gender-1', eventType: 'genderreveal', name: 'Pink or Blue',    style: 'Classic & Fun',      previewImage: '/templates/gender reveal/1.jpg', accent: '#b5c7e3' },

@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import { eviteTemplates } from '@/data/eviteTemplates';
 import { eventTypes, type EventType } from '@/data/eventFields';
 import { CircularGallery, type GalleryItem } from '@/components/ui/circular-gallery';
+import TemplateRenderer from '@/components/TemplateRenderer';
 
 interface TemplateGalleryProps {
   eventType: EventType;
@@ -98,12 +99,55 @@ export default function TemplateGallery({
 
           {/* Card: back arrow overlaid + details at bottom */}
           <div className="relative max-w-[200px] md:max-w-[230px] w-full">
-            <div className="relative aspect-[3/4] overflow-hidden shadow-2xl border border-white/10">
-              <img
-                src={zoomedTemplate.previewImage}
-                alt={zoomedTemplate.name}
-                className="w-full h-full object-cover"
-              />
+            <div className="relative overflow-hidden shadow-2xl border border-white/10">
+              {zoomedTemplate.layout ? (
+                <TemplateRenderer template={zoomedTemplate} formData={formData} />
+              ) : (
+                <div className="relative aspect-[3/4]">
+                  <img
+                    src={zoomedTemplate.previewImage}
+                    alt={zoomedTemplate.name}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Details overlay — bottom of card */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent flex flex-col justify-end p-3">
+                    <p className="font-display text-[6px] tracking-[0.2em] uppercase text-white/30 mb-0.5">
+                      You're invited to
+                    </p>
+                    {eventTitle && (
+                      <h4 className="font-serif-exp text-sm text-white leading-tight mb-1.5">
+                        {eventTitle}
+                      </h4>
+                    )}
+                    <div className="space-y-0.5">
+                      {displayDate && (
+                        <p className="font-display text-[7px] text-white/55 flex items-center gap-1">
+                          <span className="material-icons text-[#9cb092]" style={{ fontSize: '8px' }}>
+                            calendar_today
+                          </span>
+                          {displayDate}
+                        </p>
+                      )}
+                      {formData.eventTime && (
+                        <p className="font-display text-[7px] text-white/55 flex items-center gap-1">
+                          <span className="material-icons text-[#9cb092]" style={{ fontSize: '8px' }}>
+                            schedule
+                          </span>
+                          {formData.eventTime}
+                        </p>
+                      )}
+                      {displayVenue && (
+                        <p className="font-display text-[7px] text-white/55 flex items-center gap-1">
+                          <span className="material-icons text-[#9cb092]" style={{ fontSize: '8px' }}>
+                            location_on
+                          </span>
+                          {displayVenue}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Back arrow — top-left corner of the card */}
               <button
@@ -114,44 +158,6 @@ export default function TemplateGallery({
                   arrow_back
                 </span>
               </button>
-
-              {/* Details overlay — bottom of card */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent flex flex-col justify-end p-3">
-                <p className="font-display text-[6px] tracking-[0.2em] uppercase text-white/30 mb-0.5">
-                  You're invited to
-                </p>
-                {eventTitle && (
-                  <h4 className="font-serif-exp text-sm text-white leading-tight mb-1.5">
-                    {eventTitle}
-                  </h4>
-                )}
-                <div className="space-y-0.5">
-                  {displayDate && (
-                    <p className="font-display text-[7px] text-white/55 flex items-center gap-1">
-                      <span className="material-icons text-[#9cb092]" style={{ fontSize: '8px' }}>
-                        calendar_today
-                      </span>
-                      {displayDate}
-                    </p>
-                  )}
-                  {formData.eventTime && (
-                    <p className="font-display text-[7px] text-white/55 flex items-center gap-1">
-                      <span className="material-icons text-[#9cb092]" style={{ fontSize: '8px' }}>
-                        schedule
-                      </span>
-                      {formData.eventTime}
-                    </p>
-                  )}
-                  {displayVenue && (
-                    <p className="font-display text-[7px] text-white/55 flex items-center gap-1">
-                      <span className="material-icons text-[#9cb092]" style={{ fontSize: '8px' }}>
-                        location_on
-                      </span>
-                      {displayVenue}
-                    </p>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
 

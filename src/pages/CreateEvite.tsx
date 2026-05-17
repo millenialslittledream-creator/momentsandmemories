@@ -15,6 +15,7 @@ import { createGuest, type Guest } from '@/sections/create/GuestDetails';
 import GuestPopup from '@/sections/create/GuestPopup';
 import PaymentModal from '@/sections/create/PaymentModal';
 import DateTimePicker from '@/sections/create/DateTimePicker';
+import TemplateRenderer from '@/components/TemplateRenderer';
 
 type EventTypeFilter = EventType;
 type ModalPhase = 'upload' | 'editor' | 'signin' | 'guests' | 'payment' | 'sent' | null;
@@ -53,7 +54,7 @@ function renderEditorField(
   onChange: (name: string, value: string) => void
 ) {
   const baseInputClass =
-    'bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-3 h-10 text-sm rounded-sm w-full outline-none transition-colors';
+    'bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-4 h-12 text-sm rounded-sm w-full outline-none transition-colors';
 
   switch (field.type) {
     case 'date':
@@ -96,7 +97,7 @@ function renderEditorField(
             }}
             placeholder={field.placeholder}
             maxLength={200}
-            className={`${baseInputClass} min-h-[70px] resize-none`}
+            className={`${baseInputClass} h-auto min-h-[90px] py-3 resize-none`}
           />
           <p className="text-[8px] font-display text-[#b2c3b1]/40 text-right">
             {value.length}/200
@@ -1088,9 +1089,20 @@ export default function CreateEvite() {
             <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
 
             {/* ── LEFT: image / video preview ─────────────────────── */}
-            <div className="flex-shrink-0 h-[40vh] md:h-auto md:w-[30%] md:min-h-0 flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-white/[0.07]">
+            <div className="flex-shrink-0 h-[40vh] md:h-auto md:w-[50%] md:min-h-0 flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-white/[0.07]">
               <div className="flex-1 relative overflow-hidden bg-[#0d1512] flex items-center justify-center">
-                <div className="relative h-full aspect-[9/16] max-w-full overflow-hidden">
+                <div
+                  className={`relative h-full max-w-full overflow-hidden${
+                    selectedTemplate?.layout ? '' : ' aspect-[9/16]'
+                  }`}
+                  style={
+                    selectedTemplate?.layout
+                      ? {
+                          aspectRatio: `${selectedTemplate.layout.naturalWidth} / ${selectedTemplate.layout.naturalHeight}`,
+                        }
+                      : undefined
+                  }
+                >
                   {uploadedTemplate ? (
                     uploadedTemplate.type === 'image' ? (
                       <img
@@ -1109,6 +1121,8 @@ export default function CreateEvite() {
                         className="absolute inset-0 w-full h-full object-cover"
                       />
                     )
+                  ) : selectedTemplate?.layout ? (
+                    <TemplateRenderer template={selectedTemplate} formData={formData} />
                   ) : selectedTemplate ? (
                     <img
                       ref={mainImgRef}
@@ -1118,8 +1132,8 @@ export default function CreateEvite() {
                     />
                   ) : null}
 
-                  {/* Live overlay — only for stock templates, never on uploaded designs */}
-                  {!uploadedTemplate && selectedTemplate && (
+                  {/* Live overlay — only for stock templates without a positioned layout */}
+                  {!uploadedTemplate && selectedTemplate && !selectedTemplate.layout && (
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-end p-4 md:p-6 pointer-events-none">
                       <p className="font-display text-[8px] tracking-[0.25em] uppercase text-white/55 mb-1">
                         You're invited to
@@ -1215,7 +1229,7 @@ export default function CreateEvite() {
             <div className="flex-1 md:flex-1 min-h-0 flex flex-col overflow-hidden">
               <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-6 md:px-8 pt-6 pb-5">
                 {/* Editor fields — 2-column grid. Venue + textareas span full width. */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
                   {(() => {
                     const items: ReactElement[] = [];
                     for (let idx = 0; idx < editorFields.length; idx++) {
@@ -1237,6 +1251,7 @@ export default function CreateEvite() {
                                 if (next.timezone !== undefined) handleFieldChange('timezone', next.timezone);
                               }}
                               required
+                              compact
                             />
                           </div>
                         );
