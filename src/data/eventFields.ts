@@ -112,11 +112,14 @@ export const eventSpecificFields: Record<EventType, EventField[]> = {
 };
 
 // Event types that do NOT collect a Host Name in the editor.
-const EVENTS_WITHOUT_HOST_NAME: EventType[] = ['marriage'];
+const EVENTS_WITHOUT_HOST_NAME: EventType[] = ['marriage', 'bridetobe'];
+
+// Event types that do NOT collect an RSVP Contact in the editor.
+const EVENTS_WITHOUT_RSVP_CONTACT: EventType[] = ['marriage', 'bridetobe', 'housewarming', 'custom'];
 
 /**
  * Build the ordered list of editor fields for a given event type.
- * Order: event-specific → host(?) → date → time → timezone → guest count → venue → rsvp.
+ * Order: event-specific → host(?) → date → time → timezone → guest count → venue → rsvp(?).
  */
 export function getEditorFields(eventType: EventType): EventField[] {
   const find = (n: string) => commonFields.find((f) => f.name === n)!;
@@ -130,7 +133,9 @@ export function getEditorFields(eventType: EventType): EventField[] {
   fields.push(find('timezone'));
   fields.push(find('guestCount'));
   fields.push(find('venue'));
-  fields.push(find('rsvpContact'));
+  if (!EVENTS_WITHOUT_RSVP_CONTACT.includes(eventType)) {
+    fields.push(find('rsvpContact'));
+  }
   return fields;
 }
 
