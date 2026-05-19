@@ -1188,11 +1188,6 @@ export default function CreateEvite() {
                           </p>
                         )}
                       </div>
-                      {formData.customMessage && (
-                        <p className="font-serif-exp italic text-[10px] md:text-xs text-white/65 mt-3 border-t border-white/10 pt-2">
-                          "{formData.customMessage}"
-                        </p>
-                      )}
                     </div>
                   )}
                 </div>

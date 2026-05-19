@@ -80,7 +80,6 @@ export const commonFields: EventField[] = [
   { name: 'timezone', label: 'Timezone', type: 'select', options: TIMEZONE_OPTIONS, required: true },
   { name: 'venue', label: 'Venue / Location', type: 'text', placeholder: 'Where is the event?', required: true },
   { name: 'rsvpContact', label: 'RSVP Contact (Phone or Email)', type: 'text', placeholder: 'How should guests RSVP?', required: true },
-  { name: 'customMessage', label: 'Custom Message', type: 'textarea', placeholder: 'Add a personal note (optional)', required: false },
   { name: 'guestCount', label: 'Approximate Guest Count', type: 'number', placeholder: 'e.g. 50', required: false },
 ];
 
@@ -99,7 +98,6 @@ export const eventSpecificFields: Record<EventType, EventField[]> = {
   ],
   bridetobe: [
     { name: 'celebrantName', label: "Celebrant's Name", type: 'text', placeholder: "Celebrant's name", required: true },
-    { name: 'organizer', label: 'Organized By', type: 'text', placeholder: 'Bridal party organizer', required: true },
     { name: 'dressCode', label: 'Dress Code', type: 'text', placeholder: 'e.g. All White, Cocktail (optional)', required: false },
   ],
   genderreveal: [
@@ -113,34 +111,26 @@ export const eventSpecificFields: Record<EventType, EventField[]> = {
   ],
 };
 
-// Event types that ask for an RSVP contact in the editor.
-const EVENTS_WITH_RSVP: EventType[] = ['marriage', 'bridetobe', 'custom', 'housewarming'];
+// Event types that do NOT collect a Host Name in the editor.
+const EVENTS_WITHOUT_HOST_NAME: EventType[] = ['marriage'];
 
 /**
  * Build the ordered list of editor fields for a given event type.
- * Order: event-specific → host → date → time → timezone → venue → rsvp(?) → custom message → guest count.
+ * Order: event-specific → host(?) → date → time → timezone → guest count → venue → rsvp.
  */
 export function getEditorFields(eventType: EventType): EventField[] {
   const find = (n: string) => commonFields.find((f) => f.name === n)!;
   const specific = eventSpecificFields[eventType] ?? [];
-  const fields: EventField[] = [
-    ...specific,
-    find('hostName'),
-    find('eventDate'),
-    find('eventTime'),
-    find('timezone'),
-  ];
-  // Pair the slot next to Date & Time: with RSVP if the event collects it,
-  // otherwise with Guest Count — so the second column never sits empty.
-  if (EVENTS_WITH_RSVP.includes(eventType)) {
-    fields.push(find('rsvpContact'));
-    fields.push(find('venue'));
-    fields.push(find('guestCount'));
-  } else {
-    fields.push(find('guestCount'));
-    fields.push(find('venue'));
+  const fields: EventField[] = [...specific];
+  if (!EVENTS_WITHOUT_HOST_NAME.includes(eventType)) {
+    fields.push(find('hostName'));
   }
-  fields.push(find('customMessage'));
+  fields.push(find('eventDate'));
+  fields.push(find('eventTime'));
+  fields.push(find('timezone'));
+  fields.push(find('guestCount'));
+  fields.push(find('venue'));
+  fields.push(find('rsvpContact'));
   return fields;
 }
 

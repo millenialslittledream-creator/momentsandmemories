@@ -159,11 +159,6 @@ export default function FinalPreview({
                       </p>
                     )}
                   </div>
-                  {formData.customMessage && (
-                    <p className="font-serif-exp text-xs text-white/60 mt-3 border-t border-white/10 pt-2">
-                      "{formData.customMessage}"
-                    </p>
-                  )}
                 </div>
               </div>
             )}

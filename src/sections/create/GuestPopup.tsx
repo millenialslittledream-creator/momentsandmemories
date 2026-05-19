@@ -55,6 +55,8 @@ export default function GuestPopup({
   const [qrError, setQrError] = useState('');
 
   // Derived sub-events from the editor's formData (set by Multiple Events toggle).
+  // We only surface the per-event tagging UI when there are 2+ sub-events — a
+  // single sub-event is functionally the same as a regular single-event invite.
   const subEvents: SubEvent[] = useMemo(() => {
     const count = parseInt(formData['sub_events_count'] || '0', 10) || 0;
     return Array.from({ length: count }, (_, i) => ({
@@ -62,7 +64,7 @@ export default function GuestPopup({
       name: formData[`sub_${i}_name`]?.trim() || `Event ${i + 1}`,
     }));
   }, [formData]);
-  const hasSubEvents = subEvents.length > 0;
+  const hasSubEvents = subEvents.length >= 2;
 
   useEffect(() => {
     if (backdropRef.current && panelRef.current) {

@@ -85,7 +85,8 @@ export default function GuestDetails({
     idx: i,
     name: formData[`sub_${i}_name`]?.trim() || `Event ${i + 1}`,
   }));
-  const hasSubEvents = subEvents.length > 0;
+  // Show the per-event tagging columns only with truly multiple events (≥ 2).
+  const hasSubEvents = subEvents.length >= 2;
 
   useEffect(() => {
     const ctx = gsap.context(() => {

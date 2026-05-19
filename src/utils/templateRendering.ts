@@ -40,13 +40,27 @@ function formatTime12(timeStr: string): string {
   return `${h12}:${mm.toString().padStart(2, '0')} ${meridian}`;
 }
 
+/**
+ * Breaks `text` into 2 lines at the nearest word boundary once length exceeds `limit`.
+ * Prefers a space at/before the limit; falls back to the first space after the limit.
+ * If no spaces exist at all, returns the text unchanged.
+ */
+function wrapAfter(text: string, limit: number): string {
+  if (text.length <= limit) return text;
+  const beforeIdx = text.lastIndexOf(' ', limit);
+  const breakIdx = beforeIdx > 0 ? beforeIdx : text.indexOf(' ', limit);
+  if (breakIdx <= 0) return text;
+  return text.slice(0, breakIdx) + '\n' + text.slice(breakIdx + 1);
+}
+
 export function formatFieldValue(
   field: TemplateFieldLayout,
   formData: Record<string, string>
 ): string {
   // Static text takes priority — no formData lookup.
   if (field.text !== undefined) {
-    return (field.prefix || '') + field.text + (field.suffix || '');
+    const out = (field.prefix || '') + field.text + (field.suffix || '');
+    return field.wrapAfterChars ? wrapAfter(out, field.wrapAfterChars) : out;
   }
 
   if (!field.formKey) return '';
@@ -61,7 +75,8 @@ export function formatFieldValue(
   } else if (field.format === 'time12') {
     formatted = formatTime12(raw);
   }
-  return (field.prefix || '') + formatted + (field.suffix || '');
+  const out = (field.prefix || '') + formatted + (field.suffix || '');
+  return field.wrapAfterChars ? wrapAfter(out, field.wrapAfterChars) : out;
 }
 
 export function loadImage(src: string): Promise<HTMLImageElement> {

@@ -42,6 +42,7 @@ function fieldStyle(
       ? `calc(${field.letterSpacing} / ${naturalWidth} * 100cqi)`
       : undefined,
     textAlign: field.align,
+    textTransform: field.textTransform,
     whiteSpace: 'pre',
     pointerEvents: 'none',
     maxWidth: field.maxWidth

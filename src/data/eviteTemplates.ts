@@ -21,6 +21,10 @@ export interface TemplateFieldLayout {
   align: 'left' | 'center' | 'right';
   lineHeight?: number;
   maxWidth?: number;
+  /** If set, wrap text onto a 2nd line at the nearest word boundary once length exceeds this many chars. */
+  wrapAfterChars?: number;
+  /** CSS text-transform applied at render time. */
+  textTransform?: 'uppercase' | 'lowercase' | 'capitalize' | 'none';
 }
 
 export interface TemplateLayout {
@@ -40,17 +44,37 @@ export interface EviteTemplate {
 }
 
 export const eviteTemplates: EviteTemplate[] = [
-  // ── Birthday (10 templates) ─────────────────────────────────────────────
-  { id: 'bday-1',  eventType: 'birthday', name: 'Golden Hour',      style: 'Elegant & Warm',      previewImage: '/templates/birthday/1.jpg',  accent: '#e8a87c' },
-  { id: 'bday-2',  eventType: 'birthday', name: 'Neon Glow',        style: 'Bold & Modern',        previewImage: '/templates/birthday/2.jpg',  accent: '#ff6b6b' },
-  { id: 'bday-3',  eventType: 'birthday', name: 'Garden Party',     style: 'Floral & Fresh',       previewImage: '/templates/birthday/3.jpg',  accent: '#a8d5ba' },
-  { id: 'bday-4',  eventType: 'birthday', name: 'Minimalist Chic',  style: 'Clean & Simple',       previewImage: '/templates/birthday/4.jpg',  accent: '#c4b5a0' },
-  { id: 'bday-5',  eventType: 'birthday', name: 'Pastel Dream',     style: 'Soft & Playful',       previewImage: '/templates/birthday/5.jpg',  accent: '#f0c987' },
-  { id: 'bday-6',  eventType: 'birthday', name: 'Starry Night',     style: 'Celestial & Dreamy',   previewImage: '/templates/birthday/6.jpg',  accent: '#2c3e50' },
-  { id: 'bday-7',  eventType: 'birthday', name: 'Tropical Fiesta',  style: 'Vibrant & Fun',        previewImage: '/templates/birthday/7.jpg',  accent: '#e67e22' },
-  { id: 'bday-8',  eventType: 'birthday', name: 'Rustic Wood',      style: 'Warm & Natural',       previewImage: '/templates/birthday/8.jpg',  accent: '#b5651d' },
-  { id: 'bday-9',  eventType: 'birthday', name: 'Midnight Luxe',    style: 'Dark & Sophisticated', previewImage: '/templates/birthday/9.jpg',  accent: '#9b59b6' },
-  { id: 'bday-10', eventType: 'birthday', name: 'Confetti Pop',     style: 'Bright & Festive',     previewImage: '/templates/birthday/10.jpg', accent: '#e8a87c' },
+  // ── Birthday (1 template) ───────────────────────────────────────────────
+  {
+    id: 'bday-floral',
+    eventType: 'birthday',
+    name: 'Floral Celebration',
+    style: 'Elegant & Floral',
+    previewImage: '/templates/birthday/birthday1.png',
+    accent: '#A8893D',
+    layout: {
+      // Coordinate system matches the customization spec (1024 x 1536).
+      // The renderer scales these to fit the actual template image.
+      naturalWidth: 1024,
+      naturalHeight: 1536,
+      fields: [
+        // Celebrant name
+        { formKey: 'celebrantName', suffix: "’s", x: 500, y: 420, fontFamily: 'Great Vibes', fontSize: 150, color: '#A8893D', align: 'center', maxWidth: 760 },
+
+        // Date
+        { formKey: 'eventDate', format: 'longDateUpper', x: 535, y: 825, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 28, letterSpacing: 1.2, color: '#2F302A', align: 'center', maxWidth: 620, textTransform: 'uppercase' },
+
+        // Time
+        { formKey: 'eventTime', format: 'time12', x: 535, y: 860, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 28, color: '#2F302A', align: 'center', maxWidth: 620, textTransform: 'uppercase' },
+
+        // Venue / Location — wraps to 2nd line after ~21 chars at a word boundary
+        { formKey: 'venue', x: 555, y: 960, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 28, letterSpacing: 1.2, color: '#2F302A', align: 'center', maxWidth: 660, lineHeight: 36, wrapAfterChars: 21, textTransform: 'uppercase' },
+
+        // RSVP
+        { formKey: 'rsvpContact', prefix: 'RSVP: ', x: 512, y: 1285, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 25, letterSpacing: 1, color: '#2F302A', align: 'center', maxWidth: 700 },
+      ],
+    },
+  },
 
   // ── Wedding (7 templates) ───────────────────────────────────────────────
   { id: 'wed-1', eventType: 'marriage', name: 'Classic Romance',  style: 'Timeless & Elegant',    previewImage: '/templates/wedding/1.jpg', accent: '#c4a882' },
@@ -107,12 +131,6 @@ export const eviteTemplates: EviteTemplate[] = [
 
         // Venue (multi-line via \n)
         { formKey: 'venue', x: 135, y: 382, fontFamily: 'Cormorant Garamond', fontSize: 13, lineHeight: 20, color: '#3E2D23', align: 'left' },
-
-        // Custom message
-        { formKey: 'customMessage', x: 195, y: 420, fontFamily: 'Cormorant Garamond', fontSize: 15, fontStyle: 'italic', color: '#A62D58', align: 'center' },
-
-        // RSVP phone
-        { formKey: 'rsvpContact', x: 193, y: 470, fontFamily: 'Cormorant Garamond', fontSize: 11, color: '#3E2D23', align: 'center' },
       ],
     },
   },
