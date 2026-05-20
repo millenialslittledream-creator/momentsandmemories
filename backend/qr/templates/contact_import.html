@@ -264,8 +264,8 @@
             <!-- Android: Contact Picker API -->
             <button id="selectBtn">Choose Contacts</button>
 
-            <!-- iOS: vCard upload -->
-            <button id="vcfBtn">Upload from iPhone</button>
+            <!-- iOS / Android: vCard upload -->
+            <button id="vcfBtn">Upload Contacts (.vcf)</button>
 
             <!-- Fallback: manual entry -->
             <button id="fallbackBtn">Enter Manually</button>
@@ -273,11 +273,19 @@
             <!-- vCard upload section -->
             <div id="vcfSection">
                 <hr class="divider">
-                <p>Export contacts from your iPhone, then upload the .vcf file here.</p>
-                <ol>
+                <p id="vcfInstructions">Export contacts from your phone, then upload the .vcf file here.</p>
+                <!-- iPhone instructions -->
+                <ol id="iosInstructions">
                     <li>Open <strong>Contacts</strong> app</li>
                     <li>Tap a contact → scroll down → <strong>Share Contact</strong></li>
                     <li>Choose <strong>AirDrop / Files / Mail</strong> to save the .vcf</li>
+                    <li>Upload the file below</li>
+                </ol>
+                <!-- Android instructions -->
+                <ol id="androidInstructions" style="display:none">
+                    <li>Open <strong>Contacts</strong> app</li>
+                    <li>Tap the menu (⋮) → <strong>Import / Export</strong></li>
+                    <li>Choose <strong>Export to .vcf file</strong> and save it</li>
                     <li>Upload the file below</li>
                 </ol>
                 <label id="vcfLabel" for="vcfFile">Tap to choose .vcf file</label>
@@ -379,11 +387,22 @@
             document.getElementById('loadingState').style.display = 'none';
             const main = document.getElementById('mainState');
             main.style.display = 'block';
-            // Hide Contact Picker button on iOS (not supported)
+
             const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-            if (isIOS || !('contacts' in navigator)) {
+            const isAndroid = /android/i.test(navigator.userAgent);
+            const hasContactPicker = 'contacts' in navigator && 'ContactsManager' in window;
+
+            // Contact Picker API needs HTTPS + Android Chrome — hide if unavailable
+            if (isIOS || !hasContactPicker) {
                 document.getElementById('selectBtn').style.display = 'none';
             }
+
+            // Show device-appropriate vCard instructions
+            if (isAndroid) {
+                document.getElementById('iosInstructions').style.display = 'none';
+                document.getElementById('androidInstructions').style.display = 'block';
+            }
+            // iOS keeps the default iOS instructions visible
         }
 
         checkSession();
