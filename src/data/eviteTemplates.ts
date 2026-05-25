@@ -62,13 +62,13 @@ export const eviteTemplates: EviteTemplate[] = [
         { formKey: 'celebrantName', suffix: "’s", x: 500, y: 420, fontFamily: 'Great Vibes', fontSize: 150, color: '#A8893D', align: 'center', maxWidth: 760 },
 
         // Date
-        { formKey: 'eventDate', format: 'longDateUpper', x: 535, y: 825, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 28, letterSpacing: 1.2, color: '#2F302A', align: 'center', maxWidth: 620, textTransform: 'uppercase' },
+        { formKey: 'eventDate', format: 'longDateUpper', x: 360, y: 815, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 28, letterSpacing: 1.2, color: '#2F302A', align: 'left', maxWidth: 620, textTransform: 'uppercase' },
 
         // Time
-        { formKey: 'eventTime', format: 'time12', x: 535, y: 860, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 28, color: '#2F302A', align: 'center', maxWidth: 620, textTransform: 'uppercase' },
+        { formKey: 'eventTime', format: 'time12', x: 360, y: 855, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 28, color: '#2F302A', align: 'left', maxWidth: 620, textTransform: 'uppercase' },
 
         // Venue / Location — wraps to 2nd line after ~21 chars at a word boundary
-        { formKey: 'venue', x: 555, y: 960, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 28, letterSpacing: 1.2, color: '#2F302A', align: 'center', maxWidth: 660, lineHeight: 36, wrapAfterChars: 21, textTransform: 'uppercase' },
+        { formKey: 'venue', x: 360, y: 960, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 28, letterSpacing: 1.2, color: '#2F302A', align: 'left', maxWidth: 660, lineHeight: 36, wrapAfterChars: 21, textTransform: 'uppercase' },
       ],
     },
   },

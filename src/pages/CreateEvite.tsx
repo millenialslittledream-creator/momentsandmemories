@@ -1321,7 +1321,6 @@ export default function CreateEvite() {
                                 <td className="px-2 py-1.5">
                                   <DateTimePicker
                                     compact
-                                    size="sm"
                                     date={formData[`sub_${i}_date`] || ''}
                                     time={formData[`sub_${i}_time`] || ''}
                                     timezone={formData[`sub_${i}_timezone`] || ''}
