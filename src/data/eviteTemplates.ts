@@ -100,10 +100,7 @@ export const eviteTemplates: EviteTemplate[] = [
   { id: 'bride-6', eventType: 'bridetobe', name: 'Luxe Soirée',     style: 'Elegant & Glamorous',     previewImage: '/templates/bride to be/6.jpg', accent: '#c9b037' },
   { id: 'bride-7', eventType: 'bridetobe', name: 'Bachelorette',    style: 'Bold & Fun',              previewImage: '/templates/bride to be/7.jpg', accent: '#ff6b6b' },
 
-  // ── Housewarming (3 templates) ─────────────────────────────────────────
-  { id: 'house-1', eventType: 'housewarming', name: 'New Beginnings',  style: 'Warm & Inviting',      previewImage: '/templates/housewarming/1.jpg', accent: '#c4a882' },
-  { id: 'house-2', eventType: 'housewarming', name: 'Home Sweet Home', style: 'Rustic & Cozy',         previewImage: '/templates/housewarming/2.jpg', accent: '#b5651d' },
-  { id: 'house-3', eventType: 'housewarming', name: 'Welcome Home',    style: 'Modern & Minimal',      previewImage: '/templates/housewarming/3.jpg', accent: '#9cb092' },
+  // ── Housewarming (2 templates) ─────────────────────────────────────────
   {
     id: 'house-blessings',
     eventType: 'housewarming',
