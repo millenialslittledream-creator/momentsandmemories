@@ -15,10 +15,14 @@ import { createGuest, type Guest } from '@/sections/create/GuestDetails';
 import GuestPopup from '@/sections/create/GuestPopup';
 import PaymentModal from '@/sections/create/PaymentModal';
 import DateTimePicker from '@/sections/create/DateTimePicker';
+import StepIndicator from '@/sections/create/StepIndicator';
+import PreviewStep from '@/sections/create/PreviewStep';
 import TemplateRenderer from '@/components/TemplateRenderer';
 
 type EventTypeFilter = EventType;
-type ModalPhase = 'upload' | 'editor' | 'signin' | 'guests' | 'payment' | 'sent' | null;
+type ModalPhase = 'upload' | 'editor' | 'signin' | 'guests' | 'preview' | 'payment' | 'sent' | null;
+
+const MULTI_EVENTS_HELP = "Send different invites to different guest groups.";
 
 interface UploadedTemplate {
   url: string;
@@ -42,7 +46,7 @@ const FILTERS: { id: EventTypeFilter; label: string }[] = [
   { id: 'bridetobe',    label: 'Pre-Wedding Party' },
   { id: 'genderreveal', label: 'Gender Reveal' },
   { id: 'housewarming', label: 'Housewarming' },
-  { id: 'custom',       label: 'Custom' },
+  { id: 'custom',       label: 'Others' },
 ];
 
 const SUPPORTS_MULTI_EVENTS: EventType[] = ['marriage', 'custom'];
@@ -397,8 +401,10 @@ export default function CreateEvite() {
   }, [user, multipleInvitations, invitationSlots, currentSlotIdx, formData]);
 
   const backToEditor = useCallback(() => setModalPhase('editor'), []);
+  const proceedToPreview = useCallback(() => setModalPhase('preview'), []);
   const proceedToPayment = useCallback(() => setModalPhase('payment'), []);
   const backToGuests = useCallback(() => setModalPhase('guests'), []);
+  const backToPreview = useCallback(() => setModalPhase('preview'), []);
 
   const handlePaymentConfirm = useCallback(async () => {
     try {
@@ -754,7 +760,7 @@ export default function CreateEvite() {
         >
           <div
             ref={editorPanelRef}
-            className="relative w-full max-w-2xl bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl flex flex-col"
+            className="relative w-full max-w-6xl max-h-[82vh] bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -767,10 +773,8 @@ export default function CreateEvite() {
             <div className="px-6 md:px-10 pt-8 pb-4 border-b border-white/[0.06]">
               <div className="flex items-start justify-between gap-4 pr-10">
                 <div>
-                  <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092]/50 mb-2">
-                    Custom Upload
-                  </p>
-                  <h2 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
+                  <StepIndicator current={1} total={4} />
+                  <h2 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight mt-2">
                     Upload Your Own <span className="text-[#9cb092] font-agatho italic">Design</span>
                   </h2>
                   <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/50 mt-3">
@@ -793,11 +797,9 @@ export default function CreateEvite() {
                         <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-300 ${multipleInvitations ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
                       </button>
                     </div>
-                    {multipleInvitations && (
-                      <p className="font-display text-[8px] text-[#b2c3b1]/45 leading-relaxed text-right max-w-[200px]">
-                        Use this option if your celebration includes multiple events and you'd like to send specific invitations to different guest groups.
-                      </p>
-                    )}
+                    <p className="font-display text-[8px] text-[#b2c3b1]/45 leading-relaxed text-right max-w-[220px]">
+                      {MULTI_EVENTS_HELP}
+                    </p>
                   </div>
                 )}
               </div>
@@ -1048,24 +1050,37 @@ export default function CreateEvite() {
             className="relative w-full max-w-6xl max-h-[82vh] flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* ── Modal top bar: header + controls ── */}
-            <div className="flex-shrink-0 flex items-center justify-between px-6 md:px-8 py-4 border-b border-white/[0.07] bg-[#0e1712]">
-              <div>
-                <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092]/50">
-                  {multipleInvitations && invitationSlots.filter(s => s.url && s.type).length > 1
-                    ? `Invitation ${currentSlotIdx + 1} of ${invitationSlots.filter(s => s.url && s.type).length} · ${invitationSlots.filter(s => s.url && s.type)[currentSlotIdx]?.name || 'Enter Details'}`
-                    : 'Create Evite'}
-                </p>
-                <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight mt-0.5">
+            {/* ── Modal top bar: 3-col grid so step indicator stays centered ── */}
+            <div className="flex-shrink-0 grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-6 md:px-8 py-3 border-b border-white/[0.07] bg-[#0e1712]">
+              {/* Left: title + optional invitation slot label */}
+              <div className="min-w-0">
+                <h2 className="font-serif-exp text-base md:text-lg text-[#e4eee1] leading-tight truncate">
                   Let's bring your celebration <span className="text-[#9cb092] font-agatho italic">to life</span>
                 </h2>
+                {multipleInvitations && invitationSlots.filter(s => s.url && s.type).length > 1 && (
+                  <p className="font-display text-[9px] tracking-[0.18em] uppercase text-[#9cb092]/55 truncate mt-0.5">
+                    Invitation {currentSlotIdx + 1} of {invitationSlots.filter(s => s.url && s.type).length}
+                    {' · '}
+                    {invitationSlots.filter(s => s.url && s.type)[currentSlotIdx]?.name || 'Enter Details'}
+                  </p>
+                )}
               </div>
 
-              <div className="flex items-center gap-4">
-                {/* Multiple Events toggle — visible only for wedding/custom */}
+              {/* Center: step indicator */}
+              <div className="justify-self-center">
+                <StepIndicator current={1} total={4} />
+              </div>
+
+              {/* Right: multi-events toggle + close */}
+              <div className="flex items-center justify-end gap-3">
                 {supportsMultipleEvents && (
                   <div className="flex items-center gap-2">
-                    <span className="font-display text-[9px] tracking-[0.12em] uppercase text-[#b2c3b1]/60 hidden sm:block">Multiple Events</span>
+                    <div className="text-right hidden md:block">
+                      <span className="font-display text-[9px] tracking-[0.12em] uppercase text-[#b2c3b1]/60 block">Multiple Events</span>
+                      <span className="font-display text-[8px] text-[#b2c3b1]/40 block leading-tight">
+                        {MULTI_EVENTS_HELP}
+                      </span>
+                    </div>
                     <button
                       onClick={toggleHasSubEvents}
                       className={`relative w-10 h-5 rounded-full transition-colors duration-300 ${hasSubEvents ? 'bg-[#9cb092]' : 'bg-white/15'}`}
@@ -1078,7 +1093,7 @@ export default function CreateEvite() {
 
                 <button
                   onClick={closeToHome}
-                  className="w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
+                  className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
                 >
                   <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
                 </button>
@@ -1174,17 +1189,6 @@ export default function CreateEvite() {
                               location_on
                             </span>
                             {formData.venue}
-                          </p>
-                        )}
-                        {formData.rsvpContact && (
-                          <p className="font-display text-[9px] md:text-[10px] text-white/75 flex items-center gap-1.5">
-                            <span
-                              className="material-icons text-[#9cb092]"
-                              style={{ fontSize: '11px' }}
-                            >
-                              mail
-                            </span>
-                            RSVP: {formData.rsvpContact}
                           </p>
                         )}
                       </div>
@@ -1317,6 +1321,7 @@ export default function CreateEvite() {
                                 <td className="px-2 py-1.5">
                                   <DateTimePicker
                                     compact
+                                    size="sm"
                                     date={formData[`sub_${i}_date`] || ''}
                                     time={formData[`sub_${i}_time`] || ''}
                                     timezone={formData[`sub_${i}_timezone`] || ''}
@@ -1449,8 +1454,25 @@ export default function CreateEvite() {
           onDeliveryPreferenceChange={setDeliveryPreference}
           onBack={backToEditor}
           onClose={closeToHome}
-          onProceed={proceedToPayment}
+          onProceed={proceedToPreview}
           formData={formData}
+        />
+      )}
+
+      {/* ════════════════════════════════════════════════════════════
+          PREVIEW MODAL (Step 3)
+          ════════════════════════════════════════════════════════════ */}
+      {modalPhase === 'preview' && (selectedTemplate || uploadedTemplate) && (
+        <PreviewStep
+          eventType={currentEventType}
+          selectedTemplate={selectedTemplate}
+          uploadedTemplate={uploadedTemplate}
+          formData={formData}
+          deliveryPreference={deliveryPreference}
+          guestCount={guests.filter((g) => g.name.trim()).length}
+          onBack={backToGuests}
+          onClose={closeToHome}
+          onProceed={proceedToPayment}
         />
       )}
 
@@ -1460,7 +1482,7 @@ export default function CreateEvite() {
       {modalPhase === 'payment' && (
         <PaymentModal
           guestCount={guests.filter((g) => g.name.trim()).length}
-          onBack={backToGuests}
+          onBack={backToPreview}
           onConfirm={handlePaymentConfirm}
         />
       )}

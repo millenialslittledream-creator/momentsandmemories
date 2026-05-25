@@ -69,9 +69,6 @@ export const eviteTemplates: EviteTemplate[] = [
 
         // Venue / Location — wraps to 2nd line after ~21 chars at a word boundary
         { formKey: 'venue', x: 555, y: 960, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 28, letterSpacing: 1.2, color: '#2F302A', align: 'center', maxWidth: 660, lineHeight: 36, wrapAfterChars: 21, textTransform: 'uppercase' },
-
-        // RSVP
-        { formKey: 'rsvpContact', prefix: 'RSVP: ', x: 512, y: 1285, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 25, letterSpacing: 1, color: '#2F302A', align: 'center', maxWidth: 700 },
       ],
     },
   },
@@ -107,6 +104,39 @@ export const eviteTemplates: EviteTemplate[] = [
   { id: 'house-1', eventType: 'housewarming', name: 'New Beginnings',  style: 'Warm & Inviting',      previewImage: '/templates/housewarming/1.jpg', accent: '#c4a882' },
   { id: 'house-2', eventType: 'housewarming', name: 'Home Sweet Home', style: 'Rustic & Cozy',         previewImage: '/templates/housewarming/2.jpg', accent: '#b5651d' },
   { id: 'house-3', eventType: 'housewarming', name: 'Welcome Home',    style: 'Modern & Minimal',      previewImage: '/templates/housewarming/3.jpg', accent: '#9cb092' },
+  {
+    id: 'house-blessings',
+    eventType: 'housewarming',
+    name: 'Blessings of Ganesha',
+    style: 'Traditional & Floral',
+    previewImage: '/templates/housewarming/housewarming2.jpeg',
+    accent: '#B8860B',
+    layout: {
+      // Natural image is 1024 x 1536. Coordinates are in image pixels.
+      // To move a field on this template, edit only the `x` (left→right)
+      // and `y` (top→bottom) on the matching line below.
+      //   • increase x → moves RIGHT
+      //   • decrease x → moves LEFT
+      //   • increase y → moves DOWN
+      //   • decrease y → moves UP
+      naturalWidth: 1024,
+      naturalHeight: 1536,
+      fields: [
+        // Date — sits on the dotted line next to the "Date:" label.
+        // To nudge: change x / y below.
+        { formKey: 'eventDate', format: 'longDate', x: 420, y: 810, fontFamily: 'Cormorant Garamond', fontSize: 36, fontStyle: 'italic', color: '#3A2E25', align: 'left', maxWidth: 540 },
+
+        // Time — sits on the dotted line next to the "Time:" label.
+        { formKey: 'eventTime', format: 'time12', x: 420, y: 925, fontFamily: 'Cormorant Garamond', fontSize: 36, fontStyle: 'italic', color: '#3A2E25', align: 'left', maxWidth: 540 },
+
+        // Venue — sits on the dotted line next to the "Venue:" label.
+        // Single-line: smaller font + wider maxWidth so the full address fits.
+        // If you ever want it to wrap again, add back `wrapAfterChars: 28`.
+        { formKey: 'venue', x: 420, y: 1045, fontFamily: 'Cormorant Garamond', fontSize: 26, fontStyle: 'italic', color: '#3A2E25', align: 'left', maxWidth: 580 },
+      ],
+    },
+  },
+
   {
     id: 'house-gruhapravesam',
     eventType: 'housewarming',

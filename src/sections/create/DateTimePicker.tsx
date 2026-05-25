@@ -12,6 +12,8 @@ interface DateTimePickerProps {
   onChange: (next: { date?: string; time?: string; timezone?: string }) => void;
   required?: boolean;
   compact?: boolean;
+  /** Smaller height for use inside table rows next to h-9 inputs. */
+  size?: 'sm' | 'md';
 }
 
 const TIME_STEP_MIN = 15;
@@ -38,8 +40,10 @@ export default function DateTimePicker({
   onChange,
   required,
   compact,
+  size = 'md',
 }: DateTimePickerProps) {
   const [open, setOpen] = useState(false);
+  const isSm = size === 'sm';
 
   const selected = date ? new Date(date + 'T00:00:00') : undefined;
 
@@ -74,12 +78,12 @@ export default function DateTimePicker({
         {compact ? (
           <button
             type="button"
-            className="w-full h-12 px-4 bg-white/[0.06] border border-white/15 hover:border-[#9cb092]/60 focus:border-[#9cb092] transition-colors text-left rounded-sm flex items-center gap-2 outline-none"
+            className={`w-full ${isSm ? 'h-9 px-2 gap-1.5' : 'h-12 px-4 gap-2'} bg-white/[0.06] border border-white/15 hover:border-[#9cb092]/60 focus:border-[#9cb092] transition-colors text-left rounded-sm flex items-center outline-none`}
           >
-            <span className="material-icons text-[#9cb092] flex-shrink-0" style={{ fontSize: '16px' }}>
+            <span className="material-icons text-[#9cb092] flex-shrink-0" style={{ fontSize: isSm ? '14px' : '16px' }}>
               calendar_today
             </span>
-            <span className={`font-display text-sm truncate flex-1 ${date ? 'text-[#e4eee1]' : 'text-[#b2c3b1]/40'}`}>
+            <span className={`font-display ${isSm ? 'text-xs' : 'text-sm'} truncate flex-1 ${date ? 'text-[#e4eee1]' : 'text-[#b2c3b1]/40'}`}>
               {compactSummary}
             </span>
           </button>
@@ -106,6 +110,10 @@ export default function DateTimePicker({
 
       <PopoverContent
         align="center"
+        side="bottom"
+        sideOffset={6}
+        collisionPadding={16}
+        avoidCollisions
         className="w-auto p-0 bg-[#1a2418] border-white/15 backdrop-blur-xl shadow-2xl"
       >
         <div className="flex">
@@ -162,38 +170,37 @@ export default function DateTimePicker({
           </div>
         </div>
 
-        {/* Timezone footer */}
-        <div className="border-t border-white/10 px-3 py-2.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 min-w-0">
+        {/* Timezone — inline chip strip so the dropdown can never get clipped */}
+        <div className="border-t border-white/10 px-3 py-2.5">
+          <div className="flex items-center gap-1.5 mb-1.5">
             <span className="material-icons text-[#9cb092] text-base">public</span>
-            <p className="font-display text-[11px] text-[#e4eee1] truncate">
-              Timezone:
-              <span className="text-[#9cb092] font-semibold ml-1">
-                {timezone || 'not set'}
-              </span>
+            <p className="font-display text-[10px] tracking-[0.18em] uppercase text-[#b2c3b1]/70">
+              Timezone
+              {timezone && (
+                <span className="text-[#9cb092] font-semibold ml-1 normal-case tracking-normal">
+                  · {timezone}
+                </span>
+              )}
             </p>
           </div>
-          <div className="relative">
-            <select
-              value={timezone}
-              onChange={(e) => onChange({ timezone: e.target.value })}
-              className="bg-white/[0.06] border border-white/15 text-[#e4eee1] font-display text-xs h-7 rounded-sm pl-2 pr-6 appearance-none cursor-pointer outline-none hover:border-[#9cb092]/60 transition-colors"
-            >
-              <option value="" className="bg-[#1a2418]">
-                Change
-              </option>
-              {TIMEZONE_OPTIONS.map((tz) => (
-                <option key={tz} value={tz} className="bg-[#1a2418]">
+          <div className="flex flex-wrap gap-1">
+            {TIMEZONE_OPTIONS.map((tz) => {
+              const active = timezone === tz;
+              return (
+                <button
+                  key={tz}
+                  type="button"
+                  onClick={() => onChange({ timezone: tz })}
+                  className={`font-display text-[10px] tracking-[0.08em] px-2 py-1 rounded-sm border transition-colors ${
+                    active
+                      ? 'bg-[#9cb092] text-[#111914] border-[#9cb092] font-semibold'
+                      : 'bg-white/[0.04] text-[#e4eee1]/80 border-white/10 hover:border-[#9cb092]/50 hover:text-[#9cb092]'
+                  }`}
+                >
                   {tz}
-                </option>
-              ))}
-            </select>
-            <span
-              className="material-icons absolute right-1 top-1/2 -translate-y-1/2 text-[#9cb092] pointer-events-none"
-              style={{ fontSize: '14px' }}
-            >
-              expand_more
-            </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 

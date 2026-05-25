@@ -62,7 +62,7 @@ export const eventTypes: EventTypeInfo[] = [
   },
   {
     id: 'custom',
-    label: 'Custom Event',
+    label: 'Others',
     description: 'Create a personalised invite for any occasion',
     icon: 'stars',
     color: '#9cb092',
@@ -79,8 +79,8 @@ export const commonFields: EventField[] = [
   { name: 'eventTime', label: 'Event Time', type: 'time', required: true },
   { name: 'timezone', label: 'Timezone', type: 'select', options: TIMEZONE_OPTIONS, required: true },
   { name: 'venue', label: 'Venue / Location', type: 'text', placeholder: 'Where is the event?', required: true },
-  { name: 'rsvpContact', label: 'RSVP Contact (Phone or Email)', type: 'text', placeholder: 'How should guests RSVP?', required: true },
   { name: 'guestCount', label: 'Approximate Guest Count', type: 'number', placeholder: 'e.g. 50', required: false },
+  { name: 'customMessage', label: 'Custom Message (sent with the invite)', type: 'textarea', placeholder: 'A personal note from you — guests will see this in the message we send them.', required: false },
 ];
 
 export const eventSpecificFields: Record<EventType, EventField[]> = {
@@ -114,12 +114,10 @@ export const eventSpecificFields: Record<EventType, EventField[]> = {
 // Event types that do NOT collect a Host Name in the editor.
 const EVENTS_WITHOUT_HOST_NAME: EventType[] = ['marriage', 'bridetobe'];
 
-// Event types that do NOT collect an RSVP Contact in the editor.
-const EVENTS_WITHOUT_RSVP_CONTACT: EventType[] = ['marriage', 'bridetobe', 'housewarming', 'custom'];
-
 /**
  * Build the ordered list of editor fields for a given event type.
- * Order: event-specific → host(?) → date → time → timezone → guest count → venue → rsvp(?).
+ * Order: event-specific → host(?) → date → time → timezone → guest count → venue → custom message.
+ * RSVP is no longer collected for any event type.
  */
 export function getEditorFields(eventType: EventType): EventField[] {
   const find = (n: string) => commonFields.find((f) => f.name === n)!;
@@ -133,9 +131,7 @@ export function getEditorFields(eventType: EventType): EventField[] {
   fields.push(find('timezone'));
   fields.push(find('guestCount'));
   fields.push(find('venue'));
-  if (!EVENTS_WITHOUT_RSVP_CONTACT.includes(eventType)) {
-    fields.push(find('rsvpContact'));
-  }
+  fields.push(find('customMessage'));
   return fields;
 }
 

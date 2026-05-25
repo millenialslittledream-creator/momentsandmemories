@@ -4,6 +4,7 @@ import gsap from 'gsap';
 import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { createGuest, type Guest } from './GuestDetails';
+import StepIndicator from './StepIndicator';
 
 interface GuestPopupProps {
   guests: Guest[];
@@ -412,7 +413,7 @@ export default function GuestPopup({
     >
       <div
         ref={panelRef}
-        className="relative w-full max-w-3xl max-h-[88vh] flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
+        className="relative w-full max-w-6xl max-h-[82vh] flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -424,10 +425,8 @@ export default function GuestPopup({
 
         {/* Header */}
         <div className="flex-shrink-0 px-6 md:px-10 pt-8 pb-5 border-b border-white/[0.06]">
-          <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092]/50 mb-2">
-            Step 2 of 3
-          </p>
-          <h2 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
+          <StepIndicator current={2} total={4} />
+          <h2 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight mt-2">
             Who's on the <span className="text-[#9cb092] font-agatho italic">guest list?</span>
           </h2>
           <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/55 mt-3">
@@ -537,7 +536,7 @@ export default function GuestPopup({
                 : 'bg-white/5 text-white/20 cursor-not-allowed border border-white/10'
             }`}
           >
-            Proceed to Payment
+            Continue to Preview
             <span className="material-icons text-sm">arrow_forward</span>
           </button>
         </div>

@@ -239,16 +239,25 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d1a10] flex items-center justify-center">
+      <div className="min-h-screen bg-[#111914] flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-[#9cb092]/30 border-t-[#9cb092] rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1a10] text-[#e4eee1]">
+    <div className="min-h-screen bg-[#EADDD7] text-[#e4eee1] relative">
+      {/* Shared checkered bg — matches /create and /shop */}
+      <div
+        className="fixed inset-0 z-0 opacity-30 mix-blend-multiply pointer-events-none"
+        style={{
+          backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuD0yNSOWSBJLsv1-47TiuxQ15AFQ4nsrk2tyl20R-zvNNsiDXBNDhZVYz1yHqSCTtqtGcVjl35j2rrDIrA-d5xW6tM2FPDinMxC7wGNXKzBCT0JhfwdSkLFQPVqU1yfc1GtqRHSfxSmlitg3lWmrbcCqzLdzR4XsiD9nN9-_O7fp4ViDdX7MFMvLLa9exuWvETBq8HCVRb7NcpP7tWvqDoEWCeegHipJmlKBCM4gpRO9AROi6bPaa2gmQvHKabiYnelhLueCkgQ9QIe')`,
+        }}
+      />
+      <div className="fixed inset-0 z-[1] bg-[#111914]/70 pointer-events-none" />
+
       <Navigation />
-      <div className="pt-24 px-4 md:px-8 pb-16 max-w-7xl mx-auto">
+      <div className="relative z-10 pt-24 px-4 md:px-8 pb-16 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 lg:gap-12 items-start">
 
           {/* ── Left column — dashboard content ── */}

@@ -152,12 +152,6 @@ export default function FinalPreview({
                       <span className="material-icons text-[#9cb092] text-[10px]">location_on</span>
                       {displayVenue}
                     </p>
-                    {formData.rsvpContact && (
-                      <p className="font-display text-[9px] tracking-wide text-white/80 flex items-center gap-1.5">
-                        <span className="material-icons text-[#9cb092] text-[10px]">mail</span>
-                        RSVP: {formData.rsvpContact}
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>
