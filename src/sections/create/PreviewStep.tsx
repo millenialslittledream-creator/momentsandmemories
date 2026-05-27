@@ -200,8 +200,8 @@ export default function PreviewStep({
             </div>
           </div>
 
-          {/* RIGHT — Message preview as a phone screen */}
-          <div className="flex flex-col items-center justify-center min-h-0">
+          {/* RIGHT — Plain message preview (what the SMS / email body will actually contain) */}
+          <div className="flex flex-col min-h-0">
             <p className="font-display text-[9px] tracking-[0.22em] uppercase text-[#9cb092]/60 mb-2 flex items-center gap-1.5">
               <span className="material-icons" style={{ fontSize: '12px' }}>
                 {deliveryPreference === 'phone'
@@ -210,95 +210,53 @@ export default function PreviewStep({
                   ? 'mail'
                   : 'mark_email_read'}
               </span>
-              Message Preview
+              Message Preview · sent via {deliveryLabel}
             </p>
 
-            {/* Phone frame */}
-            <div className="relative h-full max-h-full aspect-[9/16] max-w-full">
-              <div className="absolute inset-0 bg-[#1a1f1a] rounded-[28px] border-[6px] border-[#2a302a] shadow-2xl overflow-hidden flex flex-col">
-                {/* Phone status bar */}
-                <div className="flex-shrink-0 flex items-center justify-between px-4 py-1.5 bg-[#0d1512] text-[#b2c3b1]/80 text-[10px] font-display">
-                  <span>9:41</span>
-                  <div className="flex items-center gap-1">
-                    <span className="material-icons" style={{ fontSize: '12px' }}>signal_cellular_4_bar</span>
-                    <span className="material-icons" style={{ fontSize: '12px' }}>wifi</span>
-                    <span className="material-icons" style={{ fontSize: '12px' }}>battery_full</span>
-                  </div>
-                </div>
+            <div className="flex-1 min-h-0 bg-white/[0.03] border border-white/10 p-5 overflow-hidden flex flex-col">
+              {/* "From" line */}
+              <p className="font-display text-[10px] tracking-[0.18em] uppercase text-[#b2c3b1]/50 mb-3 pb-3 border-b border-white/[0.07]">
+                From <span className="text-[#9cb092]">moments &amp; memories</span>
+              </p>
 
-                {/* Chat-style message */}
-                <div className="flex-1 min-h-0 p-3 overflow-hidden bg-gradient-to-b from-[#1a1f1a] to-[#141914]">
-                  <div className="flex items-start gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-full bg-[#9cb092]/20 border border-[#9cb092]/40 flex-shrink-0 flex items-center justify-center">
-                      <span className="material-icons text-[#9cb092]" style={{ fontSize: '14px' }}>
-                        {deliveryPreference === 'phone' ? 'sms' : 'mail'}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-display text-[9px] text-[#b2c3b1]/55 uppercase tracking-wider">
-                        moments &amp; memories
-                      </p>
-                      <p className="font-display text-[8px] text-[#b2c3b1]/35">
-                        now
-                      </p>
-                    </div>
-                  </div>
+              {/* Body lines — formatted like an actual SMS */}
+              <div className="space-y-3 font-display text-[13px] text-[#e4eee1] leading-relaxed">
+                <p>
+                  You're invited to{' '}
+                  <span className="font-serif-exp italic text-[#9cb092]">{eventTitle}</span>
+                </p>
 
-                  <div className="bg-white/[0.05] border border-white/10 rounded-2xl rounded-tl-sm p-3 space-y-2">
-                    <p className="font-display text-[11px] text-[#e4eee1] leading-snug">
-                      You're invited to{' '}
-                      <span className="font-serif-exp italic text-[#9cb092]">{eventTitle}</span>
-                    </p>
+                {displayDate && (
+                  <p className="flex items-start gap-2">
+                    <span className="material-icons text-[#9cb092] mt-0.5" style={{ fontSize: '14px' }}>
+                      event
+                    </span>
+                    <span>
+                      {displayDate}
+                      {formData.eventTime && ` at ${formData.eventTime}`}
+                      {formData.timezone && ` ${formData.timezone}`}
+                    </span>
+                  </p>
+                )}
 
-                    {displayDate && (
-                      <p className="font-display text-[10px] text-[#b2c3b1]/85 flex items-start gap-1.5">
-                        <span className="material-icons text-[#9cb092] mt-0.5" style={{ fontSize: '12px' }}>
-                          event
-                        </span>
-                        <span className="leading-snug">
-                          {displayDate}
-                          {formData.eventTime && ` at ${formData.eventTime}`}
-                          {formData.timezone && ` ${formData.timezone}`}
-                        </span>
-                      </p>
-                    )}
+                {formData.venue && (
+                  <p className="flex items-start gap-2">
+                    <span className="material-icons text-[#9cb092] mt-0.5" style={{ fontSize: '14px' }}>
+                      location_on
+                    </span>
+                    <span>{formData.venue}</span>
+                  </p>
+                )}
 
-                    {formData.venue && (
-                      <p className="font-display text-[10px] text-[#b2c3b1]/85 flex items-start gap-1.5">
-                        <span className="material-icons text-[#9cb092] mt-0.5" style={{ fontSize: '12px' }}>
-                          location_on
-                        </span>
-                        <span className="leading-snug">{formData.venue}</span>
-                      </p>
-                    )}
+                {customMessage && (
+                  <p className="text-[#e4eee1]/90 italic whitespace-pre-wrap pt-2 border-t border-white/[0.07]">
+                    "{customMessage}"
+                  </p>
+                )}
 
-                    {customMessage && (
-                      <div className="pt-2 border-t border-white/[0.07]">
-                        <p className="font-display text-[10px] text-[#e4eee1]/90 leading-snug italic whitespace-pre-wrap">
-                          "{customMessage}"
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Invitation card thumbnail in the message */}
-                    <div className="pt-2 border-t border-white/[0.07]">
-                      <div className="relative aspect-[9/16] w-16 bg-[#0d1512] border border-white/10 overflow-hidden mx-auto">
-                        {uploadedTemplate ? (
-                          uploadedTemplate.type === 'image' ? (
-                            <img src={uploadedTemplate.url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <video src={uploadedTemplate.url} muted className="w-full h-full object-cover" />
-                          )
-                        ) : selectedTemplate ? (
-                          <img src={selectedTemplate.previewImage} alt="" className="w-full h-full object-cover" />
-                        ) : null}
-                      </div>
-                      <p className="font-display text-[8px] tracking-[0.18em] uppercase text-[#9cb092]/70 text-center mt-1.5">
-                        Open Invitation
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <p className="pt-2 border-t border-white/[0.07] text-[#9cb092] text-[12px]">
+                  https://momentsandmemories.com/i/abc123
+                </p>
               </div>
             </div>
           </div>
