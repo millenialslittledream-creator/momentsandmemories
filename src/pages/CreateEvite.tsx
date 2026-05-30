@@ -1154,7 +1154,12 @@ export default function CreateEvite() {
 
               {/* Right: multi-events toggle + close */}
               <div className="flex items-center justify-end gap-3">
-                {supportsMultipleEvents && (
+                {/* Hide the "Multiple Events" toggle once the user has already
+                   committed to a multi-invitation flow via the intermediate
+                   dialog (Yes on "Will different guests receive different
+                   invitations?") for an uploaded wedding/custom design — they
+                   already picked their grouping path, no need to show this. */}
+                {supportsMultipleEvents && !(uploadedTemplate && multipleInvitations) && (
                   <div className="flex items-center gap-2">
                     <div className="text-right hidden md:block">
                       <span className="font-display text-[9px] tracking-[0.12em] uppercase text-[#b2c3b1]/60 block">Multiple Events</span>
