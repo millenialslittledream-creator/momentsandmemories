@@ -11,6 +11,11 @@ export interface Guest {
   // Sub-event indices this guest is invited to (stringified ints: ["0","2"]).
   // undefined = invited to ALL events (default).
   events?: string[];
+  // When the host uploaded multiple invitation sets (e.g. "Family",
+  // "Wedding guests", "Reception only"), this is the slot.id of the
+  // invitation this guest will receive. undefined = receive the first /
+  // default invitation set.
+  invitationSetId?: string;
 }
 
 interface GuestDetailsProps {

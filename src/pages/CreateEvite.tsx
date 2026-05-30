@@ -20,9 +20,23 @@ import PreviewStep from '@/sections/create/PreviewStep';
 import TemplateRenderer from '@/components/TemplateRenderer';
 
 type EventTypeFilter = EventType;
-type ModalPhase = 'upload' | 'editor' | 'signin' | 'guests' | 'preview' | 'payment' | 'sent' | null;
+type ModalPhase = 'choose-multi' | 'upload' | 'editor' | 'signin' | 'guests' | 'preview' | 'payment' | 'sent' | null;
 
 const MULTI_EVENTS_HELP = "Send different invites to different guest groups.";
+
+// Suggested placeholder names cycled through invitation slots so users see
+// concrete examples ("Family and close friends", "Wedding guests", etc.).
+const SLOT_NAME_PLACEHOLDERS = [
+  'Family and close friends',
+  'Wedding guests',
+  'Reception only',
+  'Mehendi guests',
+  'Sangeet guests',
+];
+
+function slotPlaceholder(idx: number) {
+  return SLOT_NAME_PLACEHOLDERS[idx % SLOT_NAME_PLACEHOLDERS.length];
+}
 
 interface UploadedTemplate {
   url: string;
@@ -306,9 +320,23 @@ export default function CreateEvite() {
   const openUploadFlow = useCallback(() => {
     setSelectedTemplateId(null);
     setUploadedTemplate(null);
-    setModalPhase('upload');
+    // For wedding/custom (events that support multiple invitation sets), ask
+    // the user up front whether different guests should get different invites.
+    // Everyone else goes straight to single-template upload.
+    if (SUPPORTS_MULTI_EVENTS.includes(activeFilter)) {
+      setModalPhase('choose-multi');
+    } else {
+      setMultipleInvitations(false);
+      setModalPhase('upload');
+    }
     animateModalIn();
-  }, [animateModalIn]);
+  }, [animateModalIn, activeFilter]);
+
+  // Choose-multi dialog handlers — record the user's choice and proceed.
+  const chooseMultiInvitations = useCallback((multi: boolean) => {
+    setMultipleInvitations(multi);
+    setModalPhase('upload');
+  }, []);
 
   const closeAnyModal = useCallback(() => {
     if (!editorBackdropRef.current || !editorPanelRef.current) {
@@ -747,6 +775,59 @@ export default function CreateEvite() {
       </div>
 
       {/* ════════════════════════════════════════════════════════════
+          CHOOSE-MULTI DIALOG — shown for wedding/custom before upload
+          ════════════════════════════════════════════════════════════ */}
+      {modalPhase === 'choose-multi' && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeAnyModal();
+          }}
+        >
+          <div
+            className="relative w-full max-w-lg bg-[#111914] border border-white/[0.09] shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={closeToHome}
+              className="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
+            >
+              <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
+            </button>
+
+            <div className="px-8 pt-10 pb-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center mx-auto mb-4">
+                <span className="material-icons text-[#9cb092]">group</span>
+              </div>
+              <h2 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight">
+                Will different guests receive <span className="text-[#9cb092] font-agatho italic">different invitations?</span>
+              </h2>
+              <p className="font-display text-[11px] tracking-wide text-[#b2c3b1]/55 leading-relaxed mt-4 max-w-md mx-auto">
+                Useful for weddings or celebrations where some guests are invited to specific functions only.
+              </p>
+            </div>
+
+            <div className="px-8 pb-8 grid grid-cols-2 gap-3">
+              <button
+                onClick={() => chooseMultiInvitations(false)}
+                className="py-3.5 border border-white/15 text-[#b2c3b1] font-display text-[11px] tracking-[0.22em] uppercase hover:border-[#9cb092]/40 hover:text-[#9cb092] transition-all"
+              >
+                No
+              </button>
+              <button
+                onClick={() => chooseMultiInvitations(true)}
+                className="py-3.5 bg-[#9cb092] text-[#111914] font-display text-[11px] tracking-[0.22em] uppercase font-bold hover:bg-[#adc4a3] transition-colors flex items-center justify-center gap-2"
+              >
+                Yes
+                <span className="material-icons text-sm">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════
           UPLOAD MODAL
           ════════════════════════════════════════════════════════════ */}
       {modalPhase === 'upload' && (
@@ -813,7 +894,7 @@ export default function CreateEvite() {
                   <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#b2c3b1]/55">
                     Upload an image or video for each of your invitations
                   </p>
-                  {invitationSlots.map((slot) => (
+                  {invitationSlots.map((slot, slotIdx) => (
                     <div key={slot.id} className="flex gap-3 items-stretch border border-white/[0.07] bg-white/[0.02] p-3">
                       {/* Upload area */}
                       <div className="flex-shrink-0 w-[100px]">
@@ -853,13 +934,13 @@ export default function CreateEvite() {
                       <div className="flex-1 flex flex-col gap-2 justify-between">
                         <div className="space-y-1">
                           <label className="font-display text-[8px] tracking-[0.15em] uppercase text-[#b2c3b1]/55">
-                            Template Name (for your reference)
+                            Invitation Name (who is this for?)
                           </label>
                           <input
                             type="text"
                             value={slot.name}
                             onChange={(e) => updateSlotName(slot.id, e.target.value)}
-                            placeholder="e.g. Main Wedding Invitation"
+                            placeholder={`e.g. ${slotPlaceholder(slotIdx)}`}
                             className="bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-3 h-9 text-xs rounded-sm w-full outline-none transition-colors"
                           />
                           {slot.url && (
@@ -1455,6 +1536,13 @@ export default function CreateEvite() {
           onClose={closeToHome}
           onProceed={proceedToPreview}
           formData={formData}
+          invitationSets={
+            multipleInvitations
+              ? invitationSlots
+                  .filter((s) => s.url && s.type)
+                  .map((s, i) => ({ id: s.id, name: s.name?.trim() || `Invitation ${i + 1}` }))
+              : undefined
+          }
         />
       )}
 
@@ -1469,6 +1557,19 @@ export default function CreateEvite() {
           formData={formData}
           deliveryPreference={deliveryPreference}
           guestCount={guests.filter((g) => g.name.trim()).length}
+          guests={guests}
+          invitationSets={
+            multipleInvitations
+              ? invitationSlots
+                  .filter((s) => s.url && s.type)
+                  .map((s, i) => ({
+                    id: s.id,
+                    name: s.name?.trim() || `Invitation ${i + 1}`,
+                    url: s.url,
+                    type: s.type!,
+                  }))
+              : undefined
+          }
           onBack={backToGuests}
           onClose={closeToHome}
           onProceed={proceedToPayment}

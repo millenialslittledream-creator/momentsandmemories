@@ -6,6 +6,11 @@ import { supabase } from '@/lib/supabase';
 import { createGuest, type Guest } from './GuestDetails';
 import StepIndicator from './StepIndicator';
 
+export interface InvitationSetSummary {
+  id: string;
+  name: string;
+}
+
 interface GuestPopupProps {
   guests: Guest[];
   onGuestsChange: (guests: Guest[]) => void;
@@ -15,6 +20,10 @@ interface GuestPopupProps {
   onClose?: () => void;
   onProceed: () => void;
   formData: Record<string, string>;
+  /** When the host uploaded multiple invitation sets, pass them so each
+   * guest can be assigned to the right one. Pass undefined/empty for the
+   * single-template flow. */
+  invitationSets?: InvitationSetSummary[];
 }
 
 type ContactMethod = 'manual' | 'excel' | 'qr';
@@ -36,7 +45,14 @@ export default function GuestPopup({
   onClose,
   onProceed,
   formData,
+  invitationSets,
 }: GuestPopupProps) {
+  const hasMultipleSets = (invitationSets?.length ?? 0) >= 2;
+  const defaultSetId = invitationSets?.[0]?.id;
+  const getGuestSetId = (g: Guest) => g.invitationSetId ?? defaultSetId ?? '';
+  const setGuestInvitationSet = (id: string, setId: string) => {
+    onGuestsChange(guests.map((g) => (g.id === id ? { ...g, invitationSetId: setId } : g)));
+  };
   const navigate = useNavigate();
   const handleClose = () => {
     if (onClose) onClose();
@@ -304,6 +320,9 @@ export default function GuestPopup({
             <th className={`${headerCellClass} min-w-[120px]`}>Name</th>
             {showEmail && <th className={`${headerCellClass} min-w-[160px]`}>Email</th>}
             {showPhone && <th className={`${headerCellClass} min-w-[120px]`}>Phone</th>}
+            {hasMultipleSets && (
+              <th className={`${headerCellClass} min-w-[160px]`}>Invitation Set</th>
+            )}
             {hasSubEvents && (
               <>
                 <th className={`${headerCellClass} text-center min-w-[60px]`}>All</th>
@@ -357,6 +376,21 @@ export default function GuestPopup({
                     placeholder="+1 (555) 000-0000"
                     className={cellInputClass}
                   />
+                </td>
+              )}
+              {hasMultipleSets && (
+                <td className="px-2 py-1.5">
+                  <select
+                    value={getGuestSetId(guest)}
+                    onChange={(e) => setGuestInvitationSet(guest.id, e.target.value)}
+                    className="w-full bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display text-[11px] h-8 rounded-sm px-2 outline-none cursor-pointer transition-colors"
+                  >
+                    {invitationSets!.map((s) => (
+                      <option key={s.id} value={s.id} className="bg-[#1a2418]">
+                        {s.name || 'Unnamed invitation'}
+                      </option>
+                    ))}
+                  </select>
                 </td>
               )}
               {hasSubEvents && (
