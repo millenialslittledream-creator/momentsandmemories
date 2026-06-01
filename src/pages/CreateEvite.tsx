@@ -915,26 +915,23 @@ export default function CreateEvite() {
                             )}
                           </div>
                         ) : (
-                          <div className="h-full min-h-[80px] flex flex-col gap-1">
-                            <label className="cursor-pointer flex items-center gap-1.5 flex-1 px-2 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all">
-                              <span className="material-icons text-[#9cb092]" style={{ fontSize: '15px' }}>image</span>
-                              <div>
-                                <span className="font-display text-[7px] tracking-[0.12em] uppercase text-[#9cb092] block">Image</span>
-                                <span className="font-display text-[7px] text-[#b2c3b1]/40">JPG, PNG ≤ 10MB</span>
-                              </div>
-                              <input type="file" accept="image/*" className="hidden"
-                                onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; handleSlotFilePicked(slot.id, f, 'image'); e.target.value = ''; }} />
-                            </label>
-                            <label className="cursor-pointer flex items-center gap-1.5 flex-1 px-2 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all">
-                              <span className="material-icons text-[#9cb092]" style={{ fontSize: '15px' }}>movie</span>
-                              <div>
-                                <span className="font-display text-[7px] tracking-[0.12em] uppercase text-[#9cb092] block">Video</span>
-                                <span className="font-display text-[7px] text-[#b2c3b1]/40">MP4, MOV ≤ 50MB</span>
-                              </div>
-                              <input type="file" accept="video/mp4,video/quicktime" className="hidden"
-                                onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; handleSlotFilePicked(slot.id, f, 'video'); e.target.value = ''; }} />
-                            </label>
-                          </div>
+                          <label className="cursor-pointer h-full min-h-[80px] flex flex-col items-center justify-center gap-1 px-2 py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all text-center">
+                            <span className="material-icons text-[#9cb092]" style={{ fontSize: '18px' }}>upload</span>
+                            <span className="font-display text-[8px] tracking-[0.12em] uppercase text-[#9cb092] block">Upload</span>
+                            <span className="font-display text-[7px] text-[#b2c3b1]/45 leading-tight">Image or video</span>
+                            <input
+                              type="file"
+                              accept="image/*,video/mp4,video/quicktime"
+                              className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (!f) return;
+                                const kind = f.type.startsWith('video') ? 'video' : 'image';
+                                handleSlotFilePicked(slot.id, f, kind);
+                                e.target.value = '';
+                              }}
+                            />
+                          </label>
                         )}
                       </div>
 
