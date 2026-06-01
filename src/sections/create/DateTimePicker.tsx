@@ -165,7 +165,9 @@ export default function DateTimePicker({
                   today: 'bg-[#9cb092]/10 text-[#9cb092] font-bold rounded-md',
                   month_caption:
                     'font-display text-[#e4eee1] text-sm flex items-center justify-center h-8',
-                  weekday: 'text-[#b2c3b1]/50 font-display text-[10px] uppercase',
+                  weekdays: 'flex w-full',
+                  weekday:
+                    'flex-1 text-center text-[#b2c3b1]/50 font-display text-[10px] uppercase tracking-wider py-1',
                   button_previous:
                     'text-[#b2c3b1] hover:text-[#9cb092] hover:bg-[#9cb092]/10 rounded-md h-8 w-8 p-0',
                   button_next:

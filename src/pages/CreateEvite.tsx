@@ -402,22 +402,17 @@ export default function CreateEvite() {
 
   // After event details are captured we ask the user to sign in (so we can save
   // their design + guest list). Already-signed-in users skip straight to guests.
+  //
+  // Multi-invite flow: the host enters event details ONCE on a single editor
+  // screen. The slot arrows let them preview each uploaded invitation, but
+  // formData (date / venue / bride+groom / etc.) is shared across all slots.
+  // Below we mirror the single shared formData into every slot so downstream
+  // (preview, send) sees consistent details no matter which slot is "current".
   const proceedFromEditor = useCallback(() => {
     if (multipleInvitations) {
-      const filled = invitationSlots.filter((s) => s.url && s.type);
-      if (filled.length > 1) {
-        setInvitationSlots((prev) =>
-          prev.map((s) => (s.id === filled[currentSlotIdx]?.id ? { ...s, formData } : s))
-        );
-        if (currentSlotIdx < filled.length - 1) {
-          const nextIdx = currentSlotIdx + 1;
-          const next = filled[nextIdx];
-          setCurrentSlotIdx(nextIdx);
-          setUploadedTemplate({ url: next.url, type: next.type!, fileName: next.fileName });
-          setFormData(next.formData || {});
-          return;
-        }
-      }
+      setInvitationSlots((prev) =>
+        prev.map((s) => (s.url && s.type ? { ...s, formData } : s))
+      );
     }
     if (user) {
       setModalPhase('guests');
@@ -586,12 +581,39 @@ export default function CreateEvite() {
       if (!filled.length) return;
       setCurrentSlotIdx(0);
       setUploadedTemplate({ url: filled[0].url, type: filled[0].type!, fileName: filled[0].fileName });
-      setFormData(filled[0].formData || {});
+      // Form details are shared across all uploaded invitations — clear once
+      // and let the host fill them on a single editor screen.
+      setFormData({});
+      // With 2+ invitations the host is almost always running a multi-event
+      // celebration (Mehendi/Sangeet/Wedding/Reception, etc.), so light up
+      // the Multiple Events toggle by default. They can still turn it off.
+      if (filled.length >= 2) setHasSubEvents(true);
     } else {
       if (!uploadedTemplate) return;
     }
     setModalPhase('editor');
   }, [multipleInvitations, invitationSlots, uploadedTemplate]);
+
+  // Multi-invite slot navigation — arrows in the editor preview that swap
+  // which uploaded invitation is shown on the left. Does NOT touch formData;
+  // event details stay constant across all slots.
+  const filledSlots = useMemo(
+    () => invitationSlots.filter((s) => s.url && s.type),
+    [invitationSlots]
+  );
+  const prevSlot = useCallback(() => {
+    if (!multipleInvitations || filledSlots.length < 2 || currentSlotIdx <= 0) return;
+    const next = filledSlots[currentSlotIdx - 1];
+    setCurrentSlotIdx(currentSlotIdx - 1);
+    setUploadedTemplate({ url: next.url, type: next.type!, fileName: next.fileName });
+  }, [multipleInvitations, filledSlots, currentSlotIdx]);
+  const nextSlot = useCallback(() => {
+    if (!multipleInvitations || filledSlots.length < 2 || currentSlotIdx >= filledSlots.length - 1)
+      return;
+    const next = filledSlots[currentSlotIdx + 1];
+    setCurrentSlotIdx(currentSlotIdx + 1);
+    setUploadedTemplate({ url: next.url, type: next.type!, fileName: next.fileName });
+  }, [multipleInvitations, filledSlots, currentSlotIdx]);
 
   // ── Escape closes modal ──────────────────────────────────────────
   useEffect(() => {
@@ -1287,7 +1309,10 @@ export default function CreateEvite() {
                   )}
                 </div>
 
-                {/* Prev / Next arrows — disabled for uploads */}
+                {/* Prev / Next arrows — for stock templates (gallery navigation)
+                    OR for multi-invite slot preview (navigate between the
+                    invitations the user uploaded). Form details are entered
+                    ONCE on this screen and shared across all slots. */}
                 {!uploadedTemplate && currentIdx > 0 && (
                   <button
                     onClick={prevTemplate}
@@ -1305,10 +1330,37 @@ export default function CreateEvite() {
                   </button>
                 )}
 
+                {/* Multi-invite slot navigation */}
+                {uploadedTemplate && multipleInvitations && filledSlots.length >= 2 && currentSlotIdx > 0 && (
+                  <button
+                    onClick={prevSlot}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center transition-all hover:scale-110"
+                    title="Previous invitation"
+                  >
+                    <span className="material-icons text-white text-[18px]">chevron_left</span>
+                  </button>
+                )}
+                {uploadedTemplate && multipleInvitations && filledSlots.length >= 2 && currentSlotIdx < filledSlots.length - 1 && (
+                  <button
+                    onClick={nextSlot}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center transition-all hover:scale-110"
+                    title="Next invitation"
+                  >
+                    <span className="material-icons text-white text-[18px]">chevron_right</span>
+                  </button>
+                )}
+
                 {!uploadedTemplate && (
                   <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10 pointer-events-none">
                     <span className="font-display text-[10px] text-white/60 tracking-widest">
                       {currentIdx + 1} / {visibleTemplates.length}
+                    </span>
+                  </div>
+                )}
+                {uploadedTemplate && multipleInvitations && filledSlots.length >= 2 && (
+                  <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10 pointer-events-none">
+                    <span className="font-display text-[10px] text-white/70 tracking-widest">
+                      {filledSlots[currentSlotIdx]?.name?.trim() || `Invitation ${currentSlotIdx + 1}`} · {currentSlotIdx + 1} / {filledSlots.length}
                     </span>
                   </div>
                 )}
