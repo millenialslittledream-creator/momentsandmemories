@@ -208,9 +208,12 @@ export default function CreateEvite() {
     return visibleTemplates.findIndex((t) => t.id === selectedTemplateId);
   }, [selectedTemplateId, visibleTemplates]);
 
-  // When working with an uploaded template we treat it as a custom event.
+  // When working with an uploaded template, the editor form should ask for
+  // the SAME fields a stock template of that event-type would ask for — so a
+  // birthday upload still asks for celebrant name, a baby shower still asks
+  // for parent + baby gender, etc. The image is the only thing that changed.
   const currentEventType: EventType | null = uploadedTemplate
-    ? (multipleInvitations ? activeFilter : 'custom')
+    ? activeFilter
     : selectedTemplate?.eventType ?? null;
 
   const editorFields: EventField[] = useMemo(() => {
@@ -1128,7 +1131,7 @@ export default function CreateEvite() {
         >
           <div
             ref={editorPanelRef}
-            className="relative w-full max-w-6xl max-h-[82vh] flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
+            className="relative w-full max-w-[1400px] max-h-[82vh] flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* ── Modal top bar: 3-col grid so step indicator stays centered ── */}
@@ -1407,6 +1410,7 @@ export default function CreateEvite() {
                                 <td className="px-2 py-1.5">
                                   <DateTimePicker
                                     compact
+                                    size="sm"
                                     date={formData[`sub_${i}_date`] || ''}
                                     time={formData[`sub_${i}_time`] || ''}
                                     timezone={formData[`sub_${i}_timezone`] || ''}

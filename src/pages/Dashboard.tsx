@@ -124,6 +124,24 @@ export default function Dashboard() {
   const [modalQrLoading, setModalQrLoading] = useState(false);
   const [savingGuests, setSavingGuests] = useState(false);
   const [savedCount, setSavedCount] = useState<number | null>(null);
+  const [deletingDraft, setDeletingDraft] = useState(false);
+
+  const handleDeleteDraft = async () => {
+    if (!draft || deletingDraft) return;
+    if (!window.confirm('Delete this draft? This cannot be undone.')) return;
+    setDeletingDraft(true);
+    try {
+      await api.deleteDraft();
+      setDraft(null);
+      // Also clear any local-storage draft kept by the create flow so it
+      // does not silently restore the deleted one on next visit to /create.
+      try { localStorage.removeItem('mm_evite_draft'); } catch { /* ignore */ }
+    } catch (e) {
+      console.warn('Failed to delete draft:', e);
+    } finally {
+      setDeletingDraft(false);
+    }
+  };
 
   useEffect(() => {
     Promise.all([
@@ -263,18 +281,19 @@ export default function Dashboard() {
 
       <Navigation />
       <div className="relative z-10 pt-24 px-4 md:px-8 pb-16 max-w-7xl mx-auto">
+        {/* ── Welcome header — full-width so the gift panel below sits at the
+            same Y as the stats bar instead of starting up by the title. ── */}
+        <div className="mb-8">
+          <p className="font-display text-[10px] tracking-[0.25em] uppercase text-[#9cb092]/70 mb-2">Welcome back</p>
+          <h1 className="text-3xl md:text-5xl font-serif-exp italic text-[#e4eee1]">
+            {user?.email?.split('@')[0]}
+          </h1>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 lg:gap-12 items-start">
 
           {/* ── Left column — dashboard content ── */}
           <div>
-            {/* Header */}
-            <div className="mb-10">
-              <p className="font-display text-[10px] tracking-[0.25em] uppercase text-[#9cb092]/70 mb-2">Welcome back</p>
-              <h1 className="text-3xl md:text-5xl font-serif-exp italic text-[#e4eee1]">
-                {user?.email?.split('@')[0]}
-              </h1>
-            </div>
-
             {/* Stats bar */}
             <div className="grid grid-cols-3 gap-px bg-white/5 mb-10 border border-white/5">
               {[
@@ -301,12 +320,23 @@ export default function Dashboard() {
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => navigate('/create')}
-                  className="flex-shrink-0 px-6 py-2 bg-[#9cb092] text-[#0d1a10] font-display text-[10px] tracking-[0.2em] uppercase hover:bg-[#b2c3b1] transition-colors"
-                >
-                  Continue
-                </button>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={handleDeleteDraft}
+                    disabled={deletingDraft}
+                    title="Delete this draft"
+                    className="px-3 py-2 border border-white/10 hover:border-red-400/50 text-[#b2c3b1]/60 hover:text-red-400 font-display text-[10px] tracking-[0.2em] uppercase transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-icons text-sm">delete_outline</span>
+                    <span className="hidden sm:inline">{deletingDraft ? 'Deleting…' : 'Delete'}</span>
+                  </button>
+                  <button
+                    onClick={() => navigate('/create')}
+                    className="px-6 py-2 bg-[#9cb092] text-[#0d1a10] font-display text-[10px] tracking-[0.2em] uppercase hover:bg-[#b2c3b1] transition-colors"
+                  >
+                    Continue
+                  </button>
+                </div>
               </div>
             )}
 

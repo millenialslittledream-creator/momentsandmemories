@@ -12,6 +12,9 @@ interface DateTimePickerProps {
   onChange: (next: { date?: string; time?: string; timezone?: string }) => void;
   required?: boolean;
   compact?: boolean;
+  /** "md" (default) matches h-12 form inputs; "sm" matches the h-9 cells
+   * used in the sub-events table row. */
+  size?: 'sm' | 'md';
 }
 
 const TIME_STEP_MIN = 15;
@@ -41,7 +44,9 @@ export default function DateTimePicker({
   onChange,
   required,
   compact,
+  size = 'md',
 }: DateTimePickerProps) {
+  const isSm = size === 'sm';
   const [open, setOpen] = useState(false);
 
   const selected = date ? new Date(date + 'T00:00:00') : undefined;
@@ -90,12 +95,12 @@ export default function DateTimePicker({
     <button
       type="button"
       onClick={() => setOpen(true)}
-      className="w-full h-12 px-4 bg-white/[0.06] border border-white/15 hover:border-[#9cb092]/60 focus:border-[#9cb092] transition-colors text-left rounded-sm flex items-center gap-2 outline-none"
+      className={`w-full ${isSm ? 'h-9 px-2 gap-1.5' : 'h-12 px-4 gap-2'} bg-white/[0.06] border border-white/15 hover:border-[#9cb092]/60 focus:border-[#9cb092] transition-colors text-left rounded-sm flex items-center outline-none`}
     >
-      <span className="material-icons text-[#9cb092] flex-shrink-0" style={{ fontSize: '16px' }}>
+      <span className="material-icons text-[#9cb092] flex-shrink-0" style={{ fontSize: isSm ? '14px' : '16px' }}>
         calendar_today
       </span>
-      <span className={`font-display text-sm truncate flex-1 ${date ? 'text-[#e4eee1]' : 'text-[#b2c3b1]/40'}`}>
+      <span className={`font-display ${isSm ? 'text-xs' : 'text-sm'} truncate flex-1 ${date ? 'text-[#e4eee1]' : 'text-[#b2c3b1]/40'}`}>
         {compactSummary}
       </span>
     </button>
