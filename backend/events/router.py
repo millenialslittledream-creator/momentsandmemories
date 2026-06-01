@@ -58,3 +58,11 @@ def list_invitees(event_id: str, current_user: dict = Depends(get_current_user))
 @router.delete("/{event_id}/invitees/{invitee_id}")
 def remove_invitee(event_id: str, invitee_id: str, current_user: dict = Depends(get_current_user)):
     return service.remove_invitee(event_id, invitee_id)
+
+
+@router.get("/{event_id}/rsvp-stats")
+def get_rsvp_stats(event_id: str, current_user: dict = Depends(get_current_user)):
+    try:
+        return service.get_rsvp_stats(current_user["sub"], event_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))

@@ -10,12 +10,16 @@ from shop.router import router as shop_router
 from notifications.router import router as notifications_router
 from analytics.router import router as analytics_router
 from drafts.router import router as drafts_router
+from public.router import router as public_router
+from admin.router import router as admin_router
+from messaging.router import router as messaging_router
 
 app = FastAPI(title="Moments & Memories API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url, "http://localhost:5173"],
+    allow_origins=[settings.frontend_url],
+    allow_origin_regex=r"http://localhost:\d+",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*", "X-Admin-Secret"],
@@ -30,6 +34,9 @@ app.include_router(shop_router)
 app.include_router(notifications_router)
 app.include_router(analytics_router)
 app.include_router(drafts_router)
+app.include_router(public_router)
+app.include_router(admin_router)
+app.include_router(messaging_router)
 
 
 @app.get("/health")

@@ -19,6 +19,9 @@ const SignUp = lazy(() => import('./pages/SignUp'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const EventPublic = lazy(() => import('./pages/EventPublic'));
+const RSVPPage = lazy(() => import('./pages/RSVPPage'));
+const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 
 // Register GSAP plugins globally
 gsap.registerPlugin(ScrollTrigger);
@@ -64,6 +67,9 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/event/:eventId" element={<EventPublic />} />
+              <Route path="/rsvp/:eventId/:inviteeId" element={<RSVPPage />} />
+              <Route path="/admin" element={<AdminPanel />} />
             </Routes>
           </Suspense>
           <Toaster position="top-center" richColors />

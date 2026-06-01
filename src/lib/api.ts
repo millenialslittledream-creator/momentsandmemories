@@ -98,4 +98,99 @@ export const api = {
     apiFetch<Array<{ id: string; name: string; email: string | null; phone: string | null; source: string }>>(
       `/events/${eventId}/invitees`
     ),
+
+  // ── RSVP stats (auth required) ────────────────────────────────────────
+  getEventRSVPStats: (eventId: string) =>
+    apiFetch<{ total: number; accepted: number; declined: number; pending: number }>(
+      `/events/${eventId}/rsvp-stats`
+    ),
+
+  // ── Public endpoints (no auth) ────────────────────────────────────────
+  getPublicEvent: (eventId: string) =>
+    fetch(`${API_URL}/public/events/${eventId}`)
+      .then(r => r.ok ? r.json() : r.json().then((e: { detail: string }) => Promise.reject(new Error(e.detail)))),
+
+  getRSVPPage: (eventId: string, inviteeId: string) =>
+    fetch(`${API_URL}/public/events/${eventId}/rsvp/${inviteeId}`)
+      .then(r => r.ok ? r.json() : r.json().then((e: { detail: string }) => Promise.reject(new Error(e.detail)))),
+
+  submitRSVP: (eventId: string, inviteeId: string, data: { status: string; message: string; dietary_requirements: string }) =>
+    fetch(`${API_URL}/public/events/${eventId}/rsvp/${inviteeId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).then(r => r.ok ? r.json() : r.json().then((e: { detail: string }) => Promise.reject(new Error(e.detail)))),
+
+  // ── Messaging (auth required) ─────────────────────────────────────────
+  getMessages: (eventId: string) =>
+    apiFetch<Array<{ id: string; sender_type: string; sender_name: string; body: string; created_at: string }>>(
+      `/messaging/events/${eventId}/messages`
+    ),
+
+  sendMessage: (eventId: string, body: string) =>
+    apiFetch<{ id: string; body: string; created_at: string }>(
+      `/messaging/events/${eventId}/messages`,
+      { method: 'POST', body: JSON.stringify({ body }) }
+    ),
+
+  sendGuestMessage: (eventId: string, inviteeId: string, body: string, senderName: string) =>
+    fetch(`${API_URL}/messaging/events/${eventId}/messages/guest/${inviteeId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body, sender_name: senderName }),
+    }).then(r => r.ok ? r.json() : r.json().then((e: { detail: string }) => Promise.reject(new Error(e.detail)))),
+
+  // ── Admin (X-Admin-Secret header) ─────────────────────────────────────
+  adminGetStats: (secret: string) =>
+    fetch(`${API_URL}/admin/stats`, { headers: { 'X-Admin-Secret': secret } })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('Unauthorized'))),
+
+  adminListUsers: (secret: string) =>
+    fetch(`${API_URL}/admin/users`, { headers: { 'X-Admin-Secret': secret } })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('Unauthorized'))),
+
+  adminDeleteUser: (secret: string, userId: string) =>
+    fetch(`${API_URL}/admin/users/${userId}`, {
+      method: 'DELETE',
+      headers: { 'X-Admin-Secret': secret },
+    }).then(r => r.ok ? r.json() : Promise.reject(new Error('Unauthorized'))),
+
+  adminListEvents: (secret: string) =>
+    fetch(`${API_URL}/admin/events`, { headers: { 'X-Admin-Secret': secret } })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('Unauthorized'))),
+
+  adminModerateEvent: (secret: string, eventId: string, status: string) =>
+    fetch(`${API_URL}/admin/events/${eventId}/moderate`, {
+      method: 'PUT',
+      headers: { 'X-Admin-Secret': secret, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    }).then(r => r.ok ? r.json() : Promise.reject(new Error('Unauthorized'))),
+
+  adminGetUserProfile: (secret: string, userId: string) =>
+    fetch(`${API_URL}/admin/users/${userId}`, { headers: { 'X-Admin-Secret': secret } })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to load user'))),
+
+  adminListShopItems: (secret: string) =>
+    fetch(`${API_URL}/admin/shop/items`, { headers: { 'X-Admin-Secret': secret } })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('Unauthorized'))),
+
+  adminCreateShopItem: (secret: string, data: Record<string, unknown>) =>
+    fetch(`${API_URL}/admin/shop/items`, {
+      method: 'POST',
+      headers: { 'X-Admin-Secret': secret, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to create item'))),
+
+  adminUpdateShopItem: (secret: string, itemId: string, data: Record<string, unknown>) =>
+    fetch(`${API_URL}/admin/shop/items/${itemId}`, {
+      method: 'PUT',
+      headers: { 'X-Admin-Secret': secret, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to update item'))),
+
+  adminDeleteShopItem: (secret: string, itemId: string) =>
+    fetch(`${API_URL}/admin/shop/items/${itemId}`, {
+      method: 'DELETE',
+      headers: { 'X-Admin-Secret': secret },
+    }).then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to delete item'))),
 };

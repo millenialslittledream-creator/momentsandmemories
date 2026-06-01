@@ -4,6 +4,9 @@ import Navigation from '@/sections/Navigation';
 import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
+import EngagementPanel from '@/sections/dashboard/EngagementPanel';
+import MessagingPanel from '@/sections/dashboard/MessagingPanel';
 
 interface EventRow {
   id: string;
@@ -108,6 +111,8 @@ export default function Dashboard() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
+  const [expandedTab, setExpandedTab] = useState<'analytics' | 'messages'>('analytics');
 
   // Add-guests modal state
   const [addGuestsEvent, setAddGuestsEvent] = useState<EventRow | null>(null);
@@ -331,30 +336,80 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-px">
                 {events.map((event) => (
-                  <div
-                    key={event.id}
-                    className="flex items-center gap-3 md:gap-4 px-4 md:px-5 py-4 bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#e4eee1] truncate">{event.title}</p>
-                      <p className="font-display text-[9px] tracking-[0.1em] uppercase text-[#b2c3b1]/40 mt-0.5">
-                        {new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        {event.location ? ` · ${event.location}` : ''}
-                      </p>
+                  <div key={event.id}>
+                    {/* Event row */}
+                    <div className="flex items-center gap-3 md:gap-4 px-4 md:px-5 py-4 bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-[#e4eee1] truncate">{event.title}</p>
+                        <p className="font-display text-[9px] tracking-[0.1em] uppercase text-[#b2c3b1]/40 mt-0.5">
+                          {new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          {event.location ? ` · ${event.location}` : ''}
+                        </p>
+                      </div>
+                      <span className={`font-display text-[9px] tracking-[0.15em] uppercase px-2 py-1 border flex-shrink-0 ${
+                        event.status === 'published' ? 'border-[#9cb092]/30 text-[#9cb092]' : 'border-white/10 text-[#b2c3b1]/40'
+                      }`}>
+                        {event.status}
+                      </span>
+                      {/* Share button for published events */}
+                      {event.status === 'published' && (
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/event/${event.id}`); toast.success('Event link copied!'); }}
+                          title="Share event"
+                          className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
+                        >
+                          <span className="material-icons text-sm">share</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => openAddGuests(e, event)}
+                        title="Add guests"
+                        className="flex-shrink-0 flex items-center gap-1 px-2 md:px-3 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
+                      >
+                        <span className="material-icons text-sm">person_add</span>
+                        <span className="hidden sm:inline">Add Guests</span>
+                      </button>
+                      {/* Expand toggle */}
+                      {event.status === 'published' && (
+                        <button
+                          onClick={() => setExpandedEventId(expandedEventId === event.id ? null : event.id)}
+                          title="Analytics & Messages"
+                          className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
+                        >
+                          <span className="material-icons text-sm">
+                            {expandedEventId === event.id ? 'expand_less' : 'expand_more'}
+                          </span>
+                        </button>
+                      )}
                     </div>
-                    <span className={`font-display text-[9px] tracking-[0.15em] uppercase px-2 py-1 border flex-shrink-0 ${
-                      event.status === 'published' ? 'border-[#9cb092]/30 text-[#9cb092]' : 'border-white/10 text-[#b2c3b1]/40'
-                    }`}>
-                      {event.status}
-                    </span>
-                    <button
-                      onClick={(e) => openAddGuests(e, event)}
-                      title="Add guests"
-                      className="flex-shrink-0 flex items-center gap-1 px-2 md:px-3 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
-                    >
-                      <span className="material-icons text-sm">person_add</span>
-                      <span className="hidden sm:inline">Add Guests</span>
-                    </button>
+
+                    {/* Expanded panels */}
+                    {expandedEventId === event.id && event.status === 'published' && (
+                      <div className="border border-t-0 border-white/5 bg-white/[0.01] px-4 md:px-5 pb-4">
+                        {/* Tab switcher */}
+                        <div className="flex gap-0 border-b border-[#9cb092]/15 mb-1 pt-3">
+                          {(['analytics', 'messages'] as const).map(t => (
+                            <button
+                              key={t}
+                              onClick={() => setExpandedTab(t)}
+                              className={`px-4 py-2 font-display text-[9px] tracking-[0.2em] uppercase border-b-2 -mb-px transition-colors ${
+                                expandedTab === t
+                                  ? 'text-[#9cb092] border-[#9cb092]'
+                                  : 'text-[#b2c3b1]/40 border-transparent hover:text-[#b2c3b1]/60'
+                              }`}
+                            >
+                              {t === 'analytics' ? 'RSVP Analytics' : 'Messages'}
+                            </button>
+                          ))}
+                        </div>
+                        {expandedTab === 'analytics' && (
+                          <EngagementPanel eventId={event.id} eventTitle={event.title} />
+                        )}
+                        {expandedTab === 'messages' && (
+                          <MessagingPanel eventId={event.id} />
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

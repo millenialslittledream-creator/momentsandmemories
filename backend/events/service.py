@@ -74,3 +74,16 @@ def remove_invitee(event_id: str, invitee_id: str) -> dict:
     db.table("event_invitees").delete().eq("id", invitee_id).eq("event_id", event_id).execute()
     _log("events", "invitee.removed", metadata={"invitee_id": invitee_id})
     return {"deleted": True}
+
+
+def get_rsvp_stats(user_id: str, event_id: str) -> dict:
+    db = database.get_db()
+    event = db.table("events").select("id").eq("id", event_id).eq("user_id", user_id).execute()
+    if not event.data:
+        raise ValueError("Event not found")
+    rows = db.table("event_invitees").select("rsvp_status").eq("event_id", event_id).execute().data
+    total = len(rows)
+    accepted = sum(1 for r in rows if r["rsvp_status"] == "accepted")
+    declined = sum(1 for r in rows if r["rsvp_status"] == "declined")
+    pending = sum(1 for r in rows if r.get("rsvp_status", "pending") == "pending")
+    return {"total": total, "accepted": accepted, "declined": declined, "pending": pending}
