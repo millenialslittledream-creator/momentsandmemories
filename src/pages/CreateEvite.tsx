@@ -581,13 +581,18 @@ export default function CreateEvite() {
       if (!filled.length) return;
       setCurrentSlotIdx(0);
       setUploadedTemplate({ url: filled[0].url, type: filled[0].type!, fileName: filled[0].fileName });
-      // Form details are shared across all uploaded invitations — clear once
-      // and let the host fill them on a single editor screen.
-      setFormData({});
       // With 2+ invitations the host is almost always running a multi-event
       // celebration (Mehendi/Sangeet/Wedding/Reception, etc.), so light up
-      // the Multiple Events toggle by default. They can still turn it off.
-      if (filled.length >= 2) setHasSubEvents(true);
+      // the Multiple Events toggle by default AND seed the table with one
+      // empty row so they can start typing right away. Form details (date,
+      // venue, etc.) are shared across all uploaded invitations — clear
+      // them once and let the host fill them on a single editor screen.
+      if (filled.length >= 2) {
+        setHasSubEvents(true);
+        setFormData({ sub_events_count: '1' });
+      } else {
+        setFormData({});
+      }
     } else {
       if (!uploadedTemplate) return;
     }
