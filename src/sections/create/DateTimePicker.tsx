@@ -97,9 +97,15 @@ export default function DateTimePicker({
       onClick={() => setOpen(true)}
       className={`w-full ${isSm ? 'h-9 px-2 gap-1.5' : 'h-12 px-4 gap-2'} bg-white/[0.06] border border-white/15 hover:border-[#9cb092]/60 focus:border-[#9cb092] transition-colors text-left rounded-sm flex items-center outline-none`}
     >
-      <span className="material-icons text-[#9cb092] flex-shrink-0" style={{ fontSize: isSm ? '14px' : '16px' }}>
-        calendar_today
-      </span>
+      {/* Calendar icon — only shown while empty. Once a date is picked, the
+         icon disappears so the full "Jun 25, 2026 · 1:30 AM ChST" string
+         has room and doesn't trigger horizontal scroll in the sub-events
+         table. */}
+      {!date && (
+        <span className="material-icons text-[#9cb092] flex-shrink-0" style={{ fontSize: isSm ? '14px' : '16px' }}>
+          calendar_today
+        </span>
+      )}
       <span className={`font-display ${isSm ? 'text-xs' : 'text-sm'} truncate flex-1 ${date ? 'text-[#e4eee1]' : 'text-[#b2c3b1]/40'}`}>
         {compactSummary}
       </span>

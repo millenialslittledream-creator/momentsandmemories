@@ -314,6 +314,10 @@ export default function CreateEvite() {
     (templateId: string) => {
       setUploadedTemplate(null);
       setSelectedTemplateId(templateId);
+      // Fresh template click starts a fresh celebration — the Multiple
+      // Events toggle should always begin OFF, even if a previous draft
+      // had it on in this browser.
+      setHasSubEvents(false);
       setModalPhase('editor');
       animateModalIn();
     },
@@ -323,6 +327,7 @@ export default function CreateEvite() {
   const openUploadFlow = useCallback(() => {
     setSelectedTemplateId(null);
     setUploadedTemplate(null);
+    setHasSubEvents(false);
     // For wedding/custom (events that support multiple invitation sets), ask
     // the user up front whether different guests should get different invites.
     // Everyone else goes straight to single-template upload.
