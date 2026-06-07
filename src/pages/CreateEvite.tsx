@@ -314,9 +314,11 @@ export default function CreateEvite() {
     (templateId: string) => {
       setUploadedTemplate(null);
       setSelectedTemplateId(templateId);
-      // Fresh template click starts a fresh celebration — the Multiple
-      // Events toggle should always begin OFF, even if a previous draft
-      // had it on in this browser.
+      // Fresh template click starts a fresh celebration — clear any stale
+      // formData (e.g. sub_events_count left over from an abandoned wedding
+      // draft) so the Guests page doesn't show event checkboxes that belong
+      // to a previous session.
+      setFormData({});
       setHasSubEvents(false);
       setModalPhase('editor');
       animateModalIn();
@@ -327,6 +329,9 @@ export default function CreateEvite() {
   const openUploadFlow = useCallback(() => {
     setSelectedTemplateId(null);
     setUploadedTemplate(null);
+    // Clear stale formData from any previous abandoned session so sub-event
+    // checkboxes don't bleed into a fresh upload flow.
+    setFormData({});
     setHasSubEvents(false);
     // For wedding/custom (events that support multiple invitation sets), ask
     // the user up front whether different guests should get different invites.

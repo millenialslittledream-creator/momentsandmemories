@@ -27,10 +27,66 @@ export interface TemplateFieldLayout {
   textTransform?: 'uppercase' | 'lowercase' | 'capitalize' | 'none';
 }
 
+/**
+ * Style block for a single sub-event column (name / dateTime / venue).
+ * Owns horizontal placement + font styling only — the Y position is
+ * provided per-row by the EventsListRow entry so each row can place
+ * the same column at a different height.
+ */
+export interface EventsListColumnStyle {
+  x: number;
+  fontFamily: string;
+  fontSize: number;
+  fontWeight?: string;
+  fontStyle?: 'normal' | 'italic';
+  letterSpacing?: number;
+  color: string;
+  align?: 'left' | 'center' | 'right';
+  maxWidth?: number;
+  lineHeight?: number;
+  wrapAfterChars?: number;
+  textTransform?: 'uppercase' | 'lowercase' | 'capitalize' | 'none';
+}
+
+/**
+ * One physical box on the template. Each piece of text inside the box
+ * has its OWN y position so you can tune them independently — bump the
+ * event name down 5px without touching the venue, etc.
+ */
+export interface EventsListRow {
+  /** Y of the event name line. */
+  nameY: number;
+  /** Y of the date · time line (date on line 1, time/tz on line 2). */
+  dateTimeY: number;
+  /** Y of the venue line. */
+  venueY: number;
+}
+
+export interface EventsListLayout {
+  /** Explicit list of row Y positions — one entry per box drawn on the
+   * template image (top → bottom). Number of rows here = max events
+   * rendered. Box-by-box tuning happens by editing each entry's `y`. */
+  rows: EventsListRow[];
+  /** Display name used for row 0 (the main event, sourced from the main
+   * form's eventDate / eventTime / timezone / venue). Defaults to a
+   * sensible value like "Wedding" if not set. */
+  mainEventName?: string;
+  /** Left-column event name. Same style applied to every box. */
+  name: EventsListColumnStyle;
+  /** Left-column date/time line ("MM/DD/YYYY · HH:MM AM TZ"). */
+  dateTime: EventsListColumnStyle;
+  /** Right-column venue. */
+  venue: EventsListColumnStyle;
+}
+
 export interface TemplateLayout {
   naturalWidth: number;
   naturalHeight: number;
   fields: TemplateFieldLayout[];
+  /** Optional dynamic sub-events list, for templates with a built-in
+   * multi-event area baked into the image (e.g. wedding cards that show
+   * Mehendi / Sangeet / Wedding / Reception on one card). */
+  eventsList?: EventsListLayout;
 }
 
 export interface EviteTemplate {
@@ -73,7 +129,82 @@ export const eviteTemplates: EviteTemplate[] = [
     },
   },
 
-  // ── Wedding (7 templates) ───────────────────────────────────────────────
+  // ── Wedding (8 templates) ───────────────────────────────────────────────
+  {
+    id: 'wed-multi-event',
+    eventType: 'marriage',
+    name: 'Save the Date · Multi-Event',
+    style: 'Tropical & Festive',
+    previewImage: '/templates/wedding/wedmulti.png',
+    accent: '#7a1018',
+    layout: {
+      // Natural image is 1030 x 1526. All numbers below are image pixels.
+      //
+      // To move a piece, edit the matching x / y. Same rules as the other
+      // templates:
+      //   • bigger x → moves RIGHT
+      //   • bigger y → moves DOWN
+      //   • smaller x → moves LEFT
+      //   • smaller y → moves UP
+      //
+      // The "Save the date and celebrate with us" line is baked into the
+      // image — we DO NOT render it as overlay text.
+      //
+      // Couple names sit in the empty area between the static "Save the
+      // date" text and the events list. The "&" is its own field so the
+      // gold/amber color matches the design.
+      naturalWidth: 1030,
+      naturalHeight: 1526,
+      fields: [
+        // Groom name — top of the couple block
+        { formKey: 'groomName', x: 525, y: 450, fontFamily: 'Great Vibes', fontSize: 90, color: '#7a1018', align: 'center', maxWidth: 760 },
+
+        // Ampersand (static, so the cursive & stays no matter what)
+        { text: '&', x: 525, y: 560, fontFamily: 'Great Vibes', fontSize: 60, color: '#7a1018', align: 'center' },
+
+        // Bride name — below the &
+        { formKey: 'brideName', x: 525, y: 620, fontFamily: 'Great Vibes', fontSize: 90, color: '#7a1018', align: 'center', maxWidth: 760 },
+      ],
+      // Dynamic event rows. Row 0 = the MAIN event (date/time/venue the
+      // host entered in the main form, labelled "Wedding" by default).
+      // Rows 1-3 = sub-events (Mehendi / Sangeet / Reception / ...) the
+      // host added via the Multiple Events toggle.
+      //
+      // FOUR explicit rows below — one per box drawn on the template.
+      // Tune each box's vertical position by editing its `y`. Horizontal
+      // text placement and font styling are shared (see name / dateTime /
+      // venue blocks at the bottom) so the 4 boxes stay visually consistent.
+      eventsList: {
+        mainEventName: 'Wedding',
+
+        // 4 boxes — top → bottom. Each box has 3 independent Y values:
+        //   nameY      → vertical position of the event name
+        //   dateTimeY  → vertical position of the date line (2nd line for time)
+        //   venueY     → vertical position of the venue (right cell)
+        rows: [
+          { nameY: 835, dateTimeY: 820, venueY: 820 },   // Box 1 (top)    — Wedding / main event
+          { nameY: 980, dateTimeY: 970, venueY: 970 }, // Box 2          — usually Mehendi
+          { nameY: 1125, dateTimeY: 1115, venueY: 1115 }, // Box 3          — usually Sangeet
+          { nameY: 1275, dateTimeY: 1265, venueY: 1265 }, // Box 4 (bottom) — usually Reception
+        ],
+
+        // Event name — Playfair Display, bold + uppercase, centre-aligned;
+        // wraps to next line after 12 chars so long names stay inside the box.
+        name: { x: 260, fontFamily: 'Playfair Display', fontSize: 22, fontWeight: '700', color: '#641018', align: 'center', maxWidth: 250, textTransform: 'uppercase', letterSpacing: 1, wrapAfterChars: 12 },
+
+        // Date · time — Cormorant Garamond, regular weight. Matches the
+        // high-contrast serif numerals in the reference photo
+        // ("06/21/2025" / "05:00 PM EST"). Line spacing tightened so the
+        // two lines feel like a single stacked stamp.
+        dateTime: { x: 460, fontFamily: 'Montserrat', fontSize: 17, fontWeight: '400', color: '#1f2d20', align: 'left', maxWidth: 250, lineHeight: 26 },
+
+        // Venue — Playfair Display. wrapAfterChars: 16 → each line caps
+        // at 16 chars; long addresses cascade onto a 3rd / 4th line.
+        venue: { x: 680, fontFamily: 'Playfair Display', fontSize: 19, color: '#1f2d20', align: 'left', maxWidth: 360, lineHeight: 26, wrapAfterChars: 16 },
+      },
+    },
+  },
+
   { id: 'wed-1', eventType: 'marriage', name: 'Classic Romance',  style: 'Timeless & Elegant',    previewImage: '/templates/wedding/1.jpg', accent: '#c4a882' },
   { id: 'wed-2', eventType: 'marriage', name: 'Botanical Dream',  style: 'Lush & Natural',         previewImage: '/templates/wedding/2.jpg', accent: '#7d9b76' },
   { id: 'wed-3', eventType: 'marriage', name: 'Modern Luxe',      style: 'Sleek & Sophisticated',  previewImage: '/templates/wedding/3.jpg', accent: '#1a1a2e' },
