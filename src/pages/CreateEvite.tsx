@@ -181,6 +181,7 @@ export default function CreateEvite() {
   const [guests, setGuests] = useState<Guest[]>([createGuest()]);
   const [deliveryPreference, setDeliveryPreference] = useState<'email' | 'phone' | 'both'>('email');
   const [hasSubEvents, setHasSubEvents] = useState(false);
+  const [showEventCountPopup, setShowEventCountPopup] = useState(false);
   const [multipleInvitations, setMultipleInvitations] = useState(false);
   const [currentSlotIdx, setCurrentSlotIdx] = useState(0);
   const [invitationSlots, setInvitationSlots] = useState<InvitationSlot[]>([
@@ -207,6 +208,19 @@ export default function CreateEvite() {
     if (!selectedTemplateId) return -1;
     return visibleTemplates.findIndex((t) => t.id === selectedTemplateId);
   }, [selectedTemplateId, visibleTemplates]);
+
+  // When Multiple Events is ON and the selected template belongs to a variant
+  // group, the carousel navigates WITHIN that group (2-event ↔ 3-event ↔ 4-event
+  // ↔ 5-event variants) instead of across the full gallery.
+  const variantTemplates = useMemo(() => {
+    if (!hasSubEvents || !selectedTemplate?.variantGroup) return null;
+    return eviteTemplates.filter((t) => t.variantGroup === selectedTemplate.variantGroup);
+  }, [hasSubEvents, selectedTemplate]);
+
+  const variantIdx = useMemo(() => {
+    if (!variantTemplates || !selectedTemplateId) return -1;
+    return variantTemplates.findIndex((t) => t.id === selectedTemplateId);
+  }, [variantTemplates, selectedTemplateId]);
 
   // When working with an uploaded template, the editor form should ask for
   // the SAME fields a stock template of that event-type would ask for — so a
@@ -382,14 +396,25 @@ export default function CreateEvite() {
   }, [navigate]);
 
   const prevTemplate = useCallback(() => {
-    if (uploadedTemplate || currentIdx <= 0) return;
-    setSelectedTemplateId(visibleTemplates[currentIdx - 1].id);
-  }, [currentIdx, visibleTemplates, uploadedTemplate]);
+    if (uploadedTemplate) return;
+    // In multi-event mode, navigate within the variant group only.
+    if (variantTemplates) {
+      if (variantIdx > 0) setSelectedTemplateId(variantTemplates[variantIdx - 1].id);
+      return;
+    }
+    if (currentIdx > 0) setSelectedTemplateId(visibleTemplates[currentIdx - 1].id);
+  }, [currentIdx, visibleTemplates, uploadedTemplate, variantTemplates, variantIdx]);
 
   const nextTemplate = useCallback(() => {
-    if (uploadedTemplate || currentIdx < 0 || currentIdx >= visibleTemplates.length - 1) return;
-    setSelectedTemplateId(visibleTemplates[currentIdx + 1].id);
-  }, [currentIdx, visibleTemplates, uploadedTemplate]);
+    if (uploadedTemplate) return;
+    // In multi-event mode, navigate within the variant group only.
+    if (variantTemplates) {
+      if (variantIdx < variantTemplates.length - 1) setSelectedTemplateId(variantTemplates[variantIdx + 1].id);
+      return;
+    }
+    if (currentIdx >= 0 && currentIdx < visibleTemplates.length - 1)
+      setSelectedTemplateId(visibleTemplates[currentIdx + 1].id);
+  }, [currentIdx, visibleTemplates, uploadedTemplate, variantTemplates, variantIdx]);
 
   const isEditorValid = useMemo(() => {
     if (!currentEventType) return false;
@@ -529,9 +554,9 @@ export default function CreateEvite() {
   };
 
   const toggleHasSubEvents = () => {
-    const next = !hasSubEvents;
-    setHasSubEvents(next);
-    if (!next) {
+    if (hasSubEvents) {
+      // Turning OFF — clear all sub-event data immediately.
+      setHasSubEvents(false);
       setFormData((prev) => {
         const out = { ...prev };
         const count = parseInt(out['sub_events_count'] || '0', 10) || 0;
@@ -542,9 +567,17 @@ export default function CreateEvite() {
         out['sub_events_count'] = '';
         return out;
       });
-    } else if (subEventCount === 0) {
-      handleFieldChange('sub_events_count', '1');
+    } else {
+      // Turning ON — ask how many events first via popup.
+      setShowEventCountPopup(true);
     }
+  };
+
+  // Called when the user picks a count from the "how many events?" popup.
+  const confirmEventCount = (count: number) => {
+    setShowEventCountPopup(false);
+    setHasSubEvents(true);
+    setFormData((prev) => ({ ...prev, sub_events_count: String(count) }));
   };
 
   // ── Invitation slots helpers (multiple invitations in upload) ───
@@ -1319,22 +1352,28 @@ export default function CreateEvite() {
                   )}
                 </div>
 
-                {/* Prev / Next arrows — for stock templates (gallery navigation)
-                    OR for multi-invite slot preview (navigate between the
-                    invitations the user uploaded). Form details are entered
-                    ONCE on this screen and shared across all slots. */}
-                {!uploadedTemplate && currentIdx > 0 && (
+                {/* Prev / Next arrows.
+                    • Multi-event + variant group → navigate within the variant
+                      family (2-event ↔ 3-event ↔ 4-event ↔ 5-event).
+                    • Otherwise → navigate across the full gallery as before. */}
+                {!uploadedTemplate && (variantTemplates ? variantIdx > 0 : currentIdx > 0) && (
                   <button
                     onClick={prevTemplate}
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center transition-all hover:scale-110"
+                    title={variantTemplates ? 'Previous variant' : 'Previous template'}
                   >
                     <span className="material-icons text-white text-[18px]">chevron_left</span>
                   </button>
                 )}
-                {!uploadedTemplate && currentIdx < visibleTemplates.length - 1 && (
+                {!uploadedTemplate && (
+                  variantTemplates
+                    ? variantIdx < variantTemplates.length - 1
+                    : currentIdx < visibleTemplates.length - 1
+                ) && (
                   <button
                     onClick={nextTemplate}
                     className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center transition-all hover:scale-110"
+                    title={variantTemplates ? 'Next variant' : 'Next template'}
                   >
                     <span className="material-icons text-white text-[18px]">chevron_right</span>
                   </button>
@@ -1363,7 +1402,9 @@ export default function CreateEvite() {
                 {!uploadedTemplate && (
                   <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10 pointer-events-none">
                     <span className="font-display text-[10px] text-white/60 tracking-widest">
-                      {currentIdx + 1} / {visibleTemplates.length}
+                      {variantTemplates
+                        ? `${variantTemplates[variantIdx]?.variantEventCount ?? '?'} Events · Style ${variantIdx + 1} / ${variantTemplates.length}`
+                        : `${currentIdx + 1} / ${visibleTemplates.length}`}
                     </span>
                   </div>
                 )}
@@ -1658,6 +1699,56 @@ export default function CreateEvite() {
           onBack={backToPreview}
           onConfirm={handlePaymentConfirm}
         />
+      )}
+
+      {/* ════════════════════════════════════════════════════════════
+          HOW MANY EVENTS? POPUP
+          Shown when the Multiple Events toggle is flipped ON. User
+          picks 2 / 3 / 4 / 5 and we seed that many sub-event rows.
+          ════════════════════════════════════════════════════════════ */}
+      {showEventCountPopup && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(13, 21, 18, 0.88)', backdropFilter: 'blur(6px)' }}
+          onClick={() => setShowEventCountPopup(false)}
+        >
+          <div
+            className="relative w-full max-w-sm bg-[#111914] border border-white/[0.09] shadow-2xl p-8 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Icon */}
+            <div className="w-12 h-12 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center mx-auto mb-5">
+              <span className="material-icons text-[#9cb092]">celebration</span>
+            </div>
+
+            <h2 className="font-serif-exp text-xl text-[#e4eee1] leading-tight mb-1">
+              How many <span className="text-[#9cb092] font-agatho italic">events</span>?
+            </h2>
+            <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/50 mb-7">
+              e.g. Mehendi · Sangeet · Wedding · Reception
+            </p>
+
+            {/* Count buttons */}
+            <div className="grid grid-cols-4 gap-3 mb-6">
+              {[2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => confirmEventCount(n)}
+                  className="py-5 border border-white/15 hover:border-[#9cb092] hover:bg-[#9cb092]/10 text-[#e4eee1] font-serif-exp text-3xl transition-all duration-200 hover:scale-105"
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowEventCountPopup(false)}
+              className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/40 hover:text-[#b2c3b1] transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
 
       {/* ════════════════════════════════════════════════════════════

@@ -97,6 +97,15 @@ export interface EviteTemplate {
   previewImage: string;
   accent: string;
   layout?: TemplateLayout;
+  /**
+   * Groups a family of templates that are the same design but built for
+   * different event counts (2-event, 3-event, 4-event, 5-event variants).
+   * When the Multiple Events toggle is ON, the editor carousel navigates
+   * within this group instead of across the full gallery.
+   */
+  variantGroup?: string;
+  /** How many event boxes this specific variant is designed for. */
+  variantEventCount?: number;
 }
 
 export const eviteTemplates: EviteTemplate[] = [
@@ -137,6 +146,8 @@ export const eviteTemplates: EviteTemplate[] = [
     style: 'Tropical & Festive',
     previewImage: '/templates/wedding/wedmulti.png',
     accent: '#7a1018',
+    variantGroup: 'wed-multi',
+    variantEventCount: 4,
     layout: {
       // Natural image is 1030 x 1526. All numbers below are image pixels.
       //
