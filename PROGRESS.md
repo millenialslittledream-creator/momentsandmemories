@@ -321,3 +321,40 @@ Footer (black, scrubbed entrance)
 **New files**: `backend/migrations/010_create_event_drafts.sql`, `backend/drafts/` module, `src/components/ProtectedRoute.tsx`, `src/pages/Dashboard.tsx`
 
 **Next steps**: Run Task 1–8 from the plan above
+
+---
+
+## [2026-06-07] - Deployment Architecture Mapped: Production Runs on EC2 (not Vercel)
+
+**Status**: Discovery — context gathered for in-progress custom domain + SSL setup
+
+**What was found**: Despite a linked `.vercel/project.json` (project `momentsandmemories`, → `momentsandmemories.vercel.app`), the **actual production deployment is an AWS EC2 instance**, driven by `.gitlab-ci.yml`:
+- **Pipeline**: test → build (Vite `npm run build` → `dist/`) → deploy (only on `main`)
+- **Deploy mechanism**: GitLab CI rsyncs `dist/` to `ubuntu@$EC2_HOST:/var/www/momentsandmemories/dist/`, then SSHes in to `git pull origin main`, reinstall backend deps in `venv`, and `sudo systemctl restart momentsandmemories-backend`
+- **Backend**: FastAPI service running as systemd unit `momentsandmemories-backend`
+- **Frontend**: static `dist/` served by **nginx** (already configured per user, on an **Elastic/static IP**)
+- **Confirmed EC2 Elastic IP (from AWS console)**: `13.237.143.52` — region `ap-southeast-2`, instance `i-078eb7e51ce851179`, allocation `eipalloc-0c1dc7a9f1e8c2657`, public DNS `ec2-13-237-143-52.ap-southeast-2.compute.amazonaws.com`. (Note: `16.16.75.33` seen repeatedly in local `~/.ssh/known_hosts` was a wrong guess — NOT the right host; use `13.237.143.52`.) SSH as `ubuntu`, key at `~/.ssh/gitlab_ci_deploy_key` (CI-only key, comment `gitlab-ci-deploy`)
+
+**Domain + SSL setup — ✅ COMPLETED**: Domain **`mymomentsnmemories.com`** (bought via GoDaddy) is now live on the EC2 deployment with HTTPS.
+1. ✅ GoDaddy DNS: `@` A record → `13.237.143.52` (root `mymomentsnmemories.com` and the pre-existing `www` CNAME — which aliases to the root — both resolve correctly; domain forwarding/parking disabled)
+2. ✅ SSH access fixed: the CI-only `gitlab_ci_deploy_key` doesn't have interactive login rights — the correct key is **`C:\Users\venky\Downloads\momentsandmemories.pem`** (copied to `~/.ssh/momentsandmemories.pem`, `chmod 400`); login as `ubuntu@13.237.143.52`
+3. ✅ Backend confirmed running on **port 8000** (`uvicorn main:app --host 127.0.0.1 --port 8000`, systemd unit `momentsandmemories-backend`)
+4. ✅ nginx server block added at `/etc/nginx/sites-available/mymomentsnmemories.com` (root `/var/www/momentsandmemories/dist`, `/api/` → `127.0.0.1:8000`), enabled via symlink in `sites-enabled/`
+5. ✅ SSL issued via `sudo certbot --nginx -d mymomentsnmemories.com -d www.mymomentsnmemories.com` — cert valid until **2026-09-06**, auto-renewal scheduled by certbot, HTTP→HTTPS redirect (301) auto-configured
+
+**Verified externally**: `https://mymomentsnmemories.com` → 200, `https://www.mymomentsnmemories.com` → 200, `http://...` → 301 redirect to HTTPS. Domain fully live and secured. 🎉
+
+---
+
+## [2026-06-08] - Post-Launch Cleanup: Eliminated Raw-IP Exposure (3 fixes)
+
+**Status**: ✅ COMPLETED
+
+**Problem found**: After going live on the domain, the app still showed the raw EC2 IP (`13.237.143.52`) in the browser when accessed directly, and after login — because three config values still referenced the IP/old Vercel URL instead of the new domain. Traced through `src/pages/SignIn.tsx`/`SignUp.tsx`/`ForgotPassword.tsx` (`redirectTo: window.location.origin`), `backend/main.py` (CORS `allow_origins=[settings.frontend_url]`), and `backend/qr/service.py` (`base = settings.backend_url or settings.frontend_url` — baked into every generated QR code's import URL). **No hardcoded IPs found in source code** — confirmed via full-repo grep; all issues were environment/config values.
+
+**Fixes applied**:
+1. ✅ **Supabase Auth → URL Configuration**: Site URL set to `https://mymomentsnmemories.com`; added `https://mymomentsnmemories.com/**` and `www.` variant to Redirect URLs (done via dashboard by user)
+2. ✅ **Backend `.env` on EC2** (`/var/www/momentsandmemories/backend/.env`): `FRONTEND_URL` and `BACKEND_URL` were hardcoded to `http://13.237.143.52` — updated to `https://mymomentsnmemories.com` via `sed`, then `sudo systemctl restart momentsandmemories-backend`. **This was a real functional bug**: every QR code generated before this fix encoded the wrong base URL (`http://13.237.143.52/api/qr/import/...`) — guests scanning older QR codes will hit the IP instead of the domain. ⚠️ Old event QR codes may need regeneration.
+3. ✅ **nginx catch-all redirect**: Discovered a legacy config `/etc/nginx/sites-enabled/momentsandmemories` with `server_name 13.237.143.52;` (from the pre-domain setup, May 10) that exact-matched bare-IP requests and bypassed any `default_server` block — this was the direct cause of "raw IP shows the site." Fix: removed that symlink (`sudo rm /etc/nginx/sites-enabled/momentsandmemories`; original file kept as backup in `sites-available/`) and added a new `default_server` block (`/etc/nginx/sites-available/catchall-redirect`) that 301-redirects any non-matching Host (including the bare IP) to `https://mymomentsnmemories.com`. Verified: `curl -I http://13.237.143.52/` → `301 Moved Permanently` → `Location: https://mymomentsnmemories.com/`
+
+**Next steps**: ⚠️ Consider regenerating QR codes for events created before this fix (they encode the old IP-based import URL). Then move on to the bulk SMS feature (see `docs/bulk-messaging-options.md`)
