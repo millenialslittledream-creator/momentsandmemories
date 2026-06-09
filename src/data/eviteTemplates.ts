@@ -306,11 +306,11 @@ export const eviteTemplates: EviteTemplate[] = [
 
   // ── Gender Reveal (9 templates) ────────────────────────────────────────
   {
-    id: 'gender-floral',
+    id: 'gender1',
     eventType: 'genderreveal',
-    name: 'Floral Garden Reveal',
+    name: 'Gender Reveal 1',
     style: 'Soft & Botanical',
-    previewImage: '/templates/gender reveal/gender-reveal-floral.png',
+    previewImage: '/templates/gender reveal/gender1.png',
     accent: '#7b6656',
     layout: {
       // Natural image is 1024 x 1536. Coordinates derived from the canvas
@@ -320,19 +320,22 @@ export const eviteTemplates: EviteTemplate[] = [
       naturalHeight: 1536,
       fields: [
         // Mother's name — above the baked-in "&"
-        { formKey: 'motherName', x: 512, y: 830, fontFamily: 'Great Vibes', fontSize: 82, color: '#7b6656', align: 'center', maxWidth: 680 },
+        { formKey: 'motherName', x: 512, y: 790, fontFamily: 'Great Vibes', fontSize: 82, color: '#7b6656', align: 'center', maxWidth: 680 },
 
         // Father's name — below the baked-in "&"
-        { formKey: 'fatherName', x: 512, y: 975, fontFamily: 'Great Vibes', fontSize: 82, color: '#7b6656', align: 'center', maxWidth: 680 },
+        { formKey: 'fatherName', x: 512, y: 935, fontFamily: 'Great Vibes', fontSize: 82, color: '#7b6656', align: 'center', maxWidth: 680 },
 
         // Date — to the right of the baked-in calendar icon
-        { formKey: 'eventDate', format: 'longDate', x: 368, y: 1080, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 28, color: '#7b6656', align: 'left', maxWidth: 580 },
+        { formKey: 'eventDate', format: 'longDate', x: 368, y: 1060, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 28, color: '#7b6656', align: 'left', maxWidth: 580 },
 
-        // Time + timezone — line below the date
-        { formKey: 'eventTime', format: 'time12', x: 368, y: 1120, fontFamily: 'Montserrat', fontWeight: '400', fontSize: 26, color: '#7b6656', align: 'left', maxWidth: 420 },
+        // Time — same line as timezone
+        { formKey: 'eventTime', format: 'time12', x: 368, y: 1090, fontFamily: 'Montserrat', fontWeight: '400', fontSize: 26, color: '#7b6656', align: 'left', maxWidth: 420 },
+
+        // Timezone — sits right of the time (fixed offset)
+        { formKey: 'timezone', x: 470, y: 1090, fontFamily: 'Montserrat', fontWeight: '400', fontSize: 26, color: '#7b6656', align: 'left', maxWidth: 200 },
 
         // Venue — to the right of the baked-in location icon; wraps at 24 chars
-        { formKey: 'venue', x: 368, y: 1175, fontFamily: 'Montserrat', fontWeight: '400', fontSize: 25, color: '#7b6656', align: 'left', maxWidth: 580, lineHeight: 36, wrapAfterChars: 24 },
+        { formKey: 'venue', x: 368, y: 1140, fontFamily: 'Montserrat', fontWeight: '400', fontSize: 25, color: '#7b6656', align: 'left', maxWidth: 580, lineHeight: 36, wrapAfterChars: 24 },
       ],
     },
   },
