@@ -474,6 +474,7 @@ export default function CreateEvite() {
           formData.eventName ||
           formData.celebrantName ||
           formData.brideName ||
+          formData.motherName ||
           formData.parentNames ||
           formData.hostName ||
           'My Event',
@@ -705,6 +706,7 @@ export default function CreateEvite() {
     formData.celebrantName ||
     formData.eventName ||
     formData.brideName ||
+    formData.motherName ||
     formData.parentNames ||
     formData.homeownerName ||
     formData.hostName ||

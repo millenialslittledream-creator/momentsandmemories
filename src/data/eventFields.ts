@@ -101,7 +101,8 @@ export const eventSpecificFields: Record<EventType, EventField[]> = {
     { name: 'dressCode', label: 'Dress Code', type: 'text', placeholder: 'e.g. All White, Cocktail (optional)', required: false },
   ],
   genderreveal: [
-    { name: 'parentNames', label: "Parent(s) Name(s)", type: 'text', placeholder: "Parent(s) name(s)", required: true },
+    { name: 'motherName', label: "Mother's Name", type: 'text', placeholder: "e.g. Sarah", required: true },
+    { name: 'fatherName', label: "Father's Name", type: 'text', placeholder: "e.g. Michael", required: false },
   ],
   housewarming: [
     { name: 'homeownerName', label: "Homeowner(s) Name", type: 'text', placeholder: "Who's celebrating the new home?", required: true },

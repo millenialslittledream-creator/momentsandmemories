@@ -304,7 +304,39 @@ export const eviteTemplates: EviteTemplate[] = [
     },
   },
 
-  // ── Gender Reveal (8 templates) ────────────────────────────────────────
+  // ── Gender Reveal (9 templates) ────────────────────────────────────────
+  {
+    id: 'gender-floral',
+    eventType: 'genderreveal',
+    name: 'Floral Garden Reveal',
+    style: 'Soft & Botanical',
+    previewImage: '/templates/gender reveal/gender-reveal-floral.png',
+    accent: '#7b6656',
+    layout: {
+      // Natural image is 1024 x 1536. Coordinates derived from the canvas
+      // rendering spec. Icons (calendar, location pin) are baked into the
+      // template image — we only overlay the dynamic text fields.
+      naturalWidth: 1024,
+      naturalHeight: 1536,
+      fields: [
+        // Mother's name — above the baked-in "&"
+        { formKey: 'motherName', x: 512, y: 830, fontFamily: 'Great Vibes', fontSize: 82, color: '#7b6656', align: 'center', maxWidth: 680 },
+
+        // Father's name — below the baked-in "&"
+        { formKey: 'fatherName', x: 512, y: 975, fontFamily: 'Great Vibes', fontSize: 82, color: '#7b6656', align: 'center', maxWidth: 680 },
+
+        // Date — to the right of the baked-in calendar icon
+        { formKey: 'eventDate', format: 'longDate', x: 368, y: 1080, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 28, color: '#7b6656', align: 'left', maxWidth: 580 },
+
+        // Time + timezone — line below the date
+        { formKey: 'eventTime', format: 'time12', x: 368, y: 1120, fontFamily: 'Montserrat', fontWeight: '400', fontSize: 26, color: '#7b6656', align: 'left', maxWidth: 420 },
+
+        // Venue — to the right of the baked-in location icon; wraps at 24 chars
+        { formKey: 'venue', x: 368, y: 1175, fontFamily: 'Montserrat', fontWeight: '400', fontSize: 25, color: '#7b6656', align: 'left', maxWidth: 580, lineHeight: 36, wrapAfterChars: 24 },
+      ],
+    },
+  },
+
   { id: 'gender-1', eventType: 'genderreveal', name: 'Pink or Blue',    style: 'Classic & Fun',      previewImage: '/templates/gender reveal/1.jpg', accent: '#b5c7e3' },
   { id: 'gender-2', eventType: 'genderreveal', name: 'Twinkle Stars',   style: 'Celestial & Dreamy', previewImage: '/templates/gender reveal/2.jpg', accent: '#2c3e50' },
   { id: 'gender-3', eventType: 'genderreveal', name: 'He or She',       style: 'Playful & Bold',     previewImage: '/templates/gender reveal/3.jpg', accent: '#9b59b6' },
