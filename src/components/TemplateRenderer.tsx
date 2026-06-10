@@ -308,7 +308,7 @@ export default function TemplateRenderer({
       }}
     >
       <img
-        src={template.previewImage}
+        src={template.realImage || template.previewImage}
         alt={template.name}
         style={{
           position: 'absolute',

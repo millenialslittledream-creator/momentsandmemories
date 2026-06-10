@@ -5,7 +5,7 @@ export interface TemplateFieldLayout {
   text?: string;
   prefix?: string;
   suffix?: string;
-  format?: 'longDate' | 'longDateUpper' | 'time' | 'time12' | 'raw';
+  format?: 'longDate' | 'longDateDayFirst' | 'longDateUpper' | 'time' | 'time12' | 'raw';
   iconBefore?: string;
   iconSize?: number;
   iconGap?: number;
@@ -95,6 +95,10 @@ export interface EviteTemplate {
   name: string;
   style: string;
   previewImage: string;
+  /** Full-resolution template background. When set, TemplateRenderer uses
+   * this as the canvas background while the gallery carousel keeps showing
+   * previewImage as the thumbnail. */
+  realImage?: string;
   accent: string;
   layout?: TemplateLayout;
   /**
@@ -233,14 +237,150 @@ export const eviteTemplates: EviteTemplate[] = [
   { id: 'baby-6', eventType: 'babyshower', name: 'Garden Baby',   style: 'Fresh & Natural',     previewImage: '/templates/baby shower/6.jpg', accent: '#a8d5ba' },
   { id: 'baby-7', eventType: 'babyshower', name: 'Classic Charm', style: 'Timeless & Elegant',  previewImage: '/templates/baby shower/7.jpg', accent: '#c4b5a0' },
 
-  // ── Bride to Be (7 templates) ───────────────────────────────────────────
-  { id: 'bride-1', eventType: 'bridetobe', name: 'Blush & Gold',    style: 'Glam & Feminine',       previewImage: '/templates/bride to be/1.jpg', accent: '#d4a5a5' },
-  { id: 'bride-2', eventType: 'bridetobe', name: 'Champagne Toast', style: 'Bubbly & Chic',          previewImage: '/templates/bride to be/2.jpg', accent: '#c9b037' },
-  { id: 'bride-3', eventType: 'bridetobe', name: 'Boho Bride',      style: 'Free-spirited & Natural', previewImage: '/templates/bride to be/3.jpg', accent: '#c4a882' },
-  { id: 'bride-4', eventType: 'bridetobe', name: 'Rose Garden',     style: 'Romantic & Soft',         previewImage: '/templates/bride to be/4.jpg', accent: '#e8b4b8' },
-  { id: 'bride-5', eventType: 'bridetobe', name: 'Garden Brunch',   style: 'Fresh & Feminine',        previewImage: '/templates/bride to be/5.jpg', accent: '#a8d5ba' },
-  { id: 'bride-6', eventType: 'bridetobe', name: 'Luxe Soirée',     style: 'Elegant & Glamorous',     previewImage: '/templates/bride to be/6.jpg', accent: '#c9b037' },
-  { id: 'bride-7', eventType: 'bridetobe', name: 'Bachelorette',    style: 'Bold & Fun',              previewImage: '/templates/bride to be/7.jpg', accent: '#ff6b6b' },
+  // ── Pre-Wedding Party / Bride to Be (7 templates) ─────────────────────
+  // previewImage → carousel thumbnail. realImage → full-res background for the renderer.
+  // naturalWidth/Height match each image's actual pixel dimensions (no cropping).
+  // timezone sits on the same line as eventTime; maxWidth on time keeps them from overlapping.
+  {
+    id: 'pw-one',
+    eventType: 'bridetobe',
+    name: 'The Journey Begins',
+    style: 'Gold & Elegant',
+    previewImage: '/templates/pre wedding/onepreview.jpeg',
+    realImage: '/templates/pre wedding/onereal.png',
+    accent: '#B98A3C',
+    layout: {
+      naturalWidth: 1024,  // actual: 1023×1537 — negligible 1px diff
+      naturalHeight: 1536,
+      fields: [
+        { formKey: 'celebrantName', x: 512, y: 820, fontFamily: 'Great Vibes', fontSize: 130, color: '#B98A3C', align: 'center', maxWidth: 700 },
+        { formKey: 'eventDate', format: 'longDate', x: 380, y: 1030, fontFamily: 'Cormorant Garamond', fontSize: 32, color: '#6D5646', align: 'left', maxWidth: 500 },
+        { formKey: 'eventTime', format: 'time12', x: 382, y: 1060, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#6D5646', align: 'left', maxWidth: 200 },
+        { formKey: 'timezone',                     x: 470, y: 1060, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#6D5646', align: 'left', maxWidth: 130 },
+        { formKey: 'venue', x: 382, y: 1130, fontFamily: 'Cormorant Garamond', fontSize: 30, color: '#6D5646', align: 'left', maxWidth: 500, lineHeight: 38, wrapAfterChars: 24 },
+      ],
+    },
+  },
+  {
+    id: 'pw-two',
+    eventType: 'bridetobe',
+    name: 'Sunshine & New Beginnings',
+    style: 'Bright & Tropical',
+    previewImage: '/templates/pre wedding/twopreview.jpeg',
+    realImage: '/templates/pre wedding/tworeal.png',
+    accent: '#D96545',
+    layout: {
+      naturalWidth: 1024,  // actual: 1023×1537
+      naturalHeight: 1536,
+      fields: [
+        { formKey: 'celebrantName', x: 512, y: 840, fontFamily: 'Great Vibes', fontSize: 100, color: '#D96545', align: 'center', maxWidth: 700 },
+        { formKey: 'eventDate', format: 'longDate', x: 430, y: 1040, fontFamily: 'Cormorant Garamond', fontSize: 32, color: '#1F456E', align: 'left', maxWidth: 500 },
+        { formKey: 'eventTime', format: 'time12', x: 432, y: 1080, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#1F456E', align: 'left', maxWidth: 200 },
+        { formKey: 'timezone',                     x: 520, y: 1080, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#1F456E', align: 'left', maxWidth: 130 },
+        { formKey: 'venue', x: 430, y: 1150, fontFamily: 'Cormorant Garamond', fontSize: 30, color: '#1F456E', align: 'left', maxWidth: 500, lineHeight: 38, wrapAfterChars: 24 },
+      ],
+    },
+  },
+  {
+    id: 'pw-three',
+    eventType: 'bridetobe',
+    name: 'Before The Wedding Bells',
+    style: 'Romantic & Rose',
+    previewImage: '/templates/pre wedding/threepreview.jpeg',
+    realImage: '/templates/pre wedding/threereal.png',
+    accent: '#B85F6D',
+    layout: {
+      naturalWidth: 941,   // actual: 941×1672 — taller/narrower, all coords scaled
+      naturalHeight: 1672,
+      fields: [
+        { formKey: 'celebrantName', x: 471, y: 750, fontFamily: 'Great Vibes', fontSize: 120, color: '#B85F6D', align: 'center', maxWidth: 643 },
+        { formKey: 'eventDate', format: 'longDate', x: 410, y: 940, fontFamily: 'Cormorant Garamond', fontSize: 32, color: '#5A3726', align: 'left', maxWidth: 460 },
+        { formKey: 'eventTime', format: 'time12', x: 412, y: 975, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#5A3726', align: 'left', maxWidth: 184 },
+        { formKey: 'timezone',                     x: 505, y: 975, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#5A3726', align: 'left', maxWidth: 120 },
+        { formKey: 'venue', x: 410, y: 1035, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#5A3726', align: 'left', maxWidth: 460, lineHeight: 41, wrapAfterChars: 24 },
+      ],
+    },
+  },
+  {
+    id: 'pw-four',
+    eventType: 'bridetobe',
+    name: 'Pink Floral Celebration',
+    style: 'Soft & Botanical',
+    previewImage: '/templates/pre wedding/fourpreview.jpeg',
+    realImage: '/templates/pre wedding/fourreal.png',
+    accent: '#D67A98',
+    layout: {
+      naturalWidth: 941,   // actual: 941×1672
+      naturalHeight: 1672,
+      fields: [
+        { formKey: 'celebrantName', x: 471, y: 975, fontFamily: 'Great Vibes', fontSize: 120, color: '#D67A98', align: 'center', maxWidth: 643 },
+        { formKey: 'eventDate', format: 'longDate', x: 340, y: 1190, fontFamily: 'Cormorant Garamond', fontSize: 32, color: '#657D4A', align: 'left', maxWidth: 460 },
+        { formKey: 'eventTime', format: 'time12', x: 342, y: 1230, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#657D4A', align: 'left', maxWidth: 184 },
+        { formKey: 'timezone',                     x: 430, y: 1230, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#657D4A', align: 'left', maxWidth: 120 },
+        { formKey: 'venue', x: 340, y: 1300, fontFamily: 'Cormorant Garamond', fontSize: 30, color: '#657D4A', align: 'left', maxWidth: 460, lineHeight: 41, wrapAfterChars: 24 },
+      ],
+    },
+  },
+  {
+    id: 'pw-five',
+    eventType: 'bridetobe',
+    name: 'Celebration & Joy',
+    style: 'Warm & Festive',
+    previewImage: '/templates/pre wedding/fivepreview.jpeg',
+    realImage: '/templates/pre wedding/fivereal.png',
+    accent: '#B96A70',
+    layout: {
+      naturalWidth: 941,   // actual: 941×1672
+      naturalHeight: 1672,
+      fields: [
+        { formKey: 'celebrantName', x: 471, y: 865, fontFamily: 'Great Vibes', fontSize: 70, color: '#B96A70', align: 'center', maxWidth: 643 },
+        { formKey: 'eventDate', format: 'longDateDayFirst', x: 440, y: 1025, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#4F3529', align: 'left', maxWidth: 460, lineHeight: 34 },
+        { formKey: 'eventTime', format: 'time12', x: 440, y: 1090, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#4F3529', align: 'left', maxWidth: 184 },
+        { formKey: 'timezone',                     x: 525, y: 1090, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#4F3529', align: 'left', maxWidth: 120 },
+        { formKey: 'venue', x: 440, y: 1140, fontFamily: 'Cormorant Garamond', fontSize: 24, color: '#4F3529', align: 'left', maxWidth: 460, lineHeight: 41, wrapAfterChars: 24 },
+      ],
+    },
+  },
+  {
+    id: 'pw-six',
+    eventType: 'bridetobe',
+    name: 'Garden Soirée',
+    style: 'Fresh & Floral',
+    previewImage: '/templates/pre wedding/sixpreview.jpeg',
+    realImage: '/templates/pre wedding/sixreal.png',
+    accent: '#D986A0',
+    layout: {
+      naturalWidth: 953,   // actual: 953×1650
+      naturalHeight: 1650,
+      fields: [
+        { formKey: 'celebrantName', x: 460, y: 1000, fontFamily: 'Great Vibes', fontSize: 120, color: '#D986A0', align: 'center', maxWidth: 652 },
+        { formKey: 'eventDate', format: 'longDate', x: 400, y: 1180, fontFamily: 'Cormorant Garamond', fontSize: 32, color: '#4A352C', align: 'left', maxWidth: 465 },
+        { formKey: 'eventTime', format: 'time12', x: 402, y: 1220, fontFamily: 'Cormorant Garamond', fontSize: 30, color: '#4A352C', align: 'left', maxWidth: 186 },
+        { formKey: 'timezone',                     x: 505, y: 1220, fontFamily: 'Cormorant Garamond', fontSize: 30, color: '#4A352C', align: 'left', maxWidth: 121 },
+        { formKey: 'venue', x: 400, y: 1300, fontFamily: 'Cormorant Garamond', fontSize: 30, color: '#4A352C', align: 'left', maxWidth: 465, lineHeight: 41, wrapAfterChars: 24 },
+      ],
+    },
+  },
+  {
+    id: 'pw-seven',
+    eventType: 'bridetobe',
+    name: 'Good Company',
+    style: 'Rich & Burgundy',
+    previewImage: '/templates/pre wedding/sevenpreview.jpeg',
+    realImage: '/templates/pre wedding/sevenreal.png',
+    accent: '#6B0035',
+    layout: {
+      naturalWidth: 941,   // actual: 941×1672 — offset layout, text sits on the right half
+      naturalHeight: 1672,
+      fields: [
+        { formKey: 'celebrantName', x: 570, y: 980, fontFamily: 'Great Vibes', fontSize: 120, color: '#6B0035', align: 'center', maxWidth: 625 },
+        { formKey: 'eventDate', format: 'longDate', x: 570, y: 1190, fontFamily: 'Cormorant Garamond', fontSize: 32, color: '#3F2A1E', align: 'left', maxWidth: 441 },
+        { formKey: 'eventTime', format: 'time12', x: 572, y: 1230, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#3F2A1E', align: 'left', maxWidth: 184 },
+        { formKey: 'timezone',                     x: 660, y: 1230, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#3F2A1E', align: 'left', maxWidth: 120 },
+        { formKey: 'venue', x: 570, y: 1325, fontFamily: 'Cormorant Garamond', fontSize: 30, color: '#3F2A1E', align: 'left', maxWidth: 441, lineHeight: 41, wrapAfterChars: 24 },
+      ],
+    },
+  },
 
   // ── Housewarming (2 templates) ─────────────────────────────────────────
   {
@@ -304,48 +444,156 @@ export const eviteTemplates: EviteTemplate[] = [
     },
   },
 
-  // ── Gender Reveal (9 templates) ────────────────────────────────────────
+  // ── Gender Reveal (7 templates) ────────────────────────────────────────
+  // previewImage → carousel thumbnail shown before selection.
+  // realImage    → full-res background loaded by TemplateRenderer on click.
+  // naturalWidth/Height match each image's actual pixel dimensions (no cropping).
+  // timezone sits on the same line as eventTime.
   {
-    id: 'gender1',
+    id: 'gr-one',
     eventType: 'genderreveal',
-    name: 'Gender Reveal 1',
+    name: 'Little He or She',
     style: 'Soft & Botanical',
-    previewImage: '/templates/gender reveal/gender1.png',
-    accent: '#7b6656',
+    previewImage: '/templates/gender reveal/onepreview.jpeg',
+    realImage: '/templates/gender reveal/onereal.png',
+    accent: '#E9A1B8',
     layout: {
-      // Natural image is 1024 x 1536. Coordinates derived from the canvas
-      // rendering spec. Icons (calendar, location pin) are baked into the
-      // template image — we only overlay the dynamic text fields.
-      naturalWidth: 1024,
+      naturalWidth: 1024,  // actual: 1023×1537
       naturalHeight: 1536,
       fields: [
-        // Mother's name — above the baked-in "&"
-        { formKey: 'motherName', x: 512, y: 790, fontFamily: 'Great Vibes', fontSize: 82, color: '#7b6656', align: 'center', maxWidth: 680 },
-
-        // Father's name — below the baked-in "&"
-        { formKey: 'fatherName', x: 512, y: 935, fontFamily: 'Great Vibes', fontSize: 82, color: '#7b6656', align: 'center', maxWidth: 680 },
-
-        // Date — to the right of the baked-in calendar icon
-        { formKey: 'eventDate', format: 'longDate', x: 368, y: 1060, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 28, color: '#7b6656', align: 'left', maxWidth: 580 },
-
-        // Time — same line as timezone
-        { formKey: 'eventTime', format: 'time12', x: 368, y: 1090, fontFamily: 'Montserrat', fontWeight: '400', fontSize: 26, color: '#7b6656', align: 'left', maxWidth: 420 },
-
-        // Timezone — sits right of the time (fixed offset)
-        { formKey: 'timezone', x: 470, y: 1090, fontFamily: 'Montserrat', fontWeight: '400', fontSize: 26, color: '#7b6656', align: 'left', maxWidth: 200 },
-
-        // Venue — to the right of the baked-in location icon; wraps at 24 chars
-        { formKey: 'venue', x: 368, y: 1140, fontFamily: 'Montserrat', fontWeight: '400', fontSize: 25, color: '#7b6656', align: 'left', maxWidth: 580, lineHeight: 36, wrapAfterChars: 24 },
+        { formKey: 'motherName', x: 512, y: 800, fontFamily: 'Great Vibes', fontSize: 66, color: '#745943', align: 'center', maxWidth: 620 },
+        { formKey: 'fatherName', x: 512, y: 930, fontFamily: 'Great Vibes', fontSize: 66, color: '#745943', align: 'center', maxWidth: 620 },
+        { formKey: 'eventDate', format: 'longDate', x: 350, y: 1055, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#7B6A5D', align: 'left', maxWidth: 470 },
+        { formKey: 'eventTime', format: 'time12', x: 350, y: 1085, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#7B6A5D', align: 'left', maxWidth: 200 },
+        { formKey: 'timezone',                     x: 440, y: 1085, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#7B6A5D', align: 'left', maxWidth: 130 },
+        { formKey: 'venue', x: 350, y: 1130, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#7B6A5D', align: 'left', maxWidth: 470, lineHeight: 38, wrapAfterChars: 22 },
       ],
     },
   },
-
-  { id: 'gender-1', eventType: 'genderreveal', name: 'Pink or Blue',    style: 'Classic & Fun',      previewImage: '/templates/gender reveal/1.jpg', accent: '#b5c7e3' },
-  { id: 'gender-2', eventType: 'genderreveal', name: 'Twinkle Stars',   style: 'Celestial & Dreamy', previewImage: '/templates/gender reveal/2.jpg', accent: '#2c3e50' },
-  { id: 'gender-3', eventType: 'genderreveal', name: 'He or She',       style: 'Playful & Bold',     previewImage: '/templates/gender reveal/3.jpg', accent: '#9b59b6' },
-  { id: 'gender-4', eventType: 'genderreveal', name: 'Little Peanut',   style: 'Cute & Cozy',        previewImage: '/templates/gender reveal/4.jpg', accent: '#f0c987' },
-  { id: 'gender-5', eventType: 'genderreveal', name: 'Confetti Cloud',  style: 'Whimsical & Bright', previewImage: '/templates/gender reveal/5.jpg', accent: '#e8b4b8' },
-  { id: 'gender-6', eventType: 'genderreveal', name: 'Balloon Burst',   style: 'Festive & Joyful',   previewImage: '/templates/gender reveal/6.jpg', accent: '#ff6b6b' },
-  { id: 'gender-7', eventType: 'genderreveal', name: 'Sweet Surprise',  style: 'Soft & Dreamy',      previewImage: '/templates/gender reveal/7.jpg', accent: '#d4a5a5' },
-  { id: 'gender-8', eventType: 'genderreveal', name: 'Adventure Awaits',style: 'Bold & Modern',      previewImage: '/templates/gender reveal/8.jpg', accent: '#3498db' },
+  {
+    id: 'gr-two',
+    eventType: 'genderreveal',
+    name: 'Floral Garden Reveal',
+    style: 'Lush & Romantic',
+    previewImage: '/templates/gender reveal/twopreview.jpeg',
+    realImage: '/templates/gender reveal/tworeal.png',
+    accent: '#C97AB2',
+    layout: {
+      naturalWidth: 941,   // actual: 941×1672 — all coords scaled from 1024×1536 base
+      naturalHeight: 1672,
+      fields: [
+        { formKey: 'motherName', x: 471, y: 1080, fontFamily: 'Great Vibes', fontSize: 80, color: '#C97AB2', align: 'center', maxWidth: 588 },
+        { formKey: 'fatherName', x: 471, y: 1270, fontFamily: 'Great Vibes', fontSize: 80, color: '#6EB5D4', align: 'center', maxWidth: 588 },
+        { formKey: 'eventDate', format: 'longDate', x: 360, y: 1385, fontFamily: 'Cormorant Garamond', fontSize: 32, color: '#7B6A5D', align: 'left', maxWidth: 432 },
+        { formKey: 'eventTime', format: 'time12', x: 360, y: 1420, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#7B6A5D', align: 'left', maxWidth: 184 },
+        { formKey: 'timezone',                     x: 450, y: 1420, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#7B6A5D', align: 'left', maxWidth: 120 },
+        { formKey: 'venue', x: 360, y: 1490, fontFamily: 'Cormorant Garamond', fontSize: 30, color: '#7B6A5D', align: 'left', maxWidth: 432, lineHeight: 41, wrapAfterChars: 20 },
+      ],
+    },
+  },
+  {
+    id: 'gr-three',
+    eventType: 'genderreveal',
+    name: 'Pink or Blue',
+    style: 'Classic & Playful',
+    previewImage: '/templates/gender reveal/threepreview.jpeg',
+    realImage: '/templates/gender reveal/threereal.png',
+    accent: '#E76D97',
+    layout: {
+      naturalWidth: 958,   // actual: 958×1641 — all coords scaled from 1024×1536 base
+      naturalHeight: 1641,
+      fields: [
+        { formKey: 'motherName', x: 479, y: 780, fontFamily: 'Great Vibes', fontSize: 90, color: '#E76D97', align: 'center', maxWidth: 599 },
+        { formKey: 'fatherName', x: 479, y: 980, fontFamily: 'Great Vibes', fontSize: 90, color: '#2E9BC2', align: 'center', maxWidth: 599 },
+        { formKey: 'eventDate', format: 'longDate', x: 380, y: 1120, fontFamily: 'Cormorant Garamond', fontSize: 32, color: '#6B4A32', align: 'left', maxWidth: 440 },
+        { formKey: 'eventTime', format: 'time12', x: 380, y: 1160, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#6B4A32', align: 'left', maxWidth: 187 },
+        { formKey: 'timezone',                     x: 470, y: 1160, fontFamily: 'Cormorant Garamond', fontSize: 24, color: '#6B4A32', align: 'left', maxWidth: 122 },
+        { formKey: 'venue', x: 380, y: 1235, fontFamily: 'Cormorant Garamond', fontSize: 30, color: '#6B4A32', align: 'left', maxWidth: 440, lineHeight: 41, wrapAfterChars: 20 },
+      ],
+    },
+  },
+  {
+    id: 'gr-four',
+    eventType: 'genderreveal',
+    name: 'Sweet Surprise',
+    style: 'Whimsical & Soft',
+    previewImage: '/templates/gender reveal/fourpreview.jpeg',
+    realImage: '/templates/gender reveal/fourreal.png',
+    accent: '#E75D8D',
+    layout: {
+      naturalWidth: 1024,  // actual: 1023×1537
+      naturalHeight: 1536,
+      fields: [
+        { formKey: 'motherName', x: 512, y: 785, fontFamily: 'Great Vibes', fontSize: 90, color: '#E75D8D', align: 'center', maxWidth: 640 },
+        { formKey: 'fatherName', x: 512, y: 950, fontFamily: 'Great Vibes', fontSize: 90, color: '#3E95D6', align: 'center', maxWidth: 640 },
+        { formKey: 'eventDate', format: 'longDate', x: 340, y: 1100, fontFamily: 'Cormorant Garamond', fontSize: 32, color: '#314E70', align: 'left', maxWidth: 470 },
+        { formKey: 'eventTime', format: 'time12', x: 340, y: 1140, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#314E70', align: 'left', maxWidth: 200 },
+        { formKey: 'timezone',                     x: 430, y: 1140, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#314E70', align: 'left', maxWidth: 130 },
+        { formKey: 'venue', x: 340, y: 1220, fontFamily: 'Cormorant Garamond', fontSize: 30, color: '#314E70', align: 'left', maxWidth: 470, lineHeight: 38, wrapAfterChars: 22 },
+      ],
+    },
+  },
+  {
+    id: 'gr-five',
+    eventType: 'genderreveal',
+    name: 'Twinkle Little Star',
+    style: 'Celestial & Dreamy',
+    previewImage: '/templates/gender reveal/fivepreview.jpeg',
+    realImage: '/templates/gender reveal/fivereal.png',
+    accent: '#D96B86',
+    layout: {
+      naturalWidth: 1024,  // actual: 1023×1537
+      naturalHeight: 1536,
+      fields: [
+        { formKey: 'motherName', x: 512, y: 815, fontFamily: 'Great Vibes', fontSize: 100, color: '#D96B86', align: 'center', maxWidth: 640 },
+        { formKey: 'fatherName', x: 512, y: 1000, fontFamily: 'Great Vibes', fontSize: 100, color: '#4A90C9', align: 'center', maxWidth: 640 },
+        { formKey: 'eventDate', format: 'longDate', x: 400, y: 1140, fontFamily: 'Cormorant Garamond', fontSize: 32, color: '#6E5140', align: 'left', maxWidth: 470 },
+        { formKey: 'eventTime', format: 'time12', x: 405, y: 1180, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#6E5140', align: 'left', maxWidth: 200 },
+        { formKey: 'timezone',                     x: 500, y: 1180, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#6E5140', align: 'left', maxWidth: 130 },
+        { formKey: 'venue', x: 405, y: 1250, fontFamily: 'Cormorant Garamond', fontSize: 30, color: '#6E5140', align: 'left', maxWidth: 470, lineHeight: 38, wrapAfterChars: 22 },
+      ],
+    },
+  },
+  {
+    id: 'gr-six',
+    eventType: 'genderreveal',
+    name: 'Starlit Reveal',
+    style: 'Elegant & Warm',
+    previewImage: '/templates/gender reveal/sixpreview.jpeg',
+    realImage: '/templates/gender reveal/sixreal.png',
+    accent: '#C98B6A',
+    layout: {
+      naturalWidth: 1024,  // actual: 1023×1537
+      naturalHeight: 1536,
+      fields: [
+        { formKey: 'motherName', x: 512, y: 1090, fontFamily: 'Great Vibes', fontSize: 80, color: '#D96B86', align: 'center', maxWidth: 640 },
+        { formKey: 'fatherName', x: 512, y: 1230, fontFamily: 'Great Vibes', fontSize: 80, color: '#4A90C9', align: 'center', maxWidth: 640 },
+        { formKey: 'eventDate', format: 'longDate', x: 360, y: 1340, fontFamily: 'Cormorant Garamond', fontSize: 32, color: '#654A38', align: 'left', maxWidth: 470 },
+        { formKey: 'eventTime', format: 'time12', x: 365, y: 1370, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#654A38', align: 'left', maxWidth: 200 },
+        { formKey: 'timezone',                     x: 455, y: 1370, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#654A38', align: 'left', maxWidth: 130 },
+        { formKey: 'venue', x: 360, y: 1430, fontFamily: 'Cormorant Garamond', fontSize: 30, color: '#654A38', align: 'left', maxWidth: 470, lineHeight: 38, wrapAfterChars: 22 },
+      ],
+    },
+  },
+  {
+    id: 'gr-seven',
+    eventType: 'genderreveal',
+    name: 'A Little Dream',
+    style: 'Dreamy & Soft',
+    previewImage: '/templates/gender reveal/sevenpreview.jpeg',
+    realImage: '/templates/gender reveal/sevenreal.png',
+    accent: '#E85D8F',
+    layout: {
+      naturalWidth: 941,   // actual: 941×1672 — all coords scaled from 1024×1536 base
+      naturalHeight: 1672,
+      fields: [
+        { formKey: 'motherName', x: 471, y: 980, fontFamily: 'Great Vibes', fontSize: 100, color: '#E85D8F', align: 'center', maxWidth: 588 },
+        { formKey: 'fatherName', x: 471, y: 1180, fontFamily: 'Great Vibes', fontSize: 100, color: '#2F83C8', align: 'center', maxWidth: 588 },
+        { formKey: 'eventDate', format: 'longDate', x: 310, y: 1320, fontFamily: 'Cormorant Garamond', fontSize: 32, color: '#6B3F18', align: 'left', maxWidth: 432 },
+        { formKey: 'eventTime', format: 'time12', x: 315, y: 1360, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#6B3F18', align: 'left', maxWidth: 184 },
+        { formKey: 'timezone',                     x: 400, y: 1360, fontFamily: 'Cormorant Garamond', fontSize: 26, color: '#6B3F18', align: 'left', maxWidth: 120 },
+        { formKey: 'venue', x: 315, y: 1420, fontFamily: 'Cormorant Garamond', fontSize: 30, color: '#6B3F18', align: 'left', maxWidth: 432, lineHeight: 41, wrapAfterChars: 20 },
+      ],
+    },
+  },
 ];

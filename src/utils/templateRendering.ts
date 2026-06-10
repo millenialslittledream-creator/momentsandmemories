@@ -20,6 +20,14 @@ function formatLongDate(dateStr: string): string {
   });
 }
 
+function formatLongDateDayFirst(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return dateStr;
+  const weekday = d.toLocaleDateString('en-US', { weekday: 'long' });
+  const rest = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  return `${weekday}\n${rest}`;
+}
+
 function formatLongDateUpper(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');
   if (Number.isNaN(d.getTime())) return dateStr;
@@ -70,6 +78,8 @@ export function formatFieldValue(
   let formatted = raw;
   if (field.format === 'longDate') {
     formatted = formatLongDate(raw);
+  } else if (field.format === 'longDateDayFirst') {
+    formatted = formatLongDateDayFirst(raw);
   } else if (field.format === 'longDateUpper') {
     formatted = formatLongDateUpper(raw);
   } else if (field.format === 'time12') {
