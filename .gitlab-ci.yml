@@ -64,11 +64,10 @@ deploy:
     - ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
   script:
     - rsync -av --delete dist/ ubuntu@$EC2_HOST:/var/www/momentsandmemories/dist/
+    - rsync -av --delete --exclude='venv' --exclude='__pycache__' --exclude='*.pyc' --exclude='.env' backend/ ubuntu@$EC2_HOST:/var/www/momentsandmemories/backend/
     - |
       ssh ubuntu@$EC2_HOST "
-        cd /var/www/momentsandmemories &&
-        git pull origin main &&
-        cd backend &&
+        cd /var/www/momentsandmemories/backend &&
         source venv/bin/activate &&
         pip install -r requirements.txt &&
         sudo systemctl restart momentsandmemories-backend
