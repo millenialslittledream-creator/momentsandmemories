@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
 import StepIndicator from './StepIndicator';
-import TemplateRenderer from '@/components/TemplateRenderer';
+import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRenderer';
 import { eventTypes, type EventType } from '@/data/eventFields';
-import type { EviteTemplate } from '@/data/eviteTemplates';
+import type { EviteTemplate, TemplateFieldLayout } from '@/data/eviteTemplates';
 import type { Guest } from './GuestDetails';
 
 export interface InvitationSetPreview {
@@ -25,6 +25,10 @@ interface PreviewStepProps {
   formData: Record<string, string>;
   deliveryPreference: 'email' | 'phone' | 'both';
   guestCount: number;
+  /** Customization overrides for `selectedTemplate`, applied to the
+   * stock-template render path so guests see the same edits the host made. */
+  templateOverrides?: Record<string, Partial<TemplateFieldLayout>>;
+  templatePhotoOverlay?: PhotoOverlay | null;
   onBack: () => void;
   onClose?: () => void;
   onProceed: () => void;
@@ -41,6 +45,8 @@ export default function PreviewStep({
   formData,
   deliveryPreference,
   guestCount,
+  templateOverrides,
+  templatePhotoOverlay,
   onBack,
   onClose,
   onProceed,
@@ -299,7 +305,12 @@ export default function PreviewStep({
                     />
                   )
                 ) : cardToShow?.kind === 'template' && cardToShow.template.layout ? (
-                  <TemplateRenderer template={cardToShow.template} formData={formData} />
+                  <TemplateRenderer
+                    template={cardToShow.template}
+                    formData={formData}
+                    overrides={templateOverrides}
+                    photoOverlay={templatePhotoOverlay}
+                  />
                 ) : cardToShow?.kind === 'template' ? (
                   <div className="relative w-full h-full">
                     <img

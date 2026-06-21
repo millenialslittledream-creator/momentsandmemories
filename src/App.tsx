@@ -22,6 +22,8 @@ const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const EventPublic = lazy(() => import('./pages/EventPublic'));
 const RSVPPage = lazy(() => import('./pages/RSVPPage'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const PublicWebsite = lazy(() => import('./pages/PublicWebsite'));
+const GuestGalleryUpload = lazy(() => import('./pages/GuestGalleryUpload'));
 
 // Register GSAP plugins globally
 gsap.registerPlugin(ScrollTrigger);
@@ -70,6 +72,8 @@ function App() {
               <Route path="/event/:eventId" element={<EventPublic />} />
               <Route path="/rsvp/:eventId/:inviteeId" element={<RSVPPage />} />
               <Route path="/admin" element={<AdminPanel />} />
+              <Route path="/w/:slug" element={<PublicWebsite />} />
+              <Route path="/gallery/:eventId" element={<GuestGalleryUpload />} />
             </Routes>
           </Suspense>
           <Toaster position="top-center" richColors />

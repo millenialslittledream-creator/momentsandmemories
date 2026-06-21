@@ -31,8 +31,8 @@ def test_send_sms_notification(mock_db):
     )
     mock_db.table.return_value.update.return_value.eq.return_value.execute.return_value = MagicMock(data=[{}])
 
-    with patch("notifications.service.Client") as mock_twilio:
-        mock_twilio.return_value.messages.create.return_value.sid = "SM123"
+    with patch("notifications.service.boto3") as mock_boto3:
+        mock_boto3.client.return_value.send_text_message.return_value = {"MessageId": "msg-123"}
 
         from notifications.service import send_notification
         from notifications.schemas import SendNotificationRequest

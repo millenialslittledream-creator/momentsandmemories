@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import BookViewer, { type BookPage } from '@/components/BookBuilder/BookViewer';
 
 interface PublicEvent {
   id: string;
@@ -20,6 +21,8 @@ export default function EventPublic() {
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [bookPages, setBookPages] = useState<BookPage[]>([]);
+  const [showBook, setShowBook] = useState(false);
 
   useEffect(() => {
     if (!eventId) return;
@@ -27,6 +30,9 @@ export default function EventPublic() {
       .then(setEvent)
       .catch(() => setError('This event is not available or has not been published yet.'))
       .finally(() => setLoading(false));
+    api.getPublicBook(eventId)
+      .then((book) => setBookPages((book as { pages: BookPage[] }).pages || []))
+      .catch(() => setBookPages([]));
   }, [eventId]);
 
   const handleShare = () => {
@@ -109,6 +115,15 @@ export default function EventPublic() {
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3">
+          {bookPages.length > 0 && (
+            <button
+              onClick={() => setShowBook(true)}
+              className="flex-1 py-3 border border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
+            >
+              <span className="material-icons text-sm">menu_book</span>
+              View Invitation Book
+            </button>
+          )}
           <button
             onClick={handleShare}
             className="flex-1 py-3 border border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
@@ -118,6 +133,25 @@ export default function EventPublic() {
           </button>
         </div>
       </div>
+
+      {showBook && (
+        <div
+          data-testid="book-viewer-modal"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 p-4"
+          onClick={() => setShowBook(false)}
+        >
+          <button
+            onClick={() => setShowBook(false)}
+            aria-label="Close book"
+            className="absolute top-4 right-4 text-[#e4eee1] hover:text-[#9cb092]"
+          >
+            <span className="material-icons text-2xl">close</span>
+          </button>
+          <div onClick={(e) => e.stopPropagation()}>
+            <BookViewer pages={bookPages} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

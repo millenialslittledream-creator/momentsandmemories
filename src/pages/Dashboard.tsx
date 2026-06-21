@@ -7,6 +7,10 @@ import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import EngagementPanel from '@/sections/dashboard/EngagementPanel';
 import MessagingPanel from '@/sections/dashboard/MessagingPanel';
+// GalleryPanel and the Website Builder entry point are intentionally hidden from the
+// dashboard for now (not polished enough yet) — both stay reachable by direct URL.
+import WebsiteBuilder from '@/components/WebsiteBuilder';
+import BookBuilder from '@/components/BookBuilder';
 
 interface EventRow {
   id: string;
@@ -112,7 +116,13 @@ export default function Dashboard() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
-  const [expandedTab, setExpandedTab] = useState<'analytics' | 'messages'>('analytics');
+  const [expandedTab, setExpandedTab] = useState<'analytics' | 'messages' | 'gallery'>('analytics');
+
+  // Website builder modal state
+  const [websiteBuilderEvent, setWebsiteBuilderEvent] = useState<EventRow | null>(null);
+
+  // Book builder modal state
+  const [bookBuilderEvent, setBookBuilderEvent] = useState<EventRow | null>(null);
 
   // Add-guests modal state
   const [addGuestsEvent, setAddGuestsEvent] = useState<EventRow | null>(null);
@@ -143,13 +153,28 @@ export default function Dashboard() {
     }
   };
 
+  const [websiteSlugByEvent, setWebsiteSlugByEvent] = useState<Record<string, string>>({});
+  const [bookIdByEvent, setBookIdByEvent] = useState<Record<string, string>>({});
+
   useEffect(() => {
     Promise.all([
       api.getMyEvents().catch(() => [] as EventRow[]),
       api.getDraft().catch(() => null),
-    ]).then(([evs, dr]) => {
+      api.listEventWebsites().catch(() => []),
+      api.listInvitationBooks().catch(() => []),
+    ]).then(([evs, dr, sites, books]) => {
       setEvents(evs);
       setDraft(dr && dr.step > 0 ? dr : null);
+      setWebsiteSlugByEvent(
+        Object.fromEntries(
+          sites.filter((s) => s.published).map((s) => [s.event_id, s.slug])
+        )
+      );
+      setBookIdByEvent(
+        Object.fromEntries(
+          books.filter((b) => b.published).map((b) => [b.event_id, b.id])
+        )
+      );
       setLoading(false);
     });
   }, []);
@@ -391,6 +416,33 @@ export default function Dashboard() {
                           <span className="material-icons text-sm">share</span>
                         </button>
                       )}
+                      {/* Quick link to the live website, when one is published — the
+                         editing entry point stays hidden, this is view-only discovery. */}
+                      {websiteSlugByEvent[event.id] && (
+                        <a
+                          href={`/w/${websiteSlugByEvent[event.id]}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="View live website"
+                          className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
+                        >
+                          <span className="material-icons text-sm">language</span>
+                          <span className="hidden sm:inline">View Website</span>
+                        </a>
+                      )}
+                      {/* Quick link to the live book viewer, when one is published. */}
+                      {bookIdByEvent[event.id] && (
+                        <a
+                          href={`/event/${event.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="View live invitation book"
+                          className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
+                        >
+                          <span className="material-icons text-sm">menu_book</span>
+                          <span className="hidden sm:inline">View Book</span>
+                        </a>
+                      )}
                       <button
                         onClick={(e) => openAddGuests(e, event)}
                         title="Add guests"
@@ -398,6 +450,14 @@ export default function Dashboard() {
                       >
                         <span className="material-icons text-sm">person_add</span>
                         <span className="hidden sm:inline">Add Guests</span>
+                      </button>
+                      <button
+                        onClick={() => setBookBuilderEvent(event)}
+                        title="Build an invitation book"
+                        className="flex-shrink-0 flex items-center gap-1 px-2 md:px-3 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
+                      >
+                        <span className="material-icons text-sm">menu_book</span>
+                        <span className="hidden sm:inline">Book</span>
                       </button>
                       {/* Expand toggle */}
                       {event.status === 'published' && (
@@ -499,6 +559,26 @@ export default function Dashboard() {
 
         </div>
       </div>
+
+      {/* ── Website Builder ── */}
+      {websiteBuilderEvent && (
+        <WebsiteBuilder
+          eventId={websiteBuilderEvent.id}
+          eventTitle={websiteBuilderEvent.title}
+          eventDate={new Date(websiteBuilderEvent.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          eventLocation={websiteBuilderEvent.location ?? undefined}
+          onClose={() => setWebsiteBuilderEvent(null)}
+        />
+      )}
+
+      {/* ── Book Builder ── */}
+      {bookBuilderEvent && (
+        <BookBuilder
+          eventId={bookBuilderEvent.id}
+          eventTitle={bookBuilderEvent.title}
+          onClose={() => setBookBuilderEvent(null)}
+        />
+      )}
 
       {/* ── Add Guests Modal ── */}
       {addGuestsEvent && (

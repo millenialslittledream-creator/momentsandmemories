@@ -17,10 +17,19 @@ import PaymentModal from '@/sections/create/PaymentModal';
 import DateTimePicker from '@/sections/create/DateTimePicker';
 import StepIndicator from '@/sections/create/StepIndicator';
 import PreviewStep from '@/sections/create/PreviewStep';
-import TemplateRenderer from '@/components/TemplateRenderer';
+import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRenderer';
+import CanvasEditor from '@/components/CanvasEditor';
+import type { TextElementData } from '@/components/CanvasEditor/types';
+import { canvasTemplates, getCanvasTemplatesForEventType, type CanvasTemplate } from '@/data/canvasTemplates';
+import type { TemplateFieldLayout } from '@/data/eviteTemplates';
+import { FONT_CATEGORIES, COLOR_SWATCHES } from '@/components/CanvasEditor/types';
+
+function isTextElement(el: { type: string }): el is TextElementData {
+  return el.type === 'text';
+}
 
 type EventTypeFilter = EventType;
-type ModalPhase = 'choose-multi' | 'upload' | 'editor' | 'signin' | 'guests' | 'preview' | 'payment' | 'sent' | null;
+type ModalPhase = 'choose-multi' | 'upload' | 'canvas-template-picker' | 'canvas-editor' | 'editor' | 'signin' | 'guests' | 'preview' | 'payment' | 'sent' | null;
 
 const MULTI_EVENTS_HELP = "Send different invites to different guest groups.";
 
@@ -187,6 +196,16 @@ export default function CreateEvite() {
   const [invitationSlots, setInvitationSlots] = useState<InvitationSlot[]>([
     { id: 'slot-1', url: '', type: null, fileName: '', name: 'Main Invitation' },
   ]);
+  const [pickedCanvasTemplate, setPickedCanvasTemplate] = useState<CanvasTemplate | null>(null);
+
+  // ── Template customization (font/color/position overrides + photo) ──
+  // Local-only until the real event is created; persisted to the
+  // evite_customizations table right after api.createEvent succeeds.
+  const [rightPanelTab, setRightPanelTab] = useState<'details' | 'customize'>('details');
+  const [fieldOverrides, setFieldOverrides] = useState<Record<string, Partial<TemplateFieldLayout>>>({});
+  const [photoOverlay, setPhotoOverlay] = useState<PhotoOverlay | null>(null);
+  const [selectedOverrideKey, setSelectedOverrideKey] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
 
   // ── Derived state ────────────────────────────────────────────────
   const selectedTemplate = useMemo(
@@ -200,6 +219,13 @@ export default function CreateEvite() {
   const visibleTemplates = useMemo(() => {
     if (activeFilter === 'custom') return eviteTemplates;
     return eviteTemplates.filter((t) => t.eventType === activeFilter);
+  }, [activeFilter]);
+
+  // Premade canvas (Konva) starter designs offered before opening a blank
+  // canvas. 'custom' shows every premade design since there's no inherent match.
+  const visibleCanvasTemplates = useMemo(() => {
+    if (activeFilter === 'custom') return canvasTemplates;
+    return getCanvasTemplatesForEventType(activeFilter);
   }, [activeFilter]);
 
   // For the editor modal's prev/next navigation we use only real templates
@@ -302,6 +328,62 @@ export default function CreateEvite() {
     }
   }, [formData, guests, deliveryPreference, selectedTemplateId, uploadedTemplate, hasSubEvents]);
 
+  // ── Customizable text fields for the active template ───────────────
+  // Each entry's key matches the override key TemplateRenderer merges on
+  // (formKey, falling back to `field-${idx}`) so selecting a row here and
+  // editing it updates exactly the field the live preview highlights.
+  const customizableFields = useMemo(() => {
+    if (!selectedTemplate?.layout) return [];
+    return selectedTemplate.layout.fields.map((field, idx) => ({
+      key: field.formKey ?? `field-${idx}`,
+      label: field.formKey
+        ? field.formKey.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase())
+        : field.text || `Text ${idx + 1}`,
+      field,
+    }));
+  }, [selectedTemplate]);
+
+  const selectedOverrideField = useMemo(() => {
+    const entry = customizableFields.find((f) => f.key === selectedOverrideKey);
+    if (!entry) return null;
+    return { ...entry.field, ...fieldOverrides[entry.key] };
+  }, [customizableFields, selectedOverrideKey, fieldOverrides]);
+
+  const setOverride = useCallback((key: string, patch: Partial<TemplateFieldLayout>) => {
+    setFieldOverrides((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
+  }, []);
+
+  const nudgeOverride = useCallback(
+    (key: string, axis: 'x' | 'y', delta: number, baseField: TemplateFieldLayout) => {
+      setFieldOverrides((prev) => {
+        const current = prev[key] ?? {};
+        const base = current[axis] ?? baseField[axis];
+        return { ...prev, [key]: { ...current, [axis]: base + delta } };
+      });
+    },
+    []
+  );
+
+  const handlePhotoUpload = useCallback(async (file: File) => {
+    setPhotoUploading(true);
+    try {
+      const uploaded = await api.uploadMedia(file);
+      const naturalWidth = selectedTemplate?.layout?.naturalWidth ?? 1024;
+      const naturalHeight = selectedTemplate?.layout?.naturalHeight ?? 1536;
+      setPhotoOverlay({
+        src: uploaded.public_url,
+        x: Math.round(naturalWidth / 2),
+        y: Math.round(naturalHeight * 0.3),
+        size: Math.round(naturalWidth * 0.3),
+        shape: 'circle',
+      });
+    } catch (e) {
+      console.warn('Photo upload failed:', e);
+    } finally {
+      setPhotoUploading(false);
+    }
+  }, [selectedTemplate]);
+
   // ── Handlers ─────────────────────────────────────────────────────
   const handleFieldChange = useCallback((name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -334,6 +416,10 @@ export default function CreateEvite() {
       // to a previous session.
       setFormData({});
       setHasSubEvents(false);
+      setFieldOverrides({});
+      setPhotoOverlay(null);
+      setSelectedOverrideKey(null);
+      setRightPanelTab('details');
       setModalPhase('editor');
       animateModalIn();
     },
@@ -347,6 +433,10 @@ export default function CreateEvite() {
     // checkboxes don't bleed into a fresh upload flow.
     setFormData({});
     setHasSubEvents(false);
+    setFieldOverrides({});
+    setPhotoOverlay(null);
+    setSelectedOverrideKey(null);
+    setRightPanelTab('details');
     // For wedding/custom (events that support multiple invitation sets), ask
     // the user up front whether different guests should get different invites.
     // Everyone else goes straight to single-template upload.
@@ -359,6 +449,38 @@ export default function CreateEvite() {
     animateModalIn();
   }, [animateModalIn, activeFilter]);
 
+  const openCanvasEditor = useCallback(() => {
+    setSelectedTemplateId(null);
+    setUploadedTemplate(null);
+    setPickedCanvasTemplate(null);
+    setFormData({});
+    setHasSubEvents(false);
+    setModalPhase('canvas-editor');
+  }, []);
+
+  const openCanvasTemplatePicker = useCallback(() => {
+    setSelectedTemplateId(null);
+    setUploadedTemplate(null);
+    setModalPhase('canvas-template-picker');
+    animateModalIn();
+  }, [animateModalIn]);
+
+  const pickCanvasTemplate = useCallback((template: CanvasTemplate) => {
+    setSelectedTemplateId(null);
+    setUploadedTemplate(null);
+    setPickedCanvasTemplate(template);
+    setFormData({});
+    setHasSubEvents(false);
+    setModalPhase('canvas-editor');
+  }, []);
+
+  const handleCanvasEditorFinish = useCallback((pngDataUrl: string) => {
+    setUploadedTemplate({ url: pngDataUrl, type: 'image', fileName: 'custom-design.png' });
+    setPickedCanvasTemplate(null);
+    setModalPhase('editor');
+    animateModalIn();
+  }, [animateModalIn]);
+
   // Choose-multi dialog handlers — record the user's choice and proceed.
   const chooseMultiInvitations = useCallback((multi: boolean) => {
     setMultipleInvitations(multi);
@@ -369,6 +491,7 @@ export default function CreateEvite() {
     if (!editorBackdropRef.current || !editorPanelRef.current) {
       setSelectedTemplateId(null);
       setUploadedTemplate(null);
+      setPickedCanvasTemplate(null);
       setModalPhase(null);
       return;
     }
@@ -386,6 +509,7 @@ export default function CreateEvite() {
       onComplete: () => {
         setSelectedTemplateId(null);
         setUploadedTemplate(null);
+        setPickedCanvasTemplate(null);
         setModalPhase(null);
       },
     });
@@ -395,26 +519,46 @@ export default function CreateEvite() {
     navigate('/');
   }, [navigate]);
 
+  // Switching the design mid-browse invalidates any font/color/position
+  // overrides + photo overlay tuned for the PREVIOUS template's layout —
+  // clear them so they don't silently misplace text on the new design.
+  const resetCustomization = useCallback(() => {
+    setFieldOverrides({});
+    setPhotoOverlay(null);
+    setSelectedOverrideKey(null);
+  }, []);
+
   const prevTemplate = useCallback(() => {
     if (uploadedTemplate) return;
     // In multi-event mode, navigate within the variant group only.
     if (variantTemplates) {
-      if (variantIdx > 0) setSelectedTemplateId(variantTemplates[variantIdx - 1].id);
+      if (variantIdx > 0) {
+        setSelectedTemplateId(variantTemplates[variantIdx - 1].id);
+        resetCustomization();
+      }
       return;
     }
-    if (currentIdx > 0) setSelectedTemplateId(visibleTemplates[currentIdx - 1].id);
-  }, [currentIdx, visibleTemplates, uploadedTemplate, variantTemplates, variantIdx]);
+    if (currentIdx > 0) {
+      setSelectedTemplateId(visibleTemplates[currentIdx - 1].id);
+      resetCustomization();
+    }
+  }, [currentIdx, visibleTemplates, uploadedTemplate, variantTemplates, variantIdx, resetCustomization]);
 
   const nextTemplate = useCallback(() => {
     if (uploadedTemplate) return;
     // In multi-event mode, navigate within the variant group only.
     if (variantTemplates) {
-      if (variantIdx < variantTemplates.length - 1) setSelectedTemplateId(variantTemplates[variantIdx + 1].id);
+      if (variantIdx < variantTemplates.length - 1) {
+        setSelectedTemplateId(variantTemplates[variantIdx + 1].id);
+        resetCustomization();
+      }
       return;
     }
-    if (currentIdx >= 0 && currentIdx < visibleTemplates.length - 1)
+    if (currentIdx >= 0 && currentIdx < visibleTemplates.length - 1) {
       setSelectedTemplateId(visibleTemplates[currentIdx + 1].id);
-  }, [currentIdx, visibleTemplates, uploadedTemplate, variantTemplates, variantIdx]);
+      resetCustomization();
+    }
+  }, [currentIdx, visibleTemplates, uploadedTemplate, variantTemplates, variantIdx, resetCustomization]);
 
   const isEditorValid = useMemo(() => {
     if (!currentEventType) return false;
@@ -497,6 +641,22 @@ export default function CreateEvite() {
         await api.addInvitees(evt.id, invitees);
       }
 
+      // Persist the user's font/color/position overrides + photo overlay
+      // now that a real event id exists. Doesn't block send-completion if
+      // it fails — same pattern as the invitee save above.
+      if (selectedTemplateId && (Object.keys(fieldOverrides).length > 0 || photoOverlay)) {
+        try {
+          await api.createEviteCustomization({
+            event_id: evt.id,
+            template_id: selectedTemplateId,
+            field_overrides: fieldOverrides,
+            photo_overlay: photoOverlay as unknown as Record<string, unknown> | null,
+          });
+        } catch (e) {
+          console.warn('Evite customization save skipped:', e);
+        }
+      }
+
       try {
         localStorage.removeItem('mm_evite_draft');
       } catch {
@@ -506,7 +666,7 @@ export default function CreateEvite() {
       console.warn('Evite save skipped (likely logged out or offline):', e);
     }
     setModalPhase('sent');
-  }, [formData, selectedTemplateId, guests]);
+  }, [formData, selectedTemplateId, guests, fieldOverrides, photoOverlay]);
 
   const resetFlow = useCallback(() => {
     setSelectedTemplateId(null);
@@ -662,7 +822,7 @@ export default function CreateEvite() {
   // ── Escape closes modal ──────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && (modalPhase === 'editor' || modalPhase === 'upload' || modalPhase === 'signin'))
+      if (e.key === 'Escape' && (modalPhase === 'editor' || modalPhase === 'upload' || modalPhase === 'signin' || modalPhase === 'canvas-editor' || modalPhase === 'canvas-template-picker'))
         closeAnyModal();
     };
     window.addEventListener('keydown', onKey);
@@ -808,6 +968,56 @@ export default function CreateEvite() {
                   </h3>
                 </div>
               </button>
+
+              {/* Build-your-own canvas editor tile — always second */}
+              <button
+                key="__canvas_editor__"
+                onClick={openCanvasEditor}
+                className="template-card group text-left overflow-hidden bg-[#9cb092]/[0.06] border border-dashed border-[#9cb092]/40 hover:border-[#9cb092] hover:bg-[#9cb092]/[0.12] transition-all duration-300 flex flex-col"
+              >
+                <div className="relative aspect-[9/16] overflow-hidden bg-[#192116] flex flex-col items-center justify-center text-center px-4">
+                  <div className="w-12 h-12 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <span className="material-icons text-[#9cb092] text-2xl">brush</span>
+                  </div>
+                  <p className="font-serif-exp text-sm text-[#e4eee1] leading-snug mb-1">
+                    Build Your Own Design
+                  </p>
+                  <p className="font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 leading-relaxed">
+                    Text · Images · Video
+                  </p>
+                </div>
+                <div className="px-2.5 py-2">
+                  <h3 className="font-serif-exp text-[11px] text-[#9cb092] leading-tight truncate">
+                    Design editor
+                  </h3>
+                </div>
+              </button>
+
+              {/* Start-from-premade-design tile — always third, when designs exist for this category */}
+              {visibleCanvasTemplates.length > 0 && (
+                <button
+                  key="__canvas_template_picker__"
+                  onClick={openCanvasTemplatePicker}
+                  className="template-card group text-left overflow-hidden bg-[#9cb092]/[0.06] border border-dashed border-[#9cb092]/40 hover:border-[#9cb092] hover:bg-[#9cb092]/[0.12] transition-all duration-300 flex flex-col"
+                >
+                  <div className="relative aspect-[9/16] overflow-hidden bg-[#192116] flex flex-col items-center justify-center text-center px-4">
+                    <div className="w-12 h-12 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                      <span className="material-icons text-[#9cb092] text-2xl">auto_awesome</span>
+                    </div>
+                    <p className="font-serif-exp text-sm text-[#e4eee1] leading-snug mb-1">
+                      Start from a Premade Design
+                    </p>
+                    <p className="font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 leading-relaxed">
+                      Editable Font · Color
+                    </p>
+                  </div>
+                  <div className="px-2.5 py-2">
+                    <h3 className="font-serif-exp text-[11px] text-[#9cb092] leading-tight truncate">
+                      Styled starter
+                    </h3>
+                  </div>
+                </button>
+              )}
 
               {visibleTemplates.map((t) => (
                 <button
@@ -1187,6 +1397,118 @@ export default function CreateEvite() {
       )}
 
       {/* ════════════════════════════════════════════════════════════
+          PREMADE CANVAS TEMPLATE PICKER — choose a styled starter design
+          before the canvas editor opens with it pre-loaded.
+          ════════════════════════════════════════════════════════════ */}
+      {modalPhase === 'canvas-template-picker' && (
+        <div
+          ref={editorBackdropRef}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
+          style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeAnyModal();
+          }}
+        >
+          <div
+            ref={editorPanelRef}
+            className="relative w-full max-w-5xl max-h-[82vh] bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={closeAnyModal}
+              className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
+            >
+              <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
+            </button>
+
+            <div className="px-6 md:px-10 pt-8 pb-4 border-b border-white/[0.06]">
+              <h2 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight pr-10">
+                Start from a <span className="text-[#9cb092] font-agatho italic">styled design</span>
+              </h2>
+              <p className="font-display text-[11px] tracking-wide text-[#b2c3b1]/55 leading-relaxed mt-2">
+                Pick a starting point — every font and color stays fully editable in the next step.
+              </p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto scrollbar-subtle px-6 md:px-10 py-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {visibleCanvasTemplates.map((ct) => {
+                  const textElements = ct.elements.filter(isTextElement);
+                  const heading = textElements.find((el) => el.fontSize >= 60) ?? textElements[0];
+                  const sub = textElements.find((el) => el !== heading);
+                  return (
+                    <button
+                      key={ct.id}
+                      onClick={() => pickCanvasTemplate(ct)}
+                      className="group text-left overflow-hidden border border-white/[0.07] hover:border-[#9cb092]/40 transition-all duration-300 flex flex-col"
+                    >
+                      <div
+                        className="relative aspect-[2/3] overflow-hidden flex flex-col items-center justify-center text-center px-4 gap-2"
+                        style={{ backgroundColor: ct.background.type === 'color' ? ct.background.value : '#eeeeee' }}
+                      >
+                        {heading && (
+                          <p
+                            className="leading-tight px-1"
+                            style={{
+                              fontFamily: `'${heading.fontFamily}', serif`,
+                              color: heading.fill,
+                              fontSize: '22px',
+                            }}
+                          >
+                            {heading.text}
+                          </p>
+                        )}
+                        {sub && (
+                          <p
+                            className="leading-snug px-1"
+                            style={{
+                              fontFamily: `'${sub.fontFamily}', sans-serif`,
+                              color: sub.fill,
+                              fontSize: '9px',
+                              letterSpacing: '0.05em',
+                            }}
+                          >
+                            {sub.text}
+                          </p>
+                        )}
+                      </div>
+                      <div className="px-2.5 py-2 bg-white/[0.03]">
+                        <h3 className="font-serif-exp text-[11px] text-[#9cb092] leading-tight truncate">
+                          {ct.name}
+                        </h3>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {visibleCanvasTemplates.length === 0 && (
+                <p className="font-display text-[11px] tracking-[0.25em] uppercase text-[#b2c3b1]/30 text-center py-10">
+                  No styled designs in this category yet
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════
+          BUILD-YOUR-OWN CANVAS EDITOR
+          ════════════════════════════════════════════════════════════ */}
+      {modalPhase === 'canvas-editor' && (
+        <CanvasEditor
+          key={pickedCanvasTemplate?.id ?? 'blank'}
+          eventType={activeFilter}
+          initialTemplateId={null}
+          canvasWidth={pickedCanvasTemplate?.canvasWidth}
+          canvasHeight={pickedCanvasTemplate?.canvasHeight}
+          initialBackground={pickedCanvasTemplate?.background}
+          initialElements={pickedCanvasTemplate?.elements}
+          onClose={() => setModalPhase(null)}
+          onFinish={handleCanvasEditorFinish}
+        />
+      )}
+
+      {/* ════════════════════════════════════════════════════════════
           TEMPLATE EDITOR MODAL
           ════════════════════════════════════════════════════════════ */}
       {(selectedTemplate || uploadedTemplate) && modalPhase === 'editor' && (
@@ -1295,7 +1617,12 @@ export default function CreateEvite() {
                       />
                     )
                   ) : selectedTemplate?.layout ? (
-                    <TemplateRenderer template={selectedTemplate} formData={formData} />
+                    <TemplateRenderer
+                      template={selectedTemplate}
+                      formData={formData}
+                      overrides={fieldOverrides}
+                      photoOverlay={photoOverlay}
+                    />
                   ) : selectedTemplate ? (
                     <img
                       ref={mainImgRef}
@@ -1422,6 +1749,285 @@ export default function CreateEvite() {
 
             {/* ── RIGHT: form (scrollable) ────────────────────────── */}
             <div className="flex-1 md:flex-1 min-h-0 flex flex-col overflow-hidden">
+              {/* Details / Customize Design tab pair — Customize only applies to
+                  stock templates with a positioned layout (the 32 hardcoded
+                  designs); uploaded/canvas designs have no field layout to edit. */}
+              {selectedTemplate?.layout && (
+                <div className="flex-shrink-0 flex items-center gap-1 px-6 md:px-8 pt-4 border-b border-white/[0.06] bg-[#0e1712]">
+                  {(['details', 'customize'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setRightPanelTab(tab)}
+                      className={`px-4 py-2 font-display text-[10px] tracking-[0.18em] uppercase transition-colors border-b-2 ${
+                        rightPanelTab === tab
+                          ? 'border-[#9cb092] text-[#9cb092]'
+                          : 'border-transparent text-[#b2c3b1]/55 hover:text-[#9cb092]'
+                      }`}
+                    >
+                      {tab === 'details' ? 'Details' : 'Customize Design'}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {selectedTemplate?.layout && rightPanelTab === 'customize' ? (
+                <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-6 md:px-8 pt-6 pb-5 space-y-6">
+                  {/* ── Text field list ── */}
+                  <div>
+                    <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]/80 mb-2 flex items-center gap-1.5">
+                      <span className="material-icons text-sm">text_fields</span>
+                      Text Fields
+                    </p>
+                    <div className="space-y-1">
+                      {customizableFields.map((f) => (
+                        <button
+                          key={f.key}
+                          onClick={() => setSelectedOverrideKey(f.key)}
+                          className={`w-full text-left px-3 py-2 font-display text-[11px] tracking-wide transition-colors border ${
+                            selectedOverrideKey === f.key
+                              ? 'border-[#9cb092]/60 bg-[#9cb092]/10 text-[#9cb092]'
+                              : 'border-white/10 text-[#e4eee1]/80 hover:border-[#9cb092]/30'
+                          }`}
+                        >
+                          {f.label}
+                          {fieldOverrides[f.key] && (
+                            <span className="ml-2 text-[8px] text-[#9cb092]/70 uppercase tracking-[0.15em]">edited</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ── Editing controls for the selected field ── */}
+                  {selectedOverrideField && selectedOverrideKey && (
+                    <div className="border-t border-white/[0.07] pt-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]/80">
+                          Edit Field
+                        </p>
+                        {fieldOverrides[selectedOverrideKey] && (
+                          <button
+                            onClick={() =>
+                              setFieldOverrides((prev) => {
+                                const next = { ...prev };
+                                delete next[selectedOverrideKey];
+                                return next;
+                              })
+                            }
+                            className="font-display text-[8px] tracking-[0.15em] uppercase text-[#b2c3b1]/50 hover:text-red-400/70 transition-colors"
+                          >
+                            Reset to default
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Font */}
+                      <div>
+                        <label className="block font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 mb-1.5">
+                          Font
+                        </label>
+                        <select
+                          value={selectedOverrideField.fontFamily}
+                          onChange={(e) => setOverride(selectedOverrideKey, { fontFamily: e.target.value })}
+                          className="bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display px-3 h-10 text-sm rounded-sm w-full outline-none transition-colors"
+                        >
+                          {FONT_CATEGORIES.map((cat) => (
+                            <optgroup key={cat.label} label={cat.label}>
+                              {cat.fonts.map((f) => (
+                                <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>
+                              ))}
+                            </optgroup>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Color */}
+                      <div>
+                        <label className="block font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 mb-1.5">
+                          Color
+                        </label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {COLOR_SWATCHES.map((c) => (
+                            <button
+                              key={c}
+                              onClick={() => setOverride(selectedOverrideKey, { color: c })}
+                              aria-label={`Set color ${c}`}
+                              className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-110 ${
+                                selectedOverrideField.color === c ? 'border-[#9cb092]' : 'border-white/10'
+                              }`}
+                              style={{ backgroundColor: c }}
+                            />
+                          ))}
+                        </div>
+                        <input
+                          type="color"
+                          value={selectedOverrideField.color}
+                          onChange={(e) => setOverride(selectedOverrideKey, { color: e.target.value })}
+                          className="h-9 w-full bg-white/[0.06] border border-white/15 rounded-sm cursor-pointer"
+                        />
+                      </div>
+
+                      {/* Position */}
+                      <div>
+                        <label className="block font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 mb-1.5">
+                          Position
+                        </label>
+                        <div className="grid grid-cols-3 gap-1.5 w-fit">
+                          <div />
+                          <button
+                            onClick={() => nudgeOverride(selectedOverrideKey, 'y', -4, customizableFields.find((f) => f.key === selectedOverrideKey)!.field)}
+                            className="w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10"
+                          >
+                            <span className="material-icons text-[#9cb092] text-base">arrow_upward</span>
+                          </button>
+                          <div />
+                          <button
+                            onClick={() => nudgeOverride(selectedOverrideKey, 'x', -4, customizableFields.find((f) => f.key === selectedOverrideKey)!.field)}
+                            className="w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10"
+                          >
+                            <span className="material-icons text-[#9cb092] text-base">arrow_back</span>
+                          </button>
+                          <button
+                            onClick={() => setFieldOverrides((prev) => { const next = { ...prev }; delete next[selectedOverrideKey]; return next; })}
+                            className="w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10"
+                            title="Reset position"
+                          >
+                            <span className="material-icons text-[#b2c3b1]/50 text-sm">restart_alt</span>
+                          </button>
+                          <button
+                            onClick={() => nudgeOverride(selectedOverrideKey, 'x', 4, customizableFields.find((f) => f.key === selectedOverrideKey)!.field)}
+                            className="w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10"
+                          >
+                            <span className="material-icons text-[#9cb092] text-base">arrow_forward</span>
+                          </button>
+                          <div />
+                          <button
+                            onClick={() => nudgeOverride(selectedOverrideKey, 'y', 4, customizableFields.find((f) => f.key === selectedOverrideKey)!.field)}
+                            className="w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10"
+                          >
+                            <span className="material-icons text-[#9cb092] text-base">arrow_downward</span>
+                          </button>
+                          <div />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Photo overlay ── */}
+                  <div className="border-t border-white/[0.07] pt-4 space-y-3">
+                    <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]/80 flex items-center gap-1.5">
+                      <span className="material-icons text-sm">add_a_photo</span>
+                      Add Your Photo
+                    </p>
+
+                    {!photoOverlay ? (
+                      <label className="flex items-center justify-center gap-2 border border-dashed border-white/20 hover:border-[#9cb092]/50 py-4 cursor-pointer transition-colors font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/70">
+                        <span className="material-icons text-sm">upload</span>
+                        {photoUploading ? 'Uploading…' : 'Upload a photo'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={photoUploading}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handlePhotoUpload(file);
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <img src={photoOverlay.src} alt="Your upload" className="w-12 h-12 object-cover rounded-sm border border-white/10" />
+                          <button
+                            onClick={() => setPhotoOverlay(null)}
+                            className="font-display text-[9px] tracking-[0.12em] uppercase text-[#b2c3b1]/50 hover:text-red-400/70 transition-colors"
+                          >
+                            Remove photo
+                          </button>
+                        </div>
+
+                        <div>
+                          <label className="block font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 mb-1.5">
+                            Shape
+                          </label>
+                          <div className="flex gap-2">
+                            {(['circle', 'square', 'arch'] as const).map((shape) => (
+                              <button
+                                key={shape}
+                                onClick={() => setPhotoOverlay((prev) => prev && { ...prev, shape })}
+                                className={`px-3 py-1.5 font-display text-[9px] tracking-[0.12em] uppercase border transition-colors ${
+                                  photoOverlay.shape === shape
+                                    ? 'border-[#9cb092]/60 bg-[#9cb092]/10 text-[#9cb092]'
+                                    : 'border-white/10 text-[#e4eee1]/70 hover:border-[#9cb092]/30'
+                                }`}
+                              >
+                                {shape}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 mb-1.5">
+                            Position &amp; Size
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <div className="grid grid-cols-3 gap-1.5 w-fit">
+                              <div />
+                              <button
+                                onClick={() => setPhotoOverlay((prev) => prev && { ...prev, y: prev.y - 4 })}
+                                className="w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10"
+                              >
+                                <span className="material-icons text-[#9cb092] text-base">arrow_upward</span>
+                              </button>
+                              <div />
+                              <button
+                                onClick={() => setPhotoOverlay((prev) => prev && { ...prev, x: prev.x - 4 })}
+                                className="w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10"
+                              >
+                                <span className="material-icons text-[#9cb092] text-base">arrow_back</span>
+                              </button>
+                              <div />
+                              <button
+                                onClick={() => setPhotoOverlay((prev) => prev && { ...prev, x: prev.x + 4 })}
+                                className="w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10"
+                              >
+                                <span className="material-icons text-[#9cb092] text-base">arrow_forward</span>
+                              </button>
+                              <div />
+                              <button
+                                onClick={() => setPhotoOverlay((prev) => prev && { ...prev, y: prev.y + 4 })}
+                                className="w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10"
+                              >
+                                <span className="material-icons text-[#9cb092] text-base">arrow_downward</span>
+                              </button>
+                              <div />
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => setPhotoOverlay((prev) => prev && { ...prev, size: Math.max(40, prev.size - 20) })}
+                                className="w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10"
+                                title="Smaller"
+                              >
+                                <span className="material-icons text-[#9cb092] text-base">remove</span>
+                              </button>
+                              <button
+                                onClick={() => setPhotoOverlay((prev) => prev && { ...prev, size: prev.size + 20 })}
+                                className="w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10"
+                                title="Bigger"
+                              >
+                                <span className="material-icons text-[#9cb092] text-base">add</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
               <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-6 md:px-8 pt-6 pb-5">
                 {/* Editor fields — 2-column grid. Venue + textareas span full width. */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
@@ -1562,6 +2168,7 @@ export default function CreateEvite() {
                   </div>
                 )}
               </div>
+              )}
 
               <div className="flex-shrink-0 px-6 md:px-8 py-4 border-t border-white/[0.06] bg-[#0e1712]">
                 <button
@@ -1674,6 +2281,8 @@ export default function CreateEvite() {
           deliveryPreference={deliveryPreference}
           guestCount={guests.filter((g) => g.name.trim()).length}
           guests={guests}
+          templateOverrides={fieldOverrides}
+          templatePhotoOverlay={photoOverlay}
           invitationSets={
             multipleInvitations
               ? invitationSlots

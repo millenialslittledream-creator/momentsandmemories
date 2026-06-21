@@ -7,10 +7,24 @@ import type {
 } from '@/data/eviteTemplates';
 import { formatFieldValue } from '@/utils/templateRendering';
 
+export interface PhotoOverlay {
+  src: string;
+  x: number;
+  y: number;
+  size: number;
+  shape: 'circle' | 'square' | 'arch';
+}
+
 interface TemplateRendererProps {
   template: EviteTemplate;
   formData: Record<string, string>;
   className?: string;
+  /** Per-field overrides (font/color/position), keyed by the field's
+   * formKey, falling back to `field-${idx}` for fields without one
+   * (e.g. static decorative text like the "&" in wed-multi). Merged on
+   * top of the template's default field layout — never mutates it. */
+  overrides?: Record<string, Partial<TemplateFieldLayout>>;
+  photoOverlay?: PhotoOverlay | null;
 }
 
 function formatDateShort(yyyymmdd: string): string {
@@ -165,34 +179,62 @@ function iconStyle(
   };
 }
 
+function photoOverlayStyle(overlay: PhotoOverlay, naturalWidth: number, naturalHeight: number): CSSProperties {
+  const leftPct = (overlay.x / naturalWidth) * 100;
+  const topPct = (overlay.y / naturalHeight) * 100;
+  const sizePct = (overlay.size / naturalWidth) * 100;
+  const clipPath =
+    overlay.shape === 'circle'
+      ? 'circle(50%)'
+      : overlay.shape === 'arch'
+      ? 'polygon(0% 100%, 0% 38%, 2% 28%, 6% 19%, 12% 12%, 19% 6%, 28% 2%, 38% 0%, 62% 0%, 72% 2%, 81% 6%, 88% 12%, 94% 19%, 98% 28%, 100% 38%, 100% 100%)'
+      : undefined;
+  return {
+    position: 'absolute',
+    left: `${leftPct}%`,
+    top: `${topPct}%`,
+    transform: 'translate(-50%, -50%)',
+    width: `${sizePct}%`,
+    aspectRatio: overlay.shape === 'arch' ? '4 / 5' : '1 / 1',
+    objectFit: 'cover',
+    clipPath,
+    borderRadius: overlay.shape === 'circle' ? '50%' : undefined,
+  };
+}
+
 export default function TemplateRenderer({
   template,
   formData,
   className,
+  overrides,
+  photoOverlay,
 }: TemplateRendererProps) {
   const layout = template.layout;
 
   const fieldNodes = useMemo(() => {
     if (!layout) return null;
     return layout.fields.map((field, idx) => {
-      const text = formatFieldValue(field, formData);
-      if (!text && !field.iconBefore) return null;
+      const overrideKey = field.formKey ?? `field-${idx}`;
+      const override = overrides?.[overrideKey];
+      const effectiveField = override ? { ...field, ...override } : field;
+      const text = formatFieldValue(effectiveField, formData);
+      if (!text && !effectiveField.iconBefore) return null;
       const key = field.formKey || field.text || `field-${idx}`;
       return (
         <div
           key={`${key}-${idx}`}
-          style={fieldStyle(field, layout.naturalWidth, layout.naturalHeight)}
+          style={fieldStyle(effectiveField, layout.naturalWidth, layout.naturalHeight)}
         >
-          {field.iconBefore && (
-            <span style={iconStyle(field, layout.naturalWidth)}>
-              {field.iconBefore}
+          {effectiveField.iconBefore && (
+            <span style={iconStyle(effectiveField, layout.naturalWidth)}>
+              {effectiveField.iconBefore}
             </span>
           )}
           {text && <span>{text}</span>}
         </div>
       );
     });
-  }, [layout, formData]);
+  }, [layout, formData, overrides]);
 
   // Dynamic events list. Row 0 is ALWAYS the main event (sourced from
   // the main form's eventDate / eventTime / timezone / venue, with its
@@ -320,6 +362,13 @@ export default function TemplateRenderer({
       />
       {fieldNodes}
       {eventListNodes}
+      {photoOverlay && (
+        <img
+          src={photoOverlay.src}
+          alt="Your photo"
+          style={photoOverlayStyle(photoOverlay, layout.naturalWidth, layout.naturalHeight)}
+        />
+      )}
     </div>
   );
 }

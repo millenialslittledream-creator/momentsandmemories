@@ -2,6 +2,11 @@ node_modules
 dist
 .env
 .env.*
+vercel.env
 .vercel
 *.log
 .claude/worktrees/
+test-results/
+playwright-report/
+blob-report/
+.playwright-mcp/

@@ -27,6 +27,16 @@ def get_public_event(event_id: str) -> dict:
     return event
 
 
+def get_public_website(slug: str) -> dict:
+    from event_websites.service import get_public_website_by_slug
+    return get_public_website_by_slug(slug)
+
+
+def get_public_book(event_id: str) -> dict:
+    from invitation_books.service import get_public_book_for_event
+    return get_public_book_for_event(event_id)
+
+
 def get_invitee_for_rsvp(event_id: str, invitee_id: str) -> dict:
     db = database.get_db()
     result = (

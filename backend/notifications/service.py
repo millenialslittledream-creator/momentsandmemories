@@ -5,11 +5,19 @@ import boto3
 from botocore.exceptions import ClientError
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
-from twilio.rest import Client
 import database
 from config import settings
 from middleware.logging import log_event as _log
 from notifications.schemas import SendNotificationRequest, BulkRecipient
+
+
+def _get_sms_client():
+    return boto3.client(
+        "pinpoint-sms-voice-v2",
+        region_name=settings.aws_sms_region,
+        aws_access_key_id=settings.aws_sms_access_key_id or None,
+        aws_secret_access_key=settings.aws_sms_secret_access_key or None,
+    )
 
 
 def _save_notification(data: SendNotificationRequest) -> str:
@@ -59,11 +67,11 @@ def send_notification(data: SendNotificationRequest) -> dict:
             )
             sg.send(msg)
         elif data.type == "sms":
-            client = Client(settings.twilio_account_sid, settings.twilio_auth_token)
-            client.messages.create(
-                body=f"{data.title}: {data.body}",
-                from_=settings.twilio_from_number,
-                to=data.recipient,
+            sms = _get_sms_client()
+            sms.send_text_message(
+                DestinationPhoneNumber=data.recipient,
+                OriginationIdentity=settings.sms_origination_number,
+                MessageBody=f"{data.title}: {data.body}",
             )
         elif data.type == "whatsapp":
             pass  # WhatsApp is a deep link — no server call needed
@@ -148,19 +156,19 @@ def _do_bulk_send(
                      metadata={"to": r.email, "error": str(exc)})
 
     elif channel == "sms":
-        twilio = Client(settings.twilio_account_sid, settings.twilio_auth_token)
+        sms = _get_sms_client()
         for r in recipients:
             if not r.phone:
                 continue
             personalized = body.replace("{name}", r.name)
             try:
-                twilio.messages.create(
-                    body=f"{subject}: {personalized}",
-                    from_=settings.twilio_from_number,
-                    to=r.phone,
+                sms.send_text_message(
+                    DestinationPhoneNumber=r.phone,
+                    OriginationIdentity=settings.sms_origination_number,
+                    MessageBody=f"{subject}: {personalized}",
                 )
                 _log("notifications", "bulk.sms.sent", metadata={"to": r.phone})
-            except Exception as exc:
+            except ClientError as exc:
                 _log("notifications", "bulk.sms.failed", level="error",
                      metadata={"to": r.phone, "error": str(exc)})
 

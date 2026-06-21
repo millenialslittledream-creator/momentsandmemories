@@ -1,8 +1,14 @@
 import { supabase } from '@/lib/supabase';
 
+export interface BookPageDto {
+  id: string;
+  image_url: string;
+  frame?: string;
+}
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-async function getToken(): Promise<string | null> {
+export async function getToken(): Promise<string | null> {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token ?? null;
 }
@@ -21,6 +27,27 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
     throw new Error(err.detail || 'API error');
   }
   return res.json();
+}
+
+// Public (no-auth) reads are idempotent GETs, so a brief retry on a transient
+// server-side error (5xx) is safe and avoids surfacing a false "not found" to
+// guests when the backend hiccups for a moment.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function publicGet<T = any>(path: string): Promise<T> {
+  let lastError: Error = new Error('Request failed');
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 400 * attempt));
+    try {
+      const res = await fetch(`${API_URL}${path}`);
+      if (res.ok) return res.json();
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      lastError = new Error(err.detail || 'API error');
+      if (res.status < 500) break; // not transient — don't retry 404s etc.
+    } catch (e) {
+      lastError = e instanceof Error ? e : new Error('Network error');
+    }
+  }
+  throw lastError;
 }
 
 export const api = {
@@ -106,13 +133,9 @@ export const api = {
     ),
 
   // ── Public endpoints (no auth) ────────────────────────────────────────
-  getPublicEvent: (eventId: string) =>
-    fetch(`${API_URL}/public/events/${eventId}`)
-      .then(r => r.ok ? r.json() : r.json().then((e: { detail: string }) => Promise.reject(new Error(e.detail)))),
+  getPublicEvent: (eventId: string) => publicGet(`/public/events/${eventId}`),
 
-  getRSVPPage: (eventId: string, inviteeId: string) =>
-    fetch(`${API_URL}/public/events/${eventId}/rsvp/${inviteeId}`)
-      .then(r => r.ok ? r.json() : r.json().then((e: { detail: string }) => Promise.reject(new Error(e.detail)))),
+  getRSVPPage: (eventId: string, inviteeId: string) => publicGet(`/public/events/${eventId}/rsvp/${inviteeId}`),
 
   submitRSVP: (eventId: string, inviteeId: string, data: { status: string; message: string; dietary_requirements: string }) =>
     fetch(`${API_URL}/public/events/${eventId}/rsvp/${inviteeId}`, {
@@ -193,4 +216,145 @@ export const api = {
       method: 'DELETE',
       headers: { 'X-Admin-Secret': secret },
     }).then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to delete item'))),
+
+  // ── Media uploads (canvas editor) ───────────────────────────────────────
+  uploadMedia: async (file: File): Promise<{ id: string; public_url: string; kind: 'image' | 'video' }> => {
+    const token = await getToken();
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_URL}/media/upload`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Upload failed');
+    }
+    return res.json();
+  },
+
+  // ── Custom templates (canvas editor) ────────────────────────────────────
+  createCustomTemplate: (data: Record<string, unknown>) =>
+    apiFetch<{ id: string }>('/custom-templates', { method: 'POST', body: JSON.stringify(data) }),
+
+  updateCustomTemplate: (id: string, data: Record<string, unknown>) =>
+    apiFetch<unknown>(`/custom-templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  getCustomTemplate: (id: string) =>
+    apiFetch<{
+      id: string;
+      name: string | null;
+      canvas_width: number;
+      canvas_height: number;
+      background: { type: string; value: string };
+      elements: Array<Record<string, unknown>>;
+    }>(`/custom-templates/${id}`),
+
+  listCustomTemplates: () =>
+    apiFetch<Array<{ id: string; name: string | null; updated_at: string }>>('/custom-templates'),
+
+  deleteCustomTemplate: (id: string) =>
+    apiFetch<unknown>(`/custom-templates/${id}`, { method: 'DELETE' }),
+
+  // ── Event website builder ───────────────────────────────────────────────
+  createEventWebsite: (data: { event_id: string; slug: string; sections?: Record<string, unknown>[]; theme?: Record<string, unknown>; published?: boolean }) =>
+    apiFetch<{ id: string; slug: string }>('/event-websites', { method: 'POST', body: JSON.stringify(data) }),
+
+  listEventWebsites: () =>
+    apiFetch<Array<{ id: string; event_id: string; slug: string; published: boolean; updated_at: string }>>('/event-websites'),
+
+  getEventWebsite: (id: string) =>
+    apiFetch<{
+      id: string;
+      event_id: string;
+      slug: string;
+      sections: Array<Record<string, unknown>>;
+      theme: Record<string, unknown>;
+      published: boolean;
+    }>(`/event-websites/${id}`),
+
+  updateEventWebsite: (id: string, data: { slug?: string; sections?: Record<string, unknown>[]; theme?: Record<string, unknown>; published?: boolean }) =>
+    apiFetch<unknown>(`/event-websites/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteEventWebsite: (id: string) =>
+    apiFetch<unknown>(`/event-websites/${id}`, { method: 'DELETE' }),
+
+  getPublicWebsite: (slug: string) => publicGet(`/public/websites/${slug}`),
+
+  // ── Invitation book (page-turn) ─────────────────────────────────────────
+  createInvitationBook: (data: { event_id: string; title?: string; pages?: Array<BookPageDto>; published?: boolean }) =>
+    apiFetch<{ id: string }>('/invitation-books', { method: 'POST', body: JSON.stringify(data) }),
+
+  listInvitationBooks: () =>
+    apiFetch<Array<{ id: string; event_id: string; title: string | null; published: boolean; updated_at: string }>>('/invitation-books'),
+
+  getInvitationBook: (id: string) =>
+    apiFetch<{
+      id: string;
+      event_id: string;
+      title: string | null;
+      pages: Array<BookPageDto>;
+      published: boolean;
+    }>(`/invitation-books/${id}`),
+
+  updateInvitationBook: (id: string, data: { title?: string; pages?: Array<BookPageDto>; published?: boolean }) =>
+    apiFetch<unknown>(`/invitation-books/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteInvitationBook: (id: string) =>
+    apiFetch<unknown>(`/invitation-books/${id}`, { method: 'DELETE' }),
+
+  getPublicBook: (eventId: string) => publicGet(`/public/events/${eventId}/book`),
+
+  // ── Guest photo gallery ──────────────────────────────────────────────────
+  uploadGalleryPhoto: (eventId: string, file: File, uploadedByName: string) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('uploaded_by_name', uploadedByName);
+    return fetch(`${API_URL}/public/events/${eventId}/gallery`, { method: 'POST', body: formData })
+      .then(r => r.ok ? r.json() : r.json().then((e: { detail: string }) => Promise.reject(new Error(e.detail))));
+  },
+
+  getGalleryPhotos: (eventId: string) =>
+    publicGet<Array<{ id: string; public_url: string; uploaded_by_name: string | null; approved: boolean; created_at: string }>>(
+      `/public/events/${eventId}/gallery`
+    ),
+
+  getOwnerGalleryPhotos: (eventId: string) =>
+    apiFetch<Array<{ id: string; public_url: string; uploaded_by_name: string | null; approved: boolean; created_at: string }>>(
+      `/gallery/${eventId}`
+    ),
+
+  setPhotoApproval: (photoId: string, approved: boolean) =>
+    apiFetch<unknown>(`/gallery/photos/${photoId}/approval?approved=${approved}`, { method: 'PUT' }),
+
+  deleteGalleryPhoto: (photoId: string) =>
+    apiFetch<unknown>(`/gallery/photos/${photoId}`, { method: 'DELETE' }),
+
+  // ── Evite template customizations (font/color/position overrides + photo) ──
+  createEviteCustomization: (data: {
+    event_id?: string;
+    template_id: string;
+    field_overrides?: Record<string, unknown>;
+    photo_overlay?: Record<string, unknown> | null;
+  }) =>
+    apiFetch<{ id: string }>('/evite-customizations', { method: 'POST', body: JSON.stringify(data) }),
+
+  getEviteCustomizationsByEvent: (eventId: string) =>
+    apiFetch<Array<{
+      id: string;
+      event_id: string | null;
+      template_id: string;
+      field_overrides: Record<string, unknown>;
+      photo_overlay: Record<string, unknown> | null;
+    }>>(`/evite-customizations/by-event/${eventId}`),
+
+  updateEviteCustomization: (
+    id: string,
+    data: {
+      event_id?: string;
+      field_overrides?: Record<string, unknown>;
+      photo_overlay?: Record<string, unknown> | null;
+    }
+  ) => apiFetch<unknown>(`/evite-customizations/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
 };

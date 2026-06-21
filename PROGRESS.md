@@ -358,3 +358,206 @@ Footer (black, scrubbed entrance)
 3. ✅ **nginx catch-all redirect**: Discovered a legacy config `/etc/nginx/sites-enabled/momentsandmemories` with `server_name 13.237.143.52;` (from the pre-domain setup, May 10) that exact-matched bare-IP requests and bypassed any `default_server` block — this was the direct cause of "raw IP shows the site." Fix: removed that symlink (`sudo rm /etc/nginx/sites-enabled/momentsandmemories`; original file kept as backup in `sites-available/`) and added a new `default_server` block (`/etc/nginx/sites-available/catchall-redirect`) that 301-redirects any non-matching Host (including the bare IP) to `https://mymomentsnmemories.com`. Verified: `curl -I http://13.237.143.52/` → `301 Moved Permanently` → `Location: https://mymomentsnmemories.com/`
 
 **Next steps**: ⚠️ Consider regenerating QR codes for events created before this fix (they encode the old IP-based import URL). Then move on to the bulk SMS feature (see `docs/bulk-messaging-options.md`)
+
+---
+
+## [2026-06-21] - GitLab CI Deploy Fix + AWS End User Messaging SMS Setup (in progress)
+
+**Status**: 🔄 IN PROGRESS
+
+**GitLab CI deploy fix — ✅ COMPLETED**: A teammate's push (`eb66430`) broke the `deploy` stage — EC2 had expired GitLab credentials causing `git pull origin main` to fail with `HTTP Basic: Access denied`. Fixed in `.gitlab-ci.yml` (commit `7d917d8`): removed the `git pull` step entirely and replaced it with a second `rsync` that pushes `backend/` directly from CI to EC2 (excluding `venv`, `__pycache__`, `.env`). EC2 no longer needs any GitLab credentials. Verified via pipeline #37 → `success`. Local `gitlab` remote PAT had also expired — rotated to a new token.
+
+**Bulk SMS — AWS End User Messaging SMS setup (US-only for now, per `docs/bulk-messaging-options.md`)**: Decided to use AWS End User Messaging SMS for US guests (Twilio remains wired in code but unused/unconfigured; India SMS deferred — would need MSG91 + DLT registration, not pursued yet since current audience is USA-only).
+
+Completed so far:
+1. ✅ **Toll-free number requested**: `+18556299508` (US), status `Pending` carrier registration — registration ID `registration-e2b6a0b6872c492bad4f9894d8442997`, submitted via AWS End User Messaging console (Phone numbers → Request originator → Toll-free)
+2. ✅ **SMS sandbox exit + spend threshold increase requested**: AWS Support case `178198657900903` (Service Quota increase, "SMS Production Access" = 1, region `ap-southeast-2`) — status `Work in progress`. Not urgent — app is still in testing, sandbox + simulator numbers are sufficient for now.
+3. ✅ **IAM user created**: `momentsandmemories-backend` with custom policy `momentsandmemories-sms-send` (`sms-voice:SendTextMessage`, `sms-voice:DescribePhoneNumbers`). Access key generated and stored in `vercel.env` (gitignored — added `vercel.env` to `.gitignore`, it was previously untracked-but-NOT-ignored, a latent leak risk fixed in this session) and wired into `backend/config.py` as `aws_sms_access_key_id` / `aws_sms_secret_access_key` / `aws_sms_region` / `sms_origination_number`.
+
+4. ✅ **SMS sending code written**: `backend/notifications/service.py` now uses `boto3`'s `pinpoint-sms-voice-v2` client (`_get_sms_client()` helper) for both `send_notification()` (single SMS) and `_do_bulk_send()` (bulk SMS), calling `send_text_message(DestinationPhoneNumber, OriginationIdentity, MessageBody)`. **Twilio fully removed** (was unconfigured/unused dead code) — `config.py` twilio_* settings removed, `twilio==9.3.0` dropped from `requirements.txt`, test updated to mock `boto3` instead of `Client`. All 60 backend tests pass. (Found + fixed along the way: local venv was stale and missing `boto3` entirely — reinstalled via `pip install -r requirements.txt`.)
+
+**Next steps**:
+- ⏳ Test end-to-end using an AWS *simulator* number (toll-free is still Pending, can't verify a real destination number until it's Active)
+- ⏳ Once toll-free registration approves (carrier review, up to 15 business days) and the Support case clears, switch from simulator to the real toll-free number — just a config change
+- ⚠️ Compliance note: current opt-in model is host-provided contact info (manual entry or QR-code import from host's phone) — NOT guest self-opt-in. Selected `QR_CODE` as Opt-in type on the registration form. Consider adding a soft double opt-in (e.g. first message asks "Reply YES for updates") to reduce future spam-complaint/suspension risk.
+
+---
+
+## [2026-06-21] - Canvas Template Editor (Feature 1 of 4) — Build Your Own Design
+
+**Status**: ✅ COMPLETED (local only — branch `feature/canvas-template-editor`, **not pushed**, per explicit instruction)
+
+Researched competitor evite editors first (`docs/evite-editor-research.md`), planned the integration against the full codebase (`docs/canvas-editor-plan.md`), then built a Konva-based "Build Your Own Design" canvas editor as the first of four planned features (others queued: event website builder, page-turn book invitation, guest photo gallery auto-collage).
+
+**Database (new tables only — no existing table touched)**:
+- `backend/migrations/014_create_media_uploads.sql` — `media_uploads` table + RLS, owner-only
+- `backend/migrations/015_create_user_templates.sql` — `user_templates` table (holds the `event_id` FK pointing *at* `events`, so the existing `events` table needed zero changes) + RLS
+- `backend/migrations/016_create_user_uploads_bucket.sql` — new public Storage bucket `user-uploads` (`{user_id}/{filename}` path convention) + owner-scoped storage policies
+- All three applied to the live Supabase project via MCP; verified no impact on existing tables/policies.
+
+**Backend** (`backend/media/`, `backend/custom_templates/`, registered in `main.py`):
+- `POST /media/upload`, `GET /media`, `DELETE /media/{id}` — multipart upload to Supabase Storage, validates mime type + size (10MB image / 50MB video), inserts `media_uploads` row.
+- `POST/GET/PUT/DELETE /custom-templates` — CRUD for `user_templates`, ownership-checked on every read/write.
+- 13 new pytest tests (`test_media.py`, `test_custom_templates.py`), full suite **73/73 passing**.
+
+**Frontend** (`src/components/CanvasEditor/`, wired into `src/pages/CreateEvite.tsx`):
+- Konva/react-konva Stage+Layer editor: add/edit text (font, size, color, align, bold/italic/underline, inline double-click editing), add image/video, drag/resize/rotate via Transformer, layer panel (select/lock/duplicate/delete/reorder), background color, debounced autosave to `/custom-templates`.
+- New gallery tile "Build Your Own Design" sits next to the existing "Upload Your Own Design" tile, same dashed-border visual language — zero changes to existing tile/template-picker behavior.
+- On "Done": flattens the canvas to a PNG (`stage.toDataURL()`) and hands off into the **existing, unmodified** event-details → guests → preview → payment flow by reusing the existing `uploadedTemplate` state shape — no changes needed to `TemplateRenderer.tsx` or downstream steps.
+- Styled to match the app's existing dark-green/serif editorial design system (verified visually via Playwright screenshots — not generic/pixelated).
+
+**Testing**: Playwright installed (`@playwright/test`, chromium only). `tests/e2e/canvas-editor.spec.ts` — 9 passing tests (open/close, add text, property edits, duplicate/delete, lock, background color, Done-disabled-when-empty, handoff). `tests/e2e/visual-check.spec.ts` — manual visual-review screenshots + 2 regression tests confirming the pre-existing template-picker and upload-your-own flows are unaffected. Frontend vitest (7/7) and backend pytest (73/73) both green after the change — no regressions found.
+
+**Known scope boundaries** (flagged, not blockers):
+- Authenticated persistence (real Storage upload + real `user_templates` row creation) is verified at the backend-logic level (mocked-DB pytest) but not via a live signed-in Playwright session — would require a disposable test Supabase auth account, not created without asking first.
+- The flattened design handoff currently uses a local data: URL (same limitation the existing plain-upload flow already has — not a regression).
+- The `leonxlnx/taste-skill` GitHub repo could not be installed as an actual Claude Code Skill (no `SKILL.md` at the expected path); its design principles were applied manually by matching the app's existing visual language instead.
+
+**Next steps**: Build feature 2 of 4 (event/wedding website builder), same process — plan → build → backend+frontend → Playwright test → manual/regression check — before moving to feature 3.
+
+---
+
+## [2026-06-21] - Features 2, 3, 4 + Video Bugfix — All 4 Planned Features Complete
+
+**Status**: ✅ COMPLETED (local only — branch `feature/canvas-template-editor`, **not pushed**, per explicit instruction)
+
+Continued straight on from Feature 1 in the same session. Fixed one real bug found in Feature 1, then built Features 2, 3, and 4 back to back, same plan→build→test→verify cycle each time.
+
+**Bugfix — canvas editor video rendering**: `ImageNode.tsx` used `useImage`+`Konva.Image`, which only works for static images — uploaded video files silently failed to render despite the tile advertising "Video". Fixed by adding `VideoNode.tsx` (HTMLVideoElement + `Konva.Animation` loop, the standard Konva pattern for drawing live video frames to canvas) and a `mediaKind: 'image' | 'video'` field on `ImageElementData` so the renderer picks the right node type. Verified with a real generated test video (ffmpeg) through a mocked-upload Playwright test — confirmed the video frame actually paints on the canvas (screenshot evidence), not just that nothing crashes.
+
+**Feature 2 — Event/Wedding Website Builder** (`backend/event_websites/`, `src/components/WebsiteBuilder/`):
+- New table `event_websites` (slug, sections JSONB, theme JSONB, published) — zero changes to `events`.
+- Section-based builder (not canvas) — 8 section types: Hero, Our Story, Schedule, Photo Gallery, RSVP, Map/Venue, FAQ, Custom Text. Add/reorder/edit/remove sections, live preview, slug editor, publish toggle, autosave.
+- Public route `/w/:slug` (no auth) renders the published site in a clean cream/serif wedding-website aesthetic (deliberately different from the app's dark editor chrome — appropriate for a guest-facing page, confirmed visually).
+- 8 new pytest tests, 4 new vitest component tests (`WebsiteBuilder.test.tsx`, using `@testing-library/react` since this UI has no canvas), 6 new Playwright tests + 1 visual screenshot test.
+- Entry point: new "Website" button per event row in Dashboard.
+
+**Feature 3 — "Book" page-turn invitation** (`backend/invitation_books/`, `src/components/BookBuilder/`):
+- New table `invitation_books` (ordered `pages: [{id, image_url}]`, published) — self-contained, doesn't depend on `media_uploads` or `user_templates`.
+- `react-pageflip` integration (`BookViewer.tsx`) — upload page images, reorder/delete, live page-turn preview.
+- Public viewing: a "View Invitation Book" button appears on the existing `/event/:eventId` page when a published book exists; opens a full-screen `BookViewer` modal.
+- **Verified the actual page-turn interaction**, not just that the component mounts — clicked the book and confirmed via before/after screenshots that it visually flips from page 1 to page 2.
+- 7 new pytest tests, 3 new Playwright tests.
+- Entry point: new "Book" button per event row in Dashboard.
+
+**Feature 4 — Guest photo gallery → auto-collage** (`backend/gallery/`, `src/components/GuestGallery/`, `src/pages/GuestGalleryUpload.tsx`):
+- New table `event_gallery_photos` — deliberately self-contained (own `storage_path`/`public_url` columns) rather than referencing `media_uploads`, because `media_uploads.user_id` is `NOT NULL` (owner-scoped) and guests contributing photos have no account. Uploads go through the backend's service-role client, which bypasses Storage/Table RLS, so no anonymous-write policy was needed.
+- No-login guest upload page at `/gallery/:eventId` — guest enters a name (remembered in `localStorage`), uploads photos, sees the live masonry gallery (CSS `columns-N` layout — the well-understood, no-AI approach the research confirmed was right) update immediately.
+- Host moderation: new "Guest Gallery" tab in the Dashboard's expanded event row (alongside the existing Analytics/Messages tabs) — approve/hide/delete, copy guest upload link.
+- **Cross-feature integration**: the Website Builder's "Photo Gallery" section now actually displays real approved guest photos (was a placeholder before Feature 4 existed) — wired via a new optional `eventId` prop on `WebsiteRenderer`.
+- 7 new pytest tests, 5 new Playwright tests, 1 visual masonry-layout screenshot (confirmed correct varied-height column layout).
+- Entry point: guest-facing `/gallery/:eventId` link (shared by host), moderation tab in Dashboard.
+
+**Final overall regression** (after all 4 features): `tsc -b` clean, production `npm run build` clean (85 backend routes total), backend pytest **95/95 passing**, frontend vitest **11/11 passing**, full Playwright suite **25/25 passing** across all 4 features plus the original pre-existing template-picker/upload-flow regression checks.
+
+**Demo designs**: produced via Playwright screenshot capture rather than seeded live-DB content (no disposable test account was created without asking first) — see `test-results/manual-02` through `manual-14` for canvas editor (empty/styled/layered/video), the handoff into the existing event-details form, the public wedding website rendering, the book viewer before/after a real page flip, and the guest masonry gallery. If real seeded demo data inside the live Supabase project is wanted, that needs either a disposable test auth account or the user's own login.
+
+**Known scope boundaries carried across all 4 features** (consistent with Feature 1's documented gaps):
+- None of the 4 features have been exercised end-to-end through a *live authenticated* browser session — all authenticated-path correctness is verified at the backend-logic level (mocked-DB pytest, 95/95) plus frontend mechanics (Playwright, with network calls mocked at the boundary). Real Storage/DB round-trips for owner-authenticated actions were not run against a live signed-in session.
+- Feature 2's "RSVP" section and Feature 3's "book pages" don't yet pull live data from a saved canvas-editor design (Feature 1) — pages/sections are populated by direct image upload, not by picking a previously-saved `user_templates` row. Flagged as a possible future enhancement, not built in this pass to keep scope honest.
+
+**Next steps**: none currently planned — all 4 originally-requested features are built, wired, and tested. Awaiting direction on what's next (e.g., code-split the two >500KB chunks, or move to a different feature entirely).
+
+---
+
+## [2026-06-21] - Real Authenticated E2E Pass — Live Supabase Test Account
+
+**Status**: ✅ COMPLETED (local only, **not pushed**)
+
+Per request, created a disposable test login in the live Supabase project and used it to exercise all 4 features through real sign-in, real backend persistence, and real public pages — not mocked network responses. This closed the one gap flagged at the end of the previous entry.
+
+**Test account** (Supabase Admin API, `email_confirm: true`, no email verification needed):
+- Credentials live in `.env.e2e-test` (gitignored, never committed) and as a comment block in `backend/.env`.
+- One real test event ("E2E Test Wedding", published) was created and is left in the account for future re-runs.
+- `tests/e2e/authenticated-real.spec.ts` (new) — 5 tests: dashboard sign-in, Feature 2 (build+publish website, verified via the real `/w/:slug` page), Feature 3 (build+publish book, verified via the real book viewer modal), Feature 1 (canvas autosave, verified via a real `custom_templates` row), Feature 4 (real no-auth guest upload + real host moderation tab). All 5 pass individually; a few don't cleanly chain back-to-back without resetting data first (test-script idempotency against now-existing data, not a product bug).
+
+**Real bug found and fixed**: both `WebsiteBuilder` and `BookBuilder` (`src/components/WebsiteBuilder/index.tsx`, `src/components/BookBuilder/index.tsx`) had the same autosave race condition. Their "skip the first autosave right after load" guard (`skipNextAutosave` ref) was only ever consumed inside the autosave effect, keyed off the `loaded` state transition — not off whether anything was actually fetched. For a **brand-new** event with no existing website/book yet, if a user edited anything (e.g. added a section) before the initial "does one already exist?" fetch resolved, that edit's autosave got silently swallowed: the guard treated the unrelated `loaded` flip as "the load just applied data, skip this one" even though nothing had been applied. Fixed by setting `skipNextAutosave.current = true` only when fetched data is about to be re-applied (existing record found) and explicitly `= false` when there's nothing to skip (new record) — done in the `.then()` callback itself rather than relying on effect-timing. Confirmed via the real test account: before the fix, a section added immediately after opening the builder never persisted; after the fix, it does.
+
+**Environment finding (not a product bug, but worth knowing)**: `.env.local` at the project root pins the frontend dev server to `VITE_API_URL=http://localhost:8005` (not the `.env` default of 8000) — match this when running a local backend for manual/E2E testing. Also found that a single long-running local `uvicorn` process, after several hours of heavy repeated testing in this session, started intermittently 500-ing on calls to Supabase with `WinError 10035` (a Windows-specific stale-socket error from the underlying httpx connection pool) — alternating with successful 200s on the same endpoint. Restarting the backend process resolved it immediately. This is most likely a Windows-specific manifestation of httpx/httpcore connection-pool staleness under long-lived processes; worth a follow-up to add connection pool limits/keep-alive expiry to the Supabase client if this is ever observed in production logs, but not changed here since it didn't reproduce deterministically and a restart is a full mitigation.
+
+**Cleanup**: all test-created rows (website, book, custom template, gallery photo) were deleted via the same account's own API calls after verification, leaving only the one disposable test event behind for future reuse.
+
+---
+
+## [2026-06-21] - Manual QA Pass: Real Sample Content + Two More Real Bugs Fixed
+
+**Status**: ✅ COMPLETED (local only, **not pushed**)
+
+Follow-up to the previous entry — rebuilt real sample content for all 4 features (this time *leaving it in the account*, not deleting it, so it can be inspected directly), verified persistence by reloading/navigating away and back, and screenshotted every step. Found and fixed two more real bugs along the way.
+
+**Real bug #1 — overlapping canvas elements** (`src/components/CanvasEditor/index.tsx`): `addText` and `handleFileChosen` always placed new elements at the exact same fixed center coordinate. Adding two text elements (or two images) produced two fully overlapping, illegible elements — confirmed visually via screenshot. The `duplicateElement` function already offset copies by `+20/+20`; `addText`/`handleFileChosen` never did. Fixed by adding a small cascading offset based on element count. While fixing this, also found and fixed a **stale-closure risk**: both functions computed their offset/z-index from the outer `elements` closure instead of from `setElements`'s own `prev` argument — safe today but a latent bug, especially in `handleFileChosen` (async — the closure could be stale by the time the upload's `await` resolves if the user added something else in the meantime). Moved both computations inside the state updater.
+
+**Real bug #2 — no retry on transient public-page errors** (`src/lib/api.ts`): the 5 public (no-auth) read endpoints (`getPublicEvent`, `getRSVPPage`, `getPublicWebsite`, `getPublicBook`, `getGalleryPhotos`) each did a bare `fetch()` with zero retry. During this session, the local backend's Supabase connection intermittently 500'd (see the `WinError 10035` finding in the previous entry) — when that happened on a guest's *first* page load, the page permanently showed "this event is not available" with no way to recover short of a manual refresh, even though the very next request to the same URL would have succeeded. Added a shared `publicGet()` helper that retries up to 3 times with a short backoff on 5xx (not on 4xx — a real 404 shouldn't retry), and pointed all 5 endpoints at it. This is a genuine resilience improvement regardless of whether the underlying connection-pool issue is fixed later — transient backend hiccups are a fact of life in production too.
+
+**Confirmed working and saving, for real, via direct database checks at every step**:
+- **Canvas editor**: 2-text-element design with a custom font size, persisted to `custom_templates`, correct (non-overlapping) positions confirmed in the stored JSON.
+- **Website builder**: 4-section site (Hero, Our Story, Schedule, RSVP) at slug `sarah-and-james-wedding`, published, confirmed live and rendering correctly at the real `/w/sarah-and-james-wedding` page.
+- **Invitation book**: 2 real uploaded pages, published, confirmed live in the real page-turn viewer on the event's public page.
+- **Guest gallery**: 2 real guest-uploaded photos (no login), confirmed still present after a full page reload (proof it's server-persisted, not just local React state), confirmed visible in the host's moderation panel.
+
+**Environment note**: also hit a *separate* one-off issue where the public website page rendered nothing (stuck on the outer Suspense fallback, lazy `import()` never resolving) — traced to a stale Vite dependency-optimization cache in one specific spawned dev-server instance (confirmed by starting a fresh `npm run dev` manually, which worked immediately). Not a code bug; just another symptom of having started and torn down dozens of separate dev-server processes today. If this happens again, restart the Vite dev server (or delete `node_modules/.vite` and restart).
+
+**What's currently live in the test account** (left in place — sign in with the credentials in `.env.e2e-test` to inspect directly): one published website at `/w/sarah-and-james-wedding`, one published 2-page invitation book on the test event's public page, one 2-element canvas template, and 2 real guest gallery photos.
+
+---
+
+## [2026-06-21] - User Feedback Pass: Real Production Bugs Found + Website/Gallery Hidden
+
+**Status**: ✅ COMPLETED (local only, **not pushed**)
+
+User did real manual testing after the above pass and reported a CORS error on `/event-websites` plus "designs disappear when I come out of building." Both led to real, now-fixed bugs — more serious than anything found in automated testing so far.
+
+**Real bug #1 — intermittent 500s on outbound Supabase calls, surfacing to the browser as CORS errors** (`backend/database.py`): the long-suspected `httpx.ReadError: [WinError 10035]` (stale pooled connection) finally got root-caused and fixed instead of just worked around with restarts. When the backend's outbound Supabase call failed mid-flight, FastAPI's unhandled-exception path returned a 500 that never got CORS headers attached — Chrome reports that as a CORS policy failure, which is misleading (it's not a CORS misconfiguration at all). Fixed by passing `ClientOptions(headers={"Connection": "close"})` to `create_client()`, forcing httpx to open a fresh connection per request instead of reusing a pooled one. **Verified**: 200/200 rapid sequential requests with zero failures after the fix (previously this failed within the first few dozen requests on a freshly restarted backend).
+
+**Real bug #2 — closing any builder loses an edit made in the last ~1.5s** (`CanvasEditor`, `WebsiteBuilder`, `BookBuilder`): this was the literal cause of "designs disappearing." All three builders debounce autosave by 1.5s. The close button (`onClose`) just unmounted the component with no flush — if you closed within that debounce window, the pending save's `setTimeout` got cleared by the effect's cleanup and the edit was silently dropped, never persisted. Fixed by adding a `handleClose` wrapper in each builder that clears the pending timer and `await`s one final `persist()` before calling the real `onClose`.
+
+**Real bug #3 (found while fixing #2) — no protection against creating two websites/books for the same event** (`backend/event_websites/service.py`, `backend/invitation_books/service.py`): while testing the close-flush fix, tripped a race where editing before the builder's "does a website already exist for this event?" check resolves can create a second, stray `event_websites`/`invitation_books` row instead of updating the real one — there was no backend check preventing it. Fixed two ways: (a) `create_event_website`/`create_invitation_book` now reject a second row for the same `event_id` with a clear 400 error, and (b) `WebsiteBuilder`/`BookBuilder` now show a "Loading…" state and block all editing until the initial existence-check finishes, eliminating the race at the source. Found and cleaned up one real stray duplicate website row that had been silently created earlier in testing.
+
+**Feature visibility change (explicit user request, not a bug)**: the Website Builder entry point ("Website" button) and the Guest Gallery tab were removed from the Dashboard — neither is considered polished enough to show yet. Both features are fully intact in code and still reachable directly: the public website page (`/w/:slug`) and the guest upload page (`/gallery/:eventId`) work exactly as before for anyone with the link; only the host-facing "build/edit" and "moderate" entry points on the Dashboard are hidden. `src/sections/dashboard/GalleryPanel.tsx`'s import was removed from `Dashboard.tsx` since it's now unused there; the component itself wasn't deleted. The corresponding Playwright test for the close-flush fix in `WebsiteBuilder` (`tests/e2e/close-flush-check.spec.ts`) is `test.skip()`'d with a comment explaining why, since it drove the builder through the now-removed button — the underlying fix was confirmed passing before the button was hidden.
+
+**User feedback also flagged, not yet acted on** (recorded here so it isn't lost): canvas editor needs a usable font list (current selection is too small) and the ability to apply font/color changes to *existing* premade templates, not just from-scratch designs; website builder and photo gallery need a visual-quality pass before going back on the Dashboard; all three builders need premade/pre-styled templates instead of starting blank; website builder needs animation options; publish-flow UX needs revisiting. This is a substantial design/scope effort, not a quick fix — see the next entry for how this was scoped and delivered.
+
+---
+
+## [2026-06-21] - Premade Templates / Themes / Frames Across All Three Builders
+
+**Status**: ✅ COMPLETED (local only, **not pushed**)
+
+Direct follow-through on the design-refinement feedback above. Established a shared design brief (palette, font-pairing rules, border/motif treatment — drawn from the app's existing dark editorial UI, not invented from scratch) and used it to scope three parallel workstreams, one per builder, so the output stays visually cohesive instead of three independently-improvised aesthetics. A fourth agent then did an independent, critical live QA + design-review pass against all of it.
+
+**Font list fixed first** (`src/components/CanvasEditor/types.ts`, `PropertyPanel.tsx`, `index.html`): the canvas editor only offered 5 fonts, one of which (`Lora`) wasn't even loaded via Google Fonts — selecting it silently fell back to a generic serif. Expanded to 17 fonts across 3 categorized groups (Serif & Display, Script & Calligraphy, Sans-Serif), all genuinely loaded, with `<optgroup>`s and live per-option font preview in the dropdown.
+
+**Canvas editor — premade templates** (`src/data/canvasTemplates.ts`, `src/pages/CreateEvite.tsx`): added 5 premade templates (wedding, birthday, baby shower, gender reveal, pre-wedding/engagement), each with 2 paired fonts, one accent color, and a hairline border (implemented as a locked, non-draggable image element with an inline SVG data-URI — no `CanvasEditor` core changes needed). A new "Start from a Premade Design" tile sits in the `/create` gallery alongside the existing "Build Your Own Design" (blank) option; picking one opens the same canvas editor pre-loaded with real, fully-editable elements — directly answering the original complaint that existing templates couldn't have font/color changed.
+
+**Website builder — themes, animation, publish UX** (`src/components/WebsiteBuilder/types.ts`, `WebsiteRenderer.tsx`, `index.tsx`): `WebsiteTheme` expanded from `{primaryColor, fontFamily}` to support accent/background colors, separate heading/body fonts, and border style, via a `resolveTheme()` helper that derives the new fields from the old shape when absent — confirmed the one already-published sample site (legacy theme shape) still renders pixel-identical. Added 3 distinct premade presets (Sage Garden, Ivory Classic, Terracotta Bloom) with a swatch picker, scroll-reveal fade/rise animation on section entry (respects `prefers-reduced-motion`), and a clearer publish flow (prominent live URL + copy button once published, confirmation toasts).
+
+**Invitation book — page frames** (`src/components/BookBuilder/frames.ts`, `FrameOverlay.tsx`, `BookViewer.tsx`, `index.tsx`, `src/lib/api.ts`): added an optional per-page `frame` field (3 presets: Sage Hairline, Ivory Double Border, Botanical Corner) rendered as pure CSS/SVG overlays — no raster assets. Backward compatible: pages without a `frame` field render exactly as before.
+
+**Real bug found by the independent QA agent and fixed**: the Sage Hairline and Ivory Double Border frames drew a colored line directly on the photo with no contrast guarantee — against a same-toned photo (sage foliage, ivory dress, or just the app's own cream-toned canvas templates) the border became *completely invisible*. Confirmed via a real screenshot against the sage-colored test fixture image. Fixed by bracketing every colored line with a thin dark ring on one side and a thin light ring on the other (a passe-partout mat effect) so it reads against any background; also added a soft white under-stroke to the Botanical Corner SVG linework for the same reason. Re-verified visually — the bracket is now clearly visible against the exact sage-on-sage case that was previously blank.
+
+**Process note**: three implementation agents were dispatched in parallel with `isolation: "worktree"`, expecting clean isolation — but since none of this session's feature work has ever been committed to git, the worktrees were checked out at a stale commit with none of the actual builder code on disk, and all three agents had to improvise (copying uncommitted state in, or bailing out safely). One agent (canvas templates) correctly refused to depend on another live, uncommitted worktree's code and stopped cleanly rather than guess; it was successfully re-run directly in the main checkout afterward, which is the right way to parallelize agent work in an uncommitted repo like this one. The other two manually copied their finished, verified changes back into the main checkout. All worktrees and their branches were cleaned up afterward (`git worktree remove`, `git branch -D`).
+
+**Verification**: full regression clean after every step — 25/25 Playwright (mocked), 18/18 vitest (5 files, up from 3 — picked up new BookBuilder test coverage along the way), 97/97 pytest, and a clean production build. One real regression was caught and fixed during this pass: the new "Start from a Premade Design" gallery tile shifted the existing template-picker's card indices, breaking `tests/e2e/visual-check.spec.ts`'s hardcoded `.nth(2)` selector — updated to `.nth(3)` with a comment explaining the index.
+
+---
+
+## [2026-06-21] - Customizable Old-System Templates (font/color/position + photo overlay)
+
+**Status**: ✅ COMPLETED (local only, not pushed)
+
+Product owner feedback: the 32 hardcoded `eviteTemplates.ts` designs (the ones actually offered in `/create` today — distinct from the from-scratch Canvas Editor) had zero user-editable styling. Added an override layer on top of each template's existing per-field layout data, without changing any template's default look.
+
+**Database**: new table `evite_customizations` (`backend/migrations/020_create_evite_customizations.sql`, applied live via Supabase MCP) — `event_id` (nullable, FK to `events`, `ON DELETE CASCADE`), `user_id`, `template_id`, `field_overrides` (jsonb), `photo_overlay` (jsonb, nullable), RLS owner-only policy. Confirmed `events` table's 14 columns are unchanged after migration.
+
+**Backend** (`backend/evite_customizations/` — schemas.py, service.py, router.py, registered in `main.py`): `POST /evite-customizations`, `GET /evite-customizations/by-event/{event_id}`, `GET/PATCH/DELETE /evite-customizations/{id}`, ownership-checked via `_assert_owns_event`/`_get_owned` mirroring `event_websites`. 9 new pytest tests (`backend/tests/test_evite_customizations.py`), full suite 106/106 passing.
+
+**Frontend**:
+- `src/components/TemplateRenderer.tsx` — added optional `overrides?: Record<string, Partial<TemplateFieldLayout>>` and `photoOverlay?: PhotoOverlay | null` props. Each field's effective style is `{...field, ...overrides?.[field.formKey ?? `field-${idx}`]}` computed just before `fieldStyle()`/`formatFieldValue()` — when both props are absent (every existing call site that wasn't updated, e.g. none — all 3 call sites were updated), rendering is byte-identical to before. Photo overlay renders as an absolutely-positioned `<img>` with `clip-path: circle(50%)` (circle), no clip + `object-fit: cover` (square), or a rounded-top polygon clip-path (arch).
+- `src/pages/CreateEvite.tsx` — new "Details / Customize Design" tab pair in the editor modal's right column (only shown when `selectedTemplate.layout` exists). Customize tab: clickable list of the template's text fields (label derived from `formKey` or static text), font dropdown (reusing `FONT_CATEGORIES` from `CanvasEditor/types.ts`), color swatches + raw color input (reusing `COLOR_SWATCHES`), 4-directional nudge buttons (±4px). Separate "Add Your Photo" upload (via `api.uploadMedia`) with circle/square/arch shape picker and its own position/size nudge controls. All state (`fieldOverrides`, `photoOverlay`) feeds the live left-side `<TemplateRenderer>` preview immediately. Reset on template switch (`openTemplate`, `prevTemplate`/`nextTemplate`) so a different design never inherits stale overrides.
+- Persistence: `handlePaymentConfirm` calls `api.createEviteCustomization()` right after `api.createEvent()` succeeds (only if overrides/photo exist), non-blocking on failure (same `try/catch`+`console.warn` pattern as the existing invitee save).
+- Threaded the same `overrides`/`photoOverlay` through `src/sections/create/PreviewStep.tsx` (the guest-facing preview before payment) and `src/sections/create/FinalPreview.tsx` (last-confirmation screen, currently unused/dead in the live flow but updated per spec anyway) via new `templateOverrides`/`templatePhotoOverlay` props.
+- `EventPublic.tsx` (the actual public event page) doesn't render the template/evite card at all today — confirmed via grep, nothing to thread overrides into there.
+
+**Verification**: `npx tsc -b` clean, `npx vitest run` 18/18 passing, backend pytest 106/106 passing (97 pre-existing + 9 new), production `npm run build` clean. Confirmed default (no-override) rendering is unchanged by reasoning through `bday-floral`, `wed-multi-event` (including its static `&` field and untouched `eventsList`/`EventsListLayout` path — deliberately out of scope), and `house-gruhapravesam` (prefix/lineHeight/scaled-coordinate template) — none of their formatting-relevant fields (`text`, `format`, `prefix`, `wrapAfterChars`) are ever touched by an override, only `fontFamily`/`color`/`x`/`y`.
+
+**Known scope boundary**: `EventsListLayout` (multi-event sub-event boxes) intentionally not made customizable, per explicit instruction. The Canvas Editor and its premade templates are untouched, also per instruction.

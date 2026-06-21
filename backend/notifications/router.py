@@ -30,7 +30,7 @@ def bulk_send(
     - Supply **event_id** to auto-fetch all invitees for that event, OR
     - Supply a manual **recipients** list `[{name, email, phone}]`.
     - Use `{name}` in body for per-recipient personalisation.
-    - Returns immediately; delivery happens in the background via Amazon SES / Twilio.
+    - Returns immediately; delivery happens in the background via Amazon SES / AWS End User Messaging SMS.
     """
     if not data.event_id and not data.recipients:
         raise HTTPException(

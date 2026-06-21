@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
-import { eviteTemplates } from '@/data/eviteTemplates';
+import { eviteTemplates, type TemplateFieldLayout } from '@/data/eviteTemplates';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -9,13 +9,15 @@ import {
   eventSpecificFields,
   type EventType,
 } from '@/data/eventFields';
-import TemplateRenderer from '@/components/TemplateRenderer';
+import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRenderer';
 
 interface FinalPreviewProps {
   eventType: EventType;
   selectedTemplate: string;
   formData: Record<string, string>;
   onFieldChange?: (name: string, value: string) => void;
+  templateOverrides?: Record<string, Partial<TemplateFieldLayout>>;
+  templatePhotoOverlay?: PhotoOverlay | null;
 }
 
 export default function FinalPreview({
@@ -23,6 +25,8 @@ export default function FinalPreview({
   selectedTemplate,
   formData,
   onFieldChange,
+  templateOverrides,
+  templatePhotoOverlay,
 }: FinalPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
@@ -118,7 +122,12 @@ export default function FinalPreview({
         <div className="final-card max-w-[240px] w-full lg:w-[200px] xl:w-[220px] flex-shrink-0 mx-auto lg:mx-0">
           <div className="overflow-hidden border border-white/15 shadow-2xl shadow-[#9cb092]/5">
             {template?.layout ? (
-              <TemplateRenderer template={template} formData={formData} />
+              <TemplateRenderer
+                template={template}
+                formData={formData}
+                overrides={templateOverrides}
+                photoOverlay={templatePhotoOverlay}
+              />
             ) : (
               <div className="relative aspect-[3/4]">
                 <img
