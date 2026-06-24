@@ -574,6 +574,15 @@ export default function CreateEvite() {
     return true;
   }, [editorFields, formData, currentEventType, hasSubEvents, supportsMultipleEvents, subEventCount]);
 
+  // Customize is gated behind a fully-filled details form. If validity is lost
+  // while the user is on the Customize tab (e.g. clearing a field, switching
+  // templates), snap them back to Details so they can't edit a locked design.
+  useEffect(() => {
+    if (!isEditorValid && rightPanelTab === 'customize') {
+      setRightPanelTab('details');
+    }
+  }, [isEditorValid, rightPanelTab]);
+
   // After event details are captured we ask the user to sign in (so we can save
   // their design + guest list). Already-signed-in users skip straight to guests.
   //
@@ -1622,6 +1631,13 @@ export default function CreateEvite() {
                       formData={formData}
                       overrides={fieldOverrides}
                       photoOverlay={photoOverlay}
+                      interactive={rightPanelTab === 'customize'}
+                      selectedKey={selectedOverrideKey}
+                      onSelectField={setSelectedOverrideKey}
+                      onMoveField={(key, x, y) => setOverride(key, { x, y })}
+                      onMovePhoto={(x, y) =>
+                        setPhotoOverlay((prev) => (prev ? { ...prev, x, y } : prev))
+                      }
                     />
                   ) : selectedTemplate ? (
                     <img
@@ -1754,19 +1770,29 @@ export default function CreateEvite() {
                   designs); uploaded/canvas designs have no field layout to edit. */}
               {selectedTemplate?.layout && (
                 <div className="flex-shrink-0 flex items-center gap-1 px-6 md:px-8 pt-4 border-b border-white/[0.06] bg-[#0e1712]">
-                  {(['details', 'customize'] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setRightPanelTab(tab)}
-                      className={`px-4 py-2 font-display text-[10px] tracking-[0.18em] uppercase transition-colors border-b-2 ${
-                        rightPanelTab === tab
-                          ? 'border-[#9cb092] text-[#9cb092]'
-                          : 'border-transparent text-[#b2c3b1]/55 hover:text-[#9cb092]'
-                      }`}
-                    >
-                      {tab === 'details' ? 'Details' : 'Customize Design'}
-                    </button>
-                  ))}
+                  {(['details', 'customize'] as const).map((tab) => {
+                    // Customization stays locked until every required detail is
+                    // filled — same gate as the Continue button.
+                    const locked = tab === 'customize' && !isEditorValid;
+                    return (
+                      <button
+                        key={tab}
+                        onClick={() => { if (!locked) setRightPanelTab(tab); }}
+                        disabled={locked}
+                        title={locked ? 'Fill in all required details to unlock customization' : undefined}
+                        className={`px-4 py-2 font-display text-[10px] tracking-[0.18em] uppercase transition-colors border-b-2 flex items-center gap-1.5 ${
+                          locked
+                            ? 'border-transparent text-[#b2c3b1]/25 cursor-not-allowed'
+                            : rightPanelTab === tab
+                            ? 'border-[#9cb092] text-[#9cb092]'
+                            : 'border-transparent text-[#b2c3b1]/55 hover:text-[#9cb092]'
+                        }`}
+                      >
+                        {tab === 'details' ? 'Details' : 'Customize Design'}
+                        {locked && <span className="material-icons text-[11px]">lock</span>}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
@@ -1777,6 +1803,9 @@ export default function CreateEvite() {
                     <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]/80 mb-2 flex items-center gap-1.5">
                       <span className="material-icons text-sm">text_fields</span>
                       Text Fields
+                    </p>
+                    <p className="font-display text-[9px] text-[#b2c3b1]/45 leading-relaxed mb-2 normal-case tracking-normal">
+                      Tip: double-click any element on the preview to select it, then drag it to reposition.
                     </p>
                     <div className="space-y-1">
                       {customizableFields.map((f) => (
@@ -1872,6 +1901,9 @@ export default function CreateEvite() {
                         <label className="block font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 mb-1.5">
                           Position
                         </label>
+                        <p className="font-display text-[9px] text-[#b2c3b1]/45 leading-relaxed mb-2 normal-case tracking-normal">
+                          Drag the element on the preview, or nudge with the arrows for precision.
+                        </p>
                         <div className="grid grid-cols-3 gap-1.5 w-fit">
                           <div />
                           <button

@@ -1,4 +1,12 @@
-import { Fragment, useMemo, type CSSProperties, type ReactNode } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useMemo,
+  useRef,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react';
 import type {
   EventsListColumnStyle,
   EventsListLayout,
@@ -25,6 +33,19 @@ interface TemplateRendererProps {
    * top of the template's default field layout — never mutates it. */
   overrides?: Record<string, Partial<TemplateFieldLayout>>;
   photoOverlay?: PhotoOverlay | null;
+  /** Editor-only. When true, text fields + the photo overlay become
+   * selectable (click / double-click) and draggable with the pointer.
+   * Read-only call sites (published evite, previews, gallery) omit this and
+   * stay completely static — nothing below runs for them. */
+  interactive?: boolean;
+  /** Override key of the currently-selected field — gets a selection ring. */
+  selectedKey?: string | null;
+  /** Fired when a field is clicked / double-clicked (or null to deselect). */
+  onSelectField?: (key: string | null) => void;
+  /** Fired continuously while a field is dragged — absolute natural-px x/y. */
+  onMoveField?: (key: string, x: number, y: number) => void;
+  /** Fired continuously while the photo overlay is dragged. */
+  onMovePhoto?: (x: number, y: number) => void;
 }
 
 function formatDateShort(yyyymmdd: string): string {
@@ -208,8 +229,94 @@ export default function TemplateRenderer({
   className,
   overrides,
   photoOverlay,
+  interactive = false,
+  selectedKey = null,
+  onSelectField,
+  onMoveField,
+  onMovePhoto,
 }: TemplateRendererProps) {
   const layout = template.layout;
+
+  // ── Drag-to-move (editor only) ───────────────────────────────────
+  // Measures the rendered container so screen-pixel deltas can be mapped
+  // back into the template's natural pixel coordinate space.
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    key: string;
+    kind: 'field' | 'photo';
+    startClientX: number;
+    startClientY: number;
+    startX: number;
+    startY: number;
+    moved: boolean;
+    pointerId: number;
+    el: HTMLElement;
+  } | null>(null);
+
+  const beginDrag = useCallback(
+    (
+      e: ReactPointerEvent<HTMLElement>,
+      key: string,
+      kind: 'field' | 'photo',
+      startX: number,
+      startY: number
+    ) => {
+      if (!interactive) return;
+      e.preventDefault();
+      e.stopPropagation(); // don't let the root's deselect handler fire
+      if (kind === 'field') onSelectField?.(key);
+      const el = e.currentTarget;
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore — capture is best-effort */
+      }
+      dragRef.current = {
+        key,
+        kind,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        startX,
+        startY,
+        moved: false,
+        pointerId: e.pointerId,
+        el,
+      };
+    },
+    [interactive, onSelectField]
+  );
+
+  const onDragMove = useCallback(
+    (e: ReactPointerEvent<HTMLElement>) => {
+      const drag = dragRef.current;
+      if (!drag || !layout) return;
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect || rect.width === 0 || rect.height === 0) return;
+      const dx = e.clientX - drag.startClientX;
+      const dy = e.clientY - drag.startClientY;
+      // Small threshold so a plain click selects without nudging the element.
+      if (!drag.moved && Math.hypot(dx, dy) < 3) return;
+      drag.moved = true;
+      const nextX = Math.round(drag.startX + dx * (layout.naturalWidth / rect.width));
+      const nextY = Math.round(drag.startY + dy * (layout.naturalHeight / rect.height));
+      const x = Math.max(0, Math.min(layout.naturalWidth, nextX));
+      const y = Math.max(0, Math.min(layout.naturalHeight, nextY));
+      if (drag.kind === 'photo') onMovePhoto?.(x, y);
+      else onMoveField?.(drag.key, x, y);
+    },
+    [layout, onMoveField, onMovePhoto]
+  );
+
+  const endDrag = useCallback(() => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    try {
+      drag.el.releasePointerCapture(drag.pointerId);
+    } catch {
+      /* ignore */
+    }
+    dragRef.current = null;
+  }, []);
 
   const fieldNodes = useMemo(() => {
     if (!layout) return null;
@@ -220,10 +327,38 @@ export default function TemplateRenderer({
       const text = formatFieldValue(effectiveField, formData);
       if (!text && !effectiveField.iconBefore) return null;
       const key = field.formKey || field.text || `field-${idx}`;
+      const baseStyle = fieldStyle(effectiveField, layout.naturalWidth, layout.naturalHeight);
+      const isSelected = interactive && selectedKey === overrideKey;
+      const style: CSSProperties = interactive
+        ? {
+            ...baseStyle,
+            pointerEvents: 'auto',
+            cursor: 'grab',
+            touchAction: 'none',
+            outline: isSelected ? '1.5px dashed rgba(156,176,146,0.95)' : undefined,
+            outlineOffset: 3,
+          }
+        : baseStyle;
       return (
         <div
           key={`${key}-${idx}`}
-          style={fieldStyle(effectiveField, layout.naturalWidth, layout.naturalHeight)}
+          className={interactive ? 'evite-editable' : undefined}
+          style={style}
+          onPointerDown={
+            interactive
+              ? (e) => beginDrag(e, overrideKey, 'field', effectiveField.x, effectiveField.y)
+              : undefined
+          }
+          onPointerMove={interactive ? onDragMove : undefined}
+          onPointerUp={interactive ? endDrag : undefined}
+          onDoubleClick={
+            interactive
+              ? (e) => {
+                  e.stopPropagation();
+                  onSelectField?.(overrideKey);
+                }
+              : undefined
+          }
         >
           {effectiveField.iconBefore && (
             <span style={iconStyle(effectiveField, layout.naturalWidth)}>
@@ -234,7 +369,7 @@ export default function TemplateRenderer({
         </div>
       );
     });
-  }, [layout, formData, overrides]);
+  }, [layout, formData, overrides, interactive, selectedKey, beginDrag, onDragMove, endDrag, onSelectField]);
 
   // Dynamic events list. Row 0 is ALWAYS the main event (sourced from
   // the main form's eventDate / eventTime / timezone / venue, with its
@@ -339,6 +474,7 @@ export default function TemplateRenderer({
 
   return (
     <div
+      ref={containerRef}
       className={className}
       style={{
         position: 'relative',
@@ -348,10 +484,17 @@ export default function TemplateRenderer({
         width: '100%',
         height: '100%',
       }}
+      // Clicking empty space (the background image) clears the selection.
+      // Fields stop propagation in beginDrag, so this never fires for them.
+      onPointerDown={interactive ? () => onSelectField?.(null) : undefined}
     >
+      {interactive && (
+        <style>{`.evite-editable:hover{outline:1px dashed rgba(156,176,146,0.55);outline-offset:3px;}`}</style>
+      )}
       <img
         src={template.realImage || template.previewImage}
         alt={template.name}
+        draggable={false}
         style={{
           position: 'absolute',
           inset: 0,
@@ -366,7 +509,25 @@ export default function TemplateRenderer({
         <img
           src={photoOverlay.src}
           alt="Your photo"
-          style={photoOverlayStyle(photoOverlay, layout.naturalWidth, layout.naturalHeight)}
+          draggable={false}
+          className={interactive ? 'evite-editable' : undefined}
+          style={
+            interactive
+              ? {
+                  ...photoOverlayStyle(photoOverlay, layout.naturalWidth, layout.naturalHeight),
+                  pointerEvents: 'auto',
+                  cursor: 'grab',
+                  touchAction: 'none',
+                }
+              : photoOverlayStyle(photoOverlay, layout.naturalWidth, layout.naturalHeight)
+          }
+          onPointerDown={
+            interactive
+              ? (e) => beginDrag(e, '__photo__', 'photo', photoOverlay.x, photoOverlay.y)
+              : undefined
+          }
+          onPointerMove={interactive ? onDragMove : undefined}
+          onPointerUp={interactive ? endDrag : undefined}
         />
       )}
     </div>
