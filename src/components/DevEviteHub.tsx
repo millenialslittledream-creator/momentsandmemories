@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { DESIGNS as WEDDING_DESIGNS } from './WebsiteTemplates/designs';
 import { WEDDING_THEMES } from './WebsiteTemplates/themes';
@@ -186,6 +187,7 @@ function DesignCard({
 
 /* ── hub ─────────────────────────────────────────────────────────────── */
 export default function DevEviteHub() {
+  const navigate = useNavigate();
   const [activeTab,     setActiveTab]     = useState<EventTab>('wedding');
   const [openEvent,     setOpenEvent]     = useState<EventTab | null>(null);
   const [openDesignId,  setOpenDesignId]  = useState<string | null>(null);
@@ -236,20 +238,29 @@ export default function DevEviteHub() {
 
       {/* ── top bar ── */}
       <div className="relative z-10 flex items-center justify-between px-6 md:px-10 py-4 border-b border-white/[0.07] flex-shrink-0 flex-wrap gap-3">
-        <div>
-          <h1
-            className="text-2xl md:text-3xl text-[#e4eee1] leading-tight"
-            style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>
-            What kind of{' '}
-            <span style={{ color: '#9cb092', fontStyle: 'italic', fontFamily: "'Great Vibes', cursive" }}>
-              celebration?
-            </span>
-          </h1>
-          <p
-            className="text-[9px] uppercase tracking-[0.28em] mt-1"
-            style={{ color: '#b2c3b1', fontFamily: "'Marcellus', sans-serif" }}>
-            Pick an event type · choose a design · start creating
-          </p>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/create')}
+            className="flex items-center gap-1.5 px-3 py-2 border border-white/15 text-[#b2c3b1] hover:border-[#9cb092]/40 hover:text-[#9cb092] transition-all duration-200 text-[10px] uppercase tracking-[0.2em] flex-shrink-0"
+            style={{ fontFamily: "'Marcellus', sans-serif" }}>
+            <span className="material-icons text-sm">arrow_back</span>
+            Back
+          </button>
+          <div>
+            <h1
+              className="text-2xl md:text-3xl text-[#e4eee1] leading-tight"
+              style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>
+              What kind of{' '}
+              <span style={{ color: '#9cb092', fontStyle: 'italic', fontFamily: "'Great Vibes', cursive" }}>
+                celebration?
+              </span>
+            </h1>
+            <p
+              className="text-[9px] uppercase tracking-[0.28em] mt-1"
+              style={{ color: '#b2c3b1', fontFamily: "'Marcellus', sans-serif" }}>
+              Pick an event type · choose a design · start creating
+            </p>
+          </div>
         </div>
 
         {/* event type filter chips */}
