@@ -135,7 +135,7 @@ export default function InviteEditor({
             the cover); remounts only when the design changes. */}
         <div className="flex-1 min-w-0 flex flex-col items-center justify-center p-6 overflow-hidden"
           style={{ background: 'radial-gradient(circle at 50% 30%, #16201f, #0c1013)' }}>
-          <div className="relative h-full" style={{ aspectRatio: '390 / 844', maxHeight: 820, maxWidth: '100%' }}>
+          <div className="relative" style={{ aspectRatio: '390 / 844', height: 844, maxHeight: '100%', maxWidth: '100%' }}>
             <div className="absolute inset-0 rounded-[44px] overflow-hidden shadow-2xl"
               style={{ border: '10px solid #1b2227' }}>
               <Design theme={theme} content={content} autoOpen={false} key={designId} />
