@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ReactLenis } from 'lenis/react';
@@ -24,6 +24,20 @@ const RSVPPage = lazy(() => import('./pages/RSVPPage'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const PublicWebsite = lazy(() => import('./pages/PublicWebsite'));
 const GuestGalleryUpload = lazy(() => import('./pages/GuestGalleryUpload'));
+const WebsiteBuilder = lazy(() => import('./components/WebsiteBuilder'));
+
+// Proper, user-facing entry point for the event website builder. Reached from
+// the "Build an Event Website" tile on the Create Evite page.
+function WebsiteBuilderPage() {
+  const navigate = useNavigate();
+  return (
+    <WebsiteBuilder
+      eventId="my-event"
+      eventTitle="My Celebration"
+      onClose={() => navigate('/create')}
+    />
+  );
+}
 
 // Register GSAP plugins globally
 gsap.registerPlugin(ScrollTrigger);
@@ -74,6 +88,7 @@ function App() {
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/w/:slug" element={<PublicWebsite />} />
               <Route path="/gallery/:eventId" element={<GuestGalleryUpload />} />
+              <Route path="/website-builder" element={<WebsiteBuilderPage />} />
             </Routes>
           </Suspense>
           <Toaster position="top-center" richColors />

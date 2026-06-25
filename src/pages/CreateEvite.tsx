@@ -1028,6 +1028,31 @@ export default function CreateEvite() {
                 </button>
               )}
 
+              {/* Build-an-event-website tile — opens the full website builder
+                  (multi-page site with RSVP, gallery, schedule, etc.). */}
+              <button
+                key="__website_builder__"
+                onClick={() => navigate('/website-builder')}
+                className="template-card group text-left overflow-hidden bg-[#9cb092]/[0.06] border border-dashed border-[#9cb092]/40 hover:border-[#9cb092] hover:bg-[#9cb092]/[0.12] transition-all duration-300 flex flex-col"
+              >
+                <div className="relative aspect-[9/16] overflow-hidden bg-[#192116] flex flex-col items-center justify-center text-center px-4">
+                  <div className="w-12 h-12 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <span className="material-icons text-[#9cb092] text-2xl">language</span>
+                  </div>
+                  <p className="font-serif-exp text-sm text-[#e4eee1] leading-snug mb-1">
+                    Build an Event Website
+                  </p>
+                  <p className="font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 leading-relaxed">
+                    Pages · RSVP · Gallery
+                  </p>
+                </div>
+                <div className="px-2.5 py-2">
+                  <h3 className="font-serif-exp text-[11px] text-[#9cb092] leading-tight truncate">
+                    Event website
+                  </h3>
+                </div>
+              </button>
+
               {visibleTemplates.map((t) => (
                 <button
                   key={t.id}
