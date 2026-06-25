@@ -63,7 +63,6 @@ export default function InviteEditor({
   const [designId, setDesignId] = useState(initialDesignId ?? DESIGNS[0].id);
   const [themeId, setThemeId] = useState(WEDDING_THEMES[0].id);
   const [content, setContent] = useState<InviteContent>(DEFAULT_WEDDING);
-  const [showIntro, setShowIntro] = useState(false);
   const theme = themeById(themeId);
   const Design = designById(designId).Component;
 
@@ -131,20 +130,17 @@ export default function InviteEditor({
       </div>
 
       <div className="flex-1 flex min-h-0">
-        {/* LEFT — live preview in a device frame */}
+        {/* LEFT — live preview in an iPhone 13 Pro–ratio device frame.
+            The opening animation plays by default (autoOpen=false → starts on
+            the cover); remounts only when the design changes. */}
         <div className="flex-1 min-w-0 flex flex-col items-center justify-center p-6 overflow-hidden"
           style={{ background: 'radial-gradient(circle at 50% 30%, #16201f, #0c1013)' }}>
-          <div className="relative" style={{ width: 380, maxWidth: '100%', height: '100%', maxHeight: 760 }}>
-            <div className="absolute inset-0 rounded-[28px] overflow-hidden shadow-2xl"
-              style={{ border: '8px solid #1b2227' }}>
-              <Design theme={theme} content={content} autoOpen={!showIntro} key={`${designId}-${showIntro ? 'intro' : 'open'}`} />
+          <div className="relative h-full" style={{ aspectRatio: '390 / 844', maxHeight: 820, maxWidth: '100%' }}>
+            <div className="absolute inset-0 rounded-[44px] overflow-hidden shadow-2xl"
+              style={{ border: '10px solid #1b2227' }}>
+              <Design theme={theme} content={content} autoOpen={false} key={designId} />
             </div>
           </div>
-          <button onClick={() => setShowIntro((v) => !v)}
-            className="mt-4 text-[10px] uppercase tracking-[0.22em] text-[#9bb3a3] hover:text-[#c19a4b] transition-colors flex items-center gap-1.5">
-            <span className="material-icons text-sm">{showIntro ? 'visibility' : 'auto_awesome'}</span>
-            {showIntro ? 'Skip opening' : 'Preview the opening animation'}
-          </button>
         </div>
 
         {/* RIGHT — text + image fields only */}
