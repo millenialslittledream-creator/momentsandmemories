@@ -112,6 +112,56 @@ export interface EviteTemplate {
   variantEventCount?: number;
 }
 
+/**
+ * Builds a sensible default field layout for "flat" invitation backgrounds —
+ * clean designs whose artwork sits on the borders, leaving an empty central
+ * area for text (our wedding + baby-shower stock images). Coordinates are
+ * derived as fractions of the natural image size so one helper adapts to any
+ * aspect ratio. Positions are intentionally generic (a centered stack in the
+ * empty zone): hosts fine-tune them per design by dragging / nudging in the
+ * editor's Customize tab. This is what makes every template customizable,
+ * not just the hand-tuned ones.
+ */
+function flatLayout(opts: {
+  naturalWidth: number;
+  naturalHeight: number;
+  eventType: EventType;
+  accent: string;
+  /** Detail text colour (date / time / venue). Defaults to a dark warm grey
+   * that reads on the light pastel backgrounds these templates use. */
+  detail?: string;
+}): TemplateLayout {
+  const { naturalWidth: W, naturalHeight: H, eventType, accent, detail = '#4A3A2E' } = opts;
+  const cx = Math.round(W * 0.5);
+  const script = 'Great Vibes';
+  const body = 'Cormorant Garamond';
+  const nameSize = Math.round(W * 0.12);
+  const bodySize = Math.round(W * 0.037);
+  const wide = Math.round(W * 0.82);
+
+  const fields: TemplateFieldLayout[] = [];
+
+  if (eventType === 'marriage') {
+    fields.push(
+      { formKey: 'groomName', x: cx, y: Math.round(H * 0.40), fontFamily: script, fontSize: nameSize, color: accent, align: 'center', maxWidth: wide },
+      { text: '&', x: cx, y: Math.round(H * 0.465), fontFamily: script, fontSize: Math.round(nameSize * 0.55), color: accent, align: 'center' },
+      { formKey: 'brideName', x: cx, y: Math.round(H * 0.515), fontFamily: script, fontSize: nameSize, color: accent, align: 'center', maxWidth: wide }
+    );
+  } else {
+    fields.push(
+      { formKey: 'celebrantName', x: cx, y: Math.round(H * 0.43), fontFamily: script, fontSize: nameSize, color: accent, align: 'center', maxWidth: wide }
+    );
+  }
+
+  fields.push(
+    { formKey: 'eventDate', format: 'longDate', x: cx, y: Math.round(H * 0.64), fontFamily: body, fontSize: bodySize, color: detail, align: 'center', maxWidth: wide },
+    { formKey: 'eventTime', format: 'time12', x: cx, y: Math.round(H * 0.69), fontFamily: body, fontSize: bodySize, color: detail, align: 'center', maxWidth: wide },
+    { formKey: 'venue', x: cx, y: Math.round(H * 0.745), fontFamily: body, fontSize: bodySize, color: detail, align: 'center', maxWidth: wide, lineHeight: Math.round(bodySize * 1.35), wrapAfterChars: 28 }
+  );
+
+  return { naturalWidth: W, naturalHeight: H, fields };
+}
+
 export const eviteTemplates: EviteTemplate[] = [
   // ── Birthday (1 template) ───────────────────────────────────────────────
   {
@@ -220,22 +270,22 @@ export const eviteTemplates: EviteTemplate[] = [
     },
   },
 
-  { id: 'wed-1', eventType: 'marriage', name: 'Classic Romance',  style: 'Timeless & Elegant',    previewImage: '/templates/wedding/1.jpg', accent: '#c4a882' },
-  { id: 'wed-2', eventType: 'marriage', name: 'Botanical Dream',  style: 'Lush & Natural',         previewImage: '/templates/wedding/2.jpg', accent: '#7d9b76' },
-  { id: 'wed-3', eventType: 'marriage', name: 'Modern Luxe',      style: 'Sleek & Sophisticated',  previewImage: '/templates/wedding/3.jpg', accent: '#1a1a2e' },
-  { id: 'wed-4', eventType: 'marriage', name: 'Rustic Charm',     style: 'Warm & Earthy',          previewImage: '/templates/wedding/4.jpg', accent: '#b5651d' },
-  { id: 'wed-5', eventType: 'marriage', name: 'Indian Heritage',  style: 'Traditional & Vibrant',  previewImage: '/templates/wedding/5.jpg', accent: '#e67e22' },
-  { id: 'wed-6', eventType: 'marriage', name: 'Mehendi Magic',    style: 'Bohemian & Festive',     previewImage: '/templates/wedding/6.jpg', accent: '#c4a882' },
-  { id: 'wed-7', eventType: 'marriage', name: 'Golden Mandap',    style: 'Regal & Traditional',    previewImage: '/templates/wedding/7.jpg', accent: '#c9b037' },
+  { id: 'wed-1', eventType: 'marriage', name: 'Classic Romance',  style: 'Timeless & Elegant',    previewImage: '/templates/wedding/1.jpg', accent: '#c4a882', layout: flatLayout({ naturalWidth: 736, naturalHeight: 1308, eventType: 'marriage', accent: '#a8843a' }) },
+  { id: 'wed-2', eventType: 'marriage', name: 'Botanical Dream',  style: 'Lush & Natural',         previewImage: '/templates/wedding/2.jpg', accent: '#7d9b76', layout: flatLayout({ naturalWidth: 564, naturalHeight: 1002, eventType: 'marriage', accent: '#5f7d58' }) },
+  { id: 'wed-3', eventType: 'marriage', name: 'Modern Luxe',      style: 'Sleek & Sophisticated',  previewImage: '/templates/wedding/3.jpg', accent: '#1a1a2e', layout: flatLayout({ naturalWidth: 622, naturalHeight: 1200, eventType: 'marriage', accent: '#1a1a2e' }) },
+  { id: 'wed-4', eventType: 'marriage', name: 'Rustic Charm',     style: 'Warm & Earthy',          previewImage: '/templates/wedding/4.jpg', accent: '#b5651d', layout: flatLayout({ naturalWidth: 736, naturalHeight: 1308, eventType: 'marriage', accent: '#b5651d' }) },
+  { id: 'wed-5', eventType: 'marriage', name: 'Indian Heritage',  style: 'Traditional & Vibrant',  previewImage: '/templates/wedding/5.jpg', accent: '#e67e22', layout: flatLayout({ naturalWidth: 736, naturalHeight: 1308, eventType: 'marriage', accent: '#c2611b' }) },
+  { id: 'wed-6', eventType: 'marriage', name: 'Mehendi Magic',    style: 'Bohemian & Festive',     previewImage: '/templates/wedding/6.jpg', accent: '#c4a882', layout: flatLayout({ naturalWidth: 675, naturalHeight: 1200, eventType: 'marriage', accent: '#a8843a' }) },
+  { id: 'wed-7', eventType: 'marriage', name: 'Golden Mandap',    style: 'Regal & Traditional',    previewImage: '/templates/wedding/7.jpg', accent: '#c9b037', layout: flatLayout({ naturalWidth: 736, naturalHeight: 1308, eventType: 'marriage', accent: '#9c8722' }) },
 
   // ── Baby Shower (7 templates) ───────────────────────────────────────────
-  { id: 'baby-1', eventType: 'babyshower', name: 'Soft Clouds',   style: 'Dreamy & Pastel',    previewImage: '/templates/baby shower/1.jpg', accent: '#b5d8eb' },
-  { id: 'baby-2', eventType: 'babyshower', name: 'Little Safari', style: 'Playful & Fun',       previewImage: '/templates/baby shower/2.jpg', accent: '#f0c987' },
-  { id: 'baby-3', eventType: 'babyshower', name: 'Bloom & Grow',  style: 'Floral & Soft',       previewImage: '/templates/baby shower/3.jpg', accent: '#e8b4b8' },
-  { id: 'baby-4', eventType: 'babyshower', name: 'Storybook',     style: 'Whimsical & Sweet',   previewImage: '/templates/baby shower/4.jpg', accent: '#d4c5a9' },
-  { id: 'baby-5', eventType: 'babyshower', name: 'Starlight',     style: 'Celestial & Soft',    previewImage: '/templates/baby shower/5.jpg', accent: '#b5c7e3' },
-  { id: 'baby-6', eventType: 'babyshower', name: 'Garden Baby',   style: 'Fresh & Natural',     previewImage: '/templates/baby shower/6.jpg', accent: '#a8d5ba' },
-  { id: 'baby-7', eventType: 'babyshower', name: 'Classic Charm', style: 'Timeless & Elegant',  previewImage: '/templates/baby shower/7.jpg', accent: '#c4b5a0' },
+  { id: 'baby-1', eventType: 'babyshower', name: 'Soft Clouds',   style: 'Dreamy & Pastel',    previewImage: '/templates/baby shower/1.jpg', accent: '#b5d8eb', layout: flatLayout({ naturalWidth: 736, naturalHeight: 1308, eventType: 'babyshower', accent: '#5b86a6' }) },
+  { id: 'baby-2', eventType: 'babyshower', name: 'Little Safari', style: 'Playful & Fun',       previewImage: '/templates/baby shower/2.jpg', accent: '#f0c987', layout: flatLayout({ naturalWidth: 736, naturalHeight: 1308, eventType: 'babyshower', accent: '#6b7da0' }) },
+  { id: 'baby-3', eventType: 'babyshower', name: 'Bloom & Grow',  style: 'Floral & Soft',       previewImage: '/templates/baby shower/3.jpg', accent: '#e8b4b8', layout: flatLayout({ naturalWidth: 675, naturalHeight: 1200, eventType: 'babyshower', accent: '#b5727a' }) },
+  { id: 'baby-4', eventType: 'babyshower', name: 'Storybook',     style: 'Whimsical & Sweet',   previewImage: '/templates/baby shower/4.jpg', accent: '#d4c5a9', layout: flatLayout({ naturalWidth: 675, naturalHeight: 1200, eventType: 'babyshower', accent: '#8a6d4a' }) },
+  { id: 'baby-5', eventType: 'babyshower', name: 'Starlight',     style: 'Celestial & Soft',    previewImage: '/templates/baby shower/5.jpg', accent: '#b5c7e3', layout: flatLayout({ naturalWidth: 675, naturalHeight: 1200, eventType: 'babyshower', accent: '#5e76a3' }) },
+  { id: 'baby-6', eventType: 'babyshower', name: 'Garden Baby',   style: 'Fresh & Natural',     previewImage: '/templates/baby shower/6.jpg', accent: '#a8d5ba', layout: flatLayout({ naturalWidth: 736, naturalHeight: 1308, eventType: 'babyshower', accent: '#b06b86' }) },
+  { id: 'baby-7', eventType: 'babyshower', name: 'Classic Charm', style: 'Timeless & Elegant',  previewImage: '/templates/baby shower/7.jpg', accent: '#c4b5a0', layout: flatLayout({ naturalWidth: 675, naturalHeight: 1200, eventType: 'babyshower', accent: '#7d6b52' }) },
 
   // ── Pre-Wedding Party / Bride to Be (7 templates) ─────────────────────
   // previewImage → carousel thumbnail. realImage → full-res background for the renderer.
