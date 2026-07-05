@@ -4,7 +4,7 @@ import gsap from 'gsap';
 import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { createGuest, type Guest } from './GuestDetails';
-import StepIndicator from './StepIndicator';
+import FlowStepper from './FlowStepper';
 
 export interface InvitationSetSummary {
   id: string;
@@ -467,9 +467,9 @@ export default function GuestPopup({
         </button>
 
         {/* Header */}
-        <div className="flex-shrink-0 px-6 md:px-10 pt-8 pb-5 border-b border-white/[0.06]">
-          <StepIndicator current={2} total={4} />
-          <h2 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight mt-2">
+        <div className="flex-shrink-0 px-6 md:px-10 pt-4 pb-4 border-b border-white/[0.06]">
+          <FlowStepper current={4} className="max-w-2xl mx-auto mb-3" />
+          <h2 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight">
             Who's on the <span className="text-[#9cb092] font-agatho italic">guest list?</span>
           </h2>
           <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/55 mt-3">

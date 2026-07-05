@@ -15,7 +15,7 @@ import { createGuest, type Guest } from '@/sections/create/GuestDetails';
 import GuestPopup from '@/sections/create/GuestPopup';
 import PaymentModal from '@/sections/create/PaymentModal';
 import DateTimePicker from '@/sections/create/DateTimePicker';
-import StepIndicator from '@/sections/create/StepIndicator';
+import FlowStepper from '@/sections/create/FlowStepper';
 import PreviewStep, { DEFAULT_RSVP_SETTINGS, type RSVPSettings } from '@/sections/create/PreviewStep';
 import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRenderer';
 import CanvasEditor from '@/components/CanvasEditor';
@@ -1215,6 +1215,7 @@ export default function CreateEvite() {
           </button>
 
           <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-4">
+            <FlowStepper current={1} className="max-w-2xl mx-auto mb-6" />
             <div className="text-center mb-4 md:mb-6">
               <p className="font-display text-[9px] tracking-[0.32em] uppercase text-[#9cb092]/70 mb-1.5">
                 Let&apos;s begin
@@ -1278,6 +1279,7 @@ export default function CreateEvite() {
           </button>
 
           <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-4 overflow-y-auto scrollbar-subtle">
+            <FlowStepper current={2} className="max-w-2xl mx-auto mb-6" />
             <div className="text-center mb-6 md:mb-8">
               <h1 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
                 How would you like to design your{' '}
@@ -1469,8 +1471,8 @@ export default function CreateEvite() {
             </button>
 
             <div className="px-6 md:px-10 pt-4 pb-3 border-b border-white/[0.06]">
-              <StepIndicator current={1} total={4} />
-              <div className="flex items-baseline gap-3 flex-wrap mt-1.5">
+              <FlowStepper current={2} className="max-w-2xl mx-auto mb-2.5" />
+              <div className="flex items-baseline gap-3 flex-wrap">
                 <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight">
                   Upload Your Own <span className="text-[#9cb092] font-agatho italic">Design</span>
                 </h2>
@@ -1946,8 +1948,10 @@ export default function CreateEvite() {
             className="relative w-full max-w-[1400px] max-h-[82vh] flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* ── Modal top bar: 3-col grid so step indicator stays centered ── */}
-            <div className="flex-shrink-0 grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-6 md:px-8 py-3 border-b border-white/[0.07] bg-[#0e1712]">
+            {/* ── Modal top bar: stepper on top, then title + controls ── */}
+            <div className="flex-shrink-0 px-6 md:px-8 py-3 border-b border-white/[0.07] bg-[#0e1712]">
+              <FlowStepper current={3} className="max-w-2xl mx-auto mb-2.5" />
+              <div className="flex items-center justify-between gap-4">
               {/* Left: title + optional invitation slot label */}
               <div className="min-w-0">
                 <h2 className="font-serif-exp text-base md:text-lg text-[#e4eee1] leading-tight truncate">
@@ -1962,13 +1966,8 @@ export default function CreateEvite() {
                 )}
               </div>
 
-              {/* Center: step indicator */}
-              <div className="justify-self-center">
-                <StepIndicator current={1} total={4} />
-              </div>
-
               {/* Right: multi-events toggle + close */}
-              <div className="flex items-center justify-end gap-3">
+              <div className="flex items-center gap-3">
                 {/* Multiple Events toggle — visible whenever the event type
                    supports it (wedding/custom). For multi-invite uploads with
                    2+ slots we pre-flip it ON in proceedFromUpload so the host
@@ -1998,6 +1997,7 @@ export default function CreateEvite() {
                 >
                   <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
                 </button>
+              </div>
               </div>
             </div>
 
@@ -2753,6 +2753,10 @@ export default function CreateEvite() {
       {modalPhase === 'payment' && (
         <PaymentModal
           guestCount={guests.filter((g) => g.name.trim()).length}
+          deliveryPreference={deliveryPreference}
+          invitationCount={
+            multipleInvitations ? invitationSlots.filter((s) => s.url && s.type).length : 1
+          }
           onBack={backToPreview}
           onConfirm={handlePaymentConfirm}
         />
