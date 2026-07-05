@@ -1,7 +1,7 @@
 import database
 from middleware.logging import log_event as _log
 
-VALID_RSVP_STATUSES = {"accepted", "declined"}
+VALID_RSVP_STATUSES = {"accepted", "declined", "maybe"}
 
 
 def get_public_event(event_id: str) -> dict:
@@ -41,7 +41,7 @@ def get_invitee_for_rsvp(event_id: str, invitee_id: str) -> dict:
     db = database.get_db()
     result = (
         db.table("event_invitees")
-        .select("id,name,email,rsvp_status,rsvp_message,dietary_requirements")
+        .select("id,name,email,rsvp_status,rsvp_message,dietary_requirements,party_size,kids_count,food_preference")
         .eq("id", invitee_id)
         .eq("event_id", event_id)
         .execute()
@@ -57,6 +57,9 @@ def submit_rsvp(
     status: str,
     message: str,
     dietary_requirements: str,
+    party_size: int | None = None,
+    kids_count: int | None = None,
+    food_preference: str | None = None,
 ) -> dict:
     if status not in VALID_RSVP_STATUSES:
         raise ValueError(f"Invalid RSVP status: {status!r}. Must be 'accepted' or 'declined'")
@@ -73,12 +76,21 @@ def submit_rsvp(
         raise ValueError("Invitee not found for this event")
 
     from datetime import datetime, timezone
-    db.table("event_invitees").update({
+    update = {
         "rsvp_status": status,
         "rsvp_message": message,
         "dietary_requirements": dietary_requirements,
         "responded_at": datetime.now(timezone.utc).isoformat(),
-    }).eq("id", invitee_id).execute()
+    }
+    # Only overwrite the analytics fields when the guest actually provided them,
+    # so a bare accept/decline doesn't wipe previously-captured details.
+    if party_size is not None:
+        update["party_size"] = party_size
+    if kids_count is not None:
+        update["kids_count"] = kids_count
+    if food_preference is not None:
+        update["food_preference"] = food_preference
+    db.table("event_invitees").update(update).eq("id", invitee_id).execute()
 
     _log("public", "rsvp.submitted", metadata={"event_id": event_id, "status": status})
     return {"invitee_id": invitee_id, "status": status, "message": message}

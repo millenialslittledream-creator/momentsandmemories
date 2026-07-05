@@ -69,6 +69,9 @@ def submit_rsvp(event_id: str, invitee_id: str, data: RSVPRequest):
             data.status,
             data.message or "",
             data.dietary_requirements or "",
+            data.party_size,
+            data.kids_count,
+            data.food_preference,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

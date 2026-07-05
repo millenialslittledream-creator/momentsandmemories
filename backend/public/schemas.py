@@ -15,9 +15,12 @@ class PublicEventResponse(BaseModel):
 
 
 class RSVPRequest(BaseModel):
-    status: str          # "accepted" | "declined"
+    status: str          # "accepted" | "declined" | "maybe"
     message: Optional[str] = ""
     dietary_requirements: Optional[str] = ""
+    party_size: Optional[int] = None
+    kids_count: Optional[int] = None
+    food_preference: Optional[str] = None
 
 
 class RSVPResponse(BaseModel):

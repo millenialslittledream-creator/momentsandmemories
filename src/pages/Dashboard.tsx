@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
-import EngagementPanel from '@/sections/dashboard/EngagementPanel';
+import RSVPAnalytics from '@/sections/dashboard/RSVPAnalytics';
 import MessagingPanel from '@/sections/dashboard/MessagingPanel';
 // GalleryPanel and the Website Builder entry point are intentionally hidden from the
 // dashboard for now (not polished enough yet) — both stay reachable by direct URL.
@@ -493,7 +493,7 @@ export default function Dashboard() {
                           ))}
                         </div>
                         {expandedTab === 'analytics' && (
-                          <EngagementPanel eventId={event.id} eventTitle={event.title} />
+                          <RSVPAnalytics eventId={event.id} eventTitle={event.title} />
                         )}
                         {expandedTab === 'messages' && (
                           <MessagingPanel eventId={event.id} />

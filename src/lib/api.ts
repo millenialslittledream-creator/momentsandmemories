@@ -128,16 +128,46 @@ export const api = {
 
   // ── RSVP stats (auth required) ────────────────────────────────────────
   getEventRSVPStats: (eventId: string) =>
-    apiFetch<{ total: number; accepted: number; declined: number; pending: number }>(
-      `/events/${eventId}/rsvp-stats`
-    ),
+    apiFetch<{
+      total: number;
+      accepted: number;
+      declined: number;
+      pending: number;
+      maybe?: number;
+      adults?: number;
+      kids?: number;
+      total_people?: number;
+      food_preferences?: Record<string, number>;
+      group_sizes?: Record<string, number>;
+      guests?: Array<{
+        name: string | null;
+        email: string | null;
+        phone: string | null;
+        status: string;
+        party_size: number | null;
+        kids_count: number | null;
+        food_preference: string | null;
+        responded_at: string | null;
+      }>;
+    }>(`/events/${eventId}/rsvp-stats`),
 
   // ── Public endpoints (no auth) ────────────────────────────────────────
   getPublicEvent: (eventId: string) => publicGet(`/public/events/${eventId}`),
 
   getRSVPPage: (eventId: string, inviteeId: string) => publicGet(`/public/events/${eventId}/rsvp/${inviteeId}`),
 
-  submitRSVP: (eventId: string, inviteeId: string, data: { status: string; message: string; dietary_requirements: string }) =>
+  submitRSVP: (
+    eventId: string,
+    inviteeId: string,
+    data: {
+      status: string;
+      message: string;
+      dietary_requirements: string;
+      party_size?: number | null;
+      kids_count?: number | null;
+      food_preference?: string | null;
+    }
+  ) =>
     fetch(`${API_URL}/public/events/${eventId}/rsvp/${inviteeId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

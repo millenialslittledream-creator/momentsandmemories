@@ -81,9 +81,78 @@ def get_rsvp_stats(user_id: str, event_id: str) -> dict:
     event = db.table("events").select("id").eq("id", event_id).eq("user_id", user_id).execute()
     if not event.data:
         raise ValueError("Event not found")
-    rows = db.table("event_invitees").select("rsvp_status").eq("event_id", event_id).execute().data
+    rows = (
+        db.table("event_invitees")
+        .select("name,email,phone,rsvp_status,dietary_requirements,party_size,kids_count,food_preference,responded_at")
+        .eq("event_id", event_id)
+        .execute()
+        .data
+    )
+
+    def status_of(r):
+        return r.get("rsvp_status") or "pending"
+
     total = len(rows)
-    accepted = sum(1 for r in rows if r["rsvp_status"] == "accepted")
-    declined = sum(1 for r in rows if r["rsvp_status"] == "declined")
-    pending = sum(1 for r in rows if r.get("rsvp_status", "pending") == "pending")
-    return {"total": total, "accepted": accepted, "declined": declined, "pending": pending}
+    accepted = sum(1 for r in rows if status_of(r) == "accepted")
+    declined = sum(1 for r in rows if status_of(r) == "declined")
+    maybe = sum(1 for r in rows if status_of(r) == "maybe")
+    pending = sum(1 for r in rows if status_of(r) == "pending")
+
+    # Food-preference tallies (any guest who provided one).
+    food_preferences: dict = {}
+    for r in rows:
+        fp = (r.get("food_preference") or "").strip()
+        if fp:
+            food_preferences[fp] = food_preferences.get(fp, 0) + 1
+
+    # Head-count + party-size buckets for attending guests.
+    adults = 0
+    kids = 0
+    group_sizes = {"1": 0, "2": 0, "3-4": 0, "5+": 0}
+    for r in rows:
+        if status_of(r) != "accepted":
+            continue
+        ps = r.get("party_size")
+        kc = r.get("kids_count") or 0
+        if ps is None:
+            ps = 1
+        adults += max(ps - kc, 0)
+        kids += kc
+        if ps <= 1:
+            group_sizes["1"] += 1
+        elif ps == 2:
+            group_sizes["2"] += 1
+        elif ps <= 4:
+            group_sizes["3-4"] += 1
+        else:
+            group_sizes["5+"] += 1
+
+    guests = [
+        {
+            "name": r.get("name"),
+            "email": r.get("email"),
+            "phone": r.get("phone"),
+            "status": status_of(r),
+            "party_size": r.get("party_size"),
+            "kids_count": r.get("kids_count"),
+            "food_preference": r.get("food_preference"),
+            "responded_at": r.get("responded_at"),
+        }
+        for r in rows
+    ]
+
+    return {
+        # Backward-compatible core keys (EngagementPanel still reads these).
+        "total": total,
+        "accepted": accepted,
+        "declined": declined,
+        "pending": pending,
+        # Extended analytics.
+        "maybe": maybe,
+        "adults": adults,
+        "kids": kids,
+        "total_people": adults + kids,
+        "food_preferences": food_preferences,
+        "group_sizes": group_sizes,
+        "guests": guests,
+    }

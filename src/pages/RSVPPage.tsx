@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 
-type RSVPStatus = 'accepted' | 'declined' | null;
+type RSVPStatus = 'accepted' | 'declined' | 'maybe' | null;
+
+const FOOD_OPTIONS = ['Vegetarian', 'Non-Vegetarian', 'Vegan', 'Kids Meal'];
 
 interface Invitee {
   id: string;
@@ -32,6 +34,9 @@ export default function RSVPPage() {
   const [status, setStatus] = useState<RSVPStatus>(null);
   const [message, setMessage] = useState('');
   const [dietary, setDietary] = useState('');
+  const [partySize, setPartySize] = useState('');
+  const [kidsCount, setKidsCount] = useState('');
+  const [foodPref, setFoodPref] = useState('');
   const [guestMessage, setGuestMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -64,6 +69,9 @@ export default function RSVPPage() {
         status,
         message,
         dietary_requirements: dietary,
+        party_size: status === 'accepted' && partySize ? parseInt(partySize, 10) : null,
+        kids_count: status === 'accepted' && kidsCount ? parseInt(kidsCount, 10) : null,
+        food_preference: status === 'accepted' && foodPref ? foodPref : null,
       });
       setDone(true);
     } catch (e: unknown) {
@@ -136,14 +144,14 @@ export default function RSVPPage() {
           /* ── Already responded ── */
           <div className="text-center">
             <div className={`w-16 h-16 mx-auto mb-5 flex items-center justify-center border-2 ${
-              status === 'accepted' ? 'border-[#9cb092]' : 'border-[#b2c3b1]/30'
+              status === 'accepted' ? 'border-[#9cb092]' : status === 'maybe' ? 'border-amber-400/50' : 'border-[#b2c3b1]/30'
             }`}>
-              <span className="material-icons text-2xl" style={{ color: status === 'accepted' ? '#9cb092' : '#b2c3b1' }}>
-                {status === 'accepted' ? 'check' : 'close'}
+              <span className="material-icons text-2xl" style={{ color: status === 'accepted' ? '#9cb092' : status === 'maybe' ? '#fbbf24' : '#b2c3b1' }}>
+                {status === 'accepted' ? 'check' : status === 'maybe' ? 'help_outline' : 'close'}
               </span>
             </div>
             <p className="font-serif-exp text-xl text-[#e4eee1] italic mb-1">
-              {status === 'accepted' ? 'See you there!' : 'Sorry to miss you'}
+              {status === 'accepted' ? 'See you there!' : status === 'maybe' ? 'Thanks for letting us know' : 'Sorry to miss you'}
             </p>
             <p className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/40 mb-8">
               Your RSVP has been recorded
@@ -184,11 +192,11 @@ export default function RSVPPage() {
               Will you be attending?
             </p>
 
-            {/* Yes / No buttons */}
-            <div className="grid grid-cols-2 gap-3 mb-8">
+            {/* Yes / Maybe / No buttons */}
+            <div className="grid grid-cols-3 gap-3 mb-8">
               <button
                 onClick={() => setStatus('accepted')}
-                className={`py-5 border transition-all font-display text-[10px] tracking-[0.2em] uppercase flex flex-col items-center gap-2 ${
+                className={`py-5 border transition-all font-display text-[9px] tracking-[0.15em] uppercase flex flex-col items-center gap-2 ${
                   status === 'accepted'
                     ? 'border-[#9cb092] bg-[#9cb092]/15 text-[#9cb092]'
                     : 'border-[#9cb092]/30 text-[#b2c3b1]/60 hover:border-[#9cb092]/60 hover:text-[#9cb092]'
@@ -198,8 +206,19 @@ export default function RSVPPage() {
                 Attending
               </button>
               <button
+                onClick={() => setStatus('maybe')}
+                className={`py-5 border transition-all font-display text-[9px] tracking-[0.15em] uppercase flex flex-col items-center gap-2 ${
+                  status === 'maybe'
+                    ? 'border-amber-400/60 bg-amber-400/10 text-amber-400/90'
+                    : 'border-[#9cb092]/30 text-[#b2c3b1]/60 hover:border-amber-400/40 hover:text-[#b2c3b1]'
+                }`}
+              >
+                <span className="material-icons text-xl">help_outline</span>
+                Maybe
+              </button>
+              <button
                 onClick={() => setStatus('declined')}
-                className={`py-5 border transition-all font-display text-[10px] tracking-[0.2em] uppercase flex flex-col items-center gap-2 ${
+                className={`py-5 border transition-all font-display text-[9px] tracking-[0.15em] uppercase flex flex-col items-center gap-2 ${
                   status === 'declined'
                     ? 'border-red-400/60 bg-red-400/10 text-red-400/80'
                     : 'border-[#9cb092]/30 text-[#b2c3b1]/60 hover:border-red-400/40 hover:text-[#b2c3b1]'
@@ -214,18 +233,69 @@ export default function RSVPPage() {
             {status && (
               <div className="space-y-4 mb-8">
                 {status === 'accepted' && (
-                  <div>
-                    <label className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/50 block mb-2">
-                      Dietary requirements <span className="text-[#b2c3b1]/30">(optional)</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={dietary}
-                      onChange={e => setDietary(e.target.value)}
-                      placeholder="e.g. vegetarian, nut allergy"
-                      className="w-full bg-transparent border border-[#9cb092]/30 p-3 font-display text-xs text-[#e4eee1] placeholder-[#b2c3b1]/30 focus:outline-none focus:border-[#9cb092]/60"
-                    />
-                  </div>
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/50 block mb-2">
+                          Guests attending
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={partySize}
+                          onChange={e => setPartySize(e.target.value)}
+                          placeholder="e.g. 2"
+                          className="w-full bg-transparent border border-[#9cb092]/30 p-3 font-display text-xs text-[#e4eee1] placeholder-[#b2c3b1]/30 focus:outline-none focus:border-[#9cb092]/60 [color-scheme:dark]"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/50 block mb-2">
+                          Kids <span className="text-[#b2c3b1]/30">(of above)</span>
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={kidsCount}
+                          onChange={e => setKidsCount(e.target.value)}
+                          placeholder="e.g. 1"
+                          className="w-full bg-transparent border border-[#9cb092]/30 p-3 font-display text-xs text-[#e4eee1] placeholder-[#b2c3b1]/30 focus:outline-none focus:border-[#9cb092]/60 [color-scheme:dark]"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/50 block mb-2">
+                        Food preference <span className="text-[#b2c3b1]/30">(optional)</span>
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {FOOD_OPTIONS.map(opt => (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => setFoodPref(foodPref === opt ? '' : opt)}
+                            className={`py-2.5 border font-display text-[9px] tracking-[0.1em] uppercase transition-all ${
+                              foodPref === opt
+                                ? 'border-[#9cb092] bg-[#9cb092]/15 text-[#9cb092]'
+                                : 'border-[#9cb092]/25 text-[#b2c3b1]/55 hover:border-[#9cb092]/50'
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/50 block mb-2">
+                        Dietary requirements <span className="text-[#b2c3b1]/30">(optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={dietary}
+                        onChange={e => setDietary(e.target.value)}
+                        placeholder="e.g. nut allergy"
+                        className="w-full bg-transparent border border-[#9cb092]/30 p-3 font-display text-xs text-[#e4eee1] placeholder-[#b2c3b1]/30 focus:outline-none focus:border-[#9cb092]/60"
+                      />
+                    </div>
+                  </>
                 )}
                 <div>
                   <label className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/50 block mb-2">
