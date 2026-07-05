@@ -14,8 +14,8 @@ export interface InvitationSetSummary {
 interface GuestPopupProps {
   guests: Guest[];
   onGuestsChange: (guests: Guest[]) => void;
-  deliveryPreference: 'email' | 'phone' | 'both';
-  onDeliveryPreferenceChange: (pref: 'email' | 'phone' | 'both') => void;
+  deliveryPreference: 'email' | 'phone' | 'both' | 'link';
+  onDeliveryPreferenceChange: (pref: 'email' | 'phone' | 'both' | 'link') => void;
   onBack: () => void;
   onClose?: () => void;
   onProceed: () => void;
@@ -27,7 +27,7 @@ interface GuestPopupProps {
 }
 
 type ContactMethod = 'manual' | 'excel' | 'qr';
-type DeliveryPref = 'email' | 'phone' | 'both';
+type DeliveryPref = 'email' | 'phone' | 'both' | 'link';
 
 interface SubEvent {
   idx: number;
@@ -280,7 +280,12 @@ export default function GuestPopup({
     { value: 'email', label: 'Email', icon: 'email', description: 'Send invites via email' },
     { value: 'phone', label: 'SMS', icon: 'sms', description: 'Send invites via text' },
     { value: 'both', label: 'Email + SMS', icon: 'mark_email_read', description: 'Use both for best reach' },
+    { value: 'link', label: 'Shareable Link', icon: 'link', description: 'Get a link to copy & share yourself' },
   ];
+
+  // A shareable link is self-serve: the host copies one link and sends it out
+  // themselves, so there's no per-guest contact list to collect here.
+  const showAddGuests = deliveryPreference !== 'link';
 
   const contactOptions: { value: ContactMethod; label: string; icon: string; description: string }[] = [
     { value: 'excel', label: 'Excel Upload', icon: 'upload_file', description: '.csv or .xlsx file' },
@@ -297,8 +302,12 @@ export default function GuestPopup({
     setActiveMethod(null);
   };
 
+  // The shareable-link flow has no guest list, so it can always proceed;
+  // every other delivery method needs at least one guest.
+  const canProceed = deliveryPreference === 'link' || importedCount > 0;
+
   const handleProceed = () => {
-    if (importedCount === 0) return;
+    if (!canProceed) return;
     onProceed();
   };
 
@@ -476,7 +485,7 @@ export default function GuestPopup({
               <span className="material-icons text-[#9cb092] text-base">send</span>
               How should we deliver the evite?
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {deliveryOptions.map((opt) => (
                 <button
                   key={opt.value}
@@ -505,7 +514,10 @@ export default function GuestPopup({
             </div>
           </div>
 
-          {/* Section 2: Contact method */}
+          {/* Section 2: Contact method — hidden for the shareable-link flow,
+              where the host distributes one link themselves and there's no
+              per-guest list to collect. */}
+          {showAddGuests && (
           <div>
             <h3 className="font-serif-exp text-base text-[#e4eee1] mb-3 flex items-center gap-2">
               <span className="material-icons text-[#9cb092] text-base">group_add</span>
@@ -531,24 +543,35 @@ export default function GuestPopup({
               ))}
             </div>
           </div>
+          )}
 
           {/* Status hint */}
-          <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
-            <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/50">
-              {importedCount > 0
-                ? `${importedCount} guest${importedCount === 1 ? '' : 's'} added`
-                : 'No guests added yet — pick a method above'}
-            </p>
-            {importedCount > 0 && (
-              <button
-                onClick={() => openMethod('manual')}
-                className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092] hover:text-[#adc4a3] transition-colors flex items-center gap-1"
-              >
-                <span className="material-icons text-sm">visibility</span>
-                Review guests
-              </button>
-            )}
-          </div>
+          {showAddGuests ? (
+            <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
+              <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/50">
+                {importedCount > 0
+                  ? `${importedCount} guest${importedCount === 1 ? '' : 's'} added`
+                  : 'No guests added yet — pick a method above'}
+              </p>
+              {importedCount > 0 && (
+                <button
+                  onClick={() => openMethod('manual')}
+                  className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092] hover:text-[#adc4a3] transition-colors flex items-center gap-1"
+                >
+                  <span className="material-icons text-sm">visibility</span>
+                  Review guests
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="border-t border-white/[0.06] pt-4 flex items-start gap-2.5">
+              <span className="material-icons text-[#9cb092] text-base mt-0.5">link</span>
+              <p className="font-display text-[10px] text-[#b2c3b1]/60 leading-relaxed">
+                We'll generate a unique link on the next step — copy it and share it with your
+                guests however you like. No guest list needed.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -563,9 +586,9 @@ export default function GuestPopup({
 
           <button
             onClick={handleProceed}
-            disabled={importedCount === 0}
+            disabled={!canProceed}
             className={`py-3 px-8 font-display text-[11px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center gap-2 ${
-              importedCount > 0
+              canProceed
                 ? 'bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]'
                 : 'bg-white/5 text-white/20 cursor-not-allowed border border-white/10'
             }`}

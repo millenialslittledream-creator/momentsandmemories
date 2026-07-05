@@ -21,8 +21,8 @@ export interface Guest {
 interface GuestDetailsProps {
   guests: Guest[];
   onGuestsChange: (guests: Guest[]) => void;
-  deliveryPreference: 'email' | 'phone' | 'both';
-  onDeliveryPreferenceChange: (pref: 'email' | 'phone' | 'both') => void;
+  deliveryPreference: 'email' | 'phone' | 'both' | 'link';
+  onDeliveryPreferenceChange: (pref: 'email' | 'phone' | 'both' | 'link') => void;
   formData: Record<string, string>;
 }
 

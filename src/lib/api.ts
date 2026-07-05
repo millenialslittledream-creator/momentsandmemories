@@ -87,7 +87,7 @@ export const api = {
       form_data: Record<string, string>;
       selected_template: string | null;
       guests: Array<{ id: string; name: string; email: string; phone: string }>;
-      delivery_preference: 'email' | 'phone' | 'both';
+      delivery_preference: 'email' | 'phone' | 'both' | 'link';
       updated_at: string;
     } | null>('/drafts/my'),
 

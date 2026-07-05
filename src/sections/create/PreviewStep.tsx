@@ -13,6 +13,30 @@ export interface InvitationSetPreview {
   type: 'image' | 'video';
 }
 
+// What guests are asked to provide when they RSVP. Held in the create-flow
+// state and shown/edited on the Preview step.
+export interface RSVPSettings {
+  enabled: boolean;
+  responseOptions: { yes: boolean; no: boolean; maybe: boolean };
+  collectGuestCount: boolean;
+  collectKidsCount: boolean;
+  collectFoodPreference: boolean;
+  foodOptions: string[];
+  collectAdditionalInfo: boolean;
+}
+
+export const ALL_FOOD_OPTIONS = ['Vegetarian', 'Non-Vegetarian', 'Vegan', 'Kids Meal'];
+
+export const DEFAULT_RSVP_SETTINGS: RSVPSettings = {
+  enabled: true,
+  responseOptions: { yes: true, no: true, maybe: true },
+  collectGuestCount: true,
+  collectKidsCount: true,
+  collectFoodPreference: true,
+  foodOptions: [...ALL_FOOD_OPTIONS],
+  collectAdditionalInfo: true,
+};
+
 interface PreviewStepProps {
   eventType: EventType | null;
   selectedTemplate: EviteTemplate | null;
@@ -23,12 +47,14 @@ interface PreviewStepProps {
   invitationSets?: InvitationSetPreview[];
   guests?: Guest[];
   formData: Record<string, string>;
-  deliveryPreference: 'email' | 'phone' | 'both';
+  deliveryPreference: 'email' | 'phone' | 'both' | 'link';
   guestCount: number;
   /** Customization overrides for `selectedTemplate`, applied to the
    * stock-template render path so guests see the same edits the host made. */
   templateOverrides?: Record<string, Partial<TemplateFieldLayout>>;
   templatePhotoOverlay?: PhotoOverlay | null;
+  rsvpSettings: RSVPSettings;
+  onRsvpSettingsChange: (settings: RSVPSettings) => void;
   onBack: () => void;
   onClose?: () => void;
   onProceed: () => void;
@@ -47,12 +73,39 @@ export default function PreviewStep({
   guestCount,
   templateOverrides,
   templatePhotoOverlay,
+  rsvpSettings,
+  onRsvpSettingsChange,
   onBack,
   onClose,
   onProceed,
 }: PreviewStepProps) {
   const backdropRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const [rsvpEditing, setRsvpEditing] = useState(false);
+
+  const patchRsvp = (patch: Partial<RSVPSettings>) =>
+    onRsvpSettingsChange({ ...rsvpSettings, ...patch });
+
+  const toggleFoodOption = (opt: string) => {
+    const has = rsvpSettings.foodOptions.includes(opt);
+    patchRsvp({
+      foodOptions: has
+        ? rsvpSettings.foodOptions.filter((o) => o !== opt)
+        : [...rsvpSettings.foodOptions, opt],
+    });
+  };
+
+  const rsvpSummary = (() => {
+    const ro = rsvpSettings.responseOptions;
+    const parts: string[] = [];
+    const roList = [ro.yes && 'Yes', ro.no && 'No', ro.maybe && 'Maybe'].filter(Boolean).join(' / ');
+    if (roList) parts.push(roList);
+    if (rsvpSettings.collectGuestCount) parts.push('Guest count');
+    if (rsvpSettings.collectKidsCount) parts.push('Kids count');
+    if (rsvpSettings.collectFoodPreference) parts.push('Food preference');
+    if (rsvpSettings.collectAdditionalInfo) parts.push('Notes to host');
+    return parts.join(' · ') || 'No fields selected';
+  })();
 
   const isMulti = (invitationSets?.length ?? 0) >= 2;
   const guestList = guests ?? [];
@@ -133,6 +186,8 @@ export default function PreviewStep({
       ? 'Email'
       : deliveryPreference === 'phone'
       ? 'SMS'
+      : deliveryPreference === 'link'
+      ? 'Shareable Link'
       : 'Email + SMS';
 
   const customMessage = formData.customMessage?.trim() || '';
@@ -426,6 +481,8 @@ export default function PreviewStep({
                     ? 'sms'
                     : deliveryPreference === 'email'
                     ? 'mail'
+                    : deliveryPreference === 'link'
+                    ? 'link'
                     : 'mark_email_read'}
                 </span>
                 Message Preview · sent via {deliveryLabel}
@@ -475,6 +532,159 @@ export default function PreviewStep({
           )}
         </div>
 
+        {/* ── RSVP settings ── */}
+        <div className="flex-shrink-0 border-t border-white/[0.06] bg-[#0e1712]">
+          <div className="px-6 md:px-10 py-3">
+            {!rsvpEditing ? (
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="material-icons text-[#9cb092] text-base">how_to_reg</span>
+                  <div className="min-w-0">
+                    <p className="font-display text-[10px] tracking-[0.18em] uppercase text-[#e4eee1] flex items-center gap-2">
+                      RSVP Settings
+                      <span
+                        className={`px-1.5 py-0.5 text-[8px] tracking-[0.15em] uppercase font-bold ${
+                          rsvpSettings.enabled
+                            ? 'bg-[#9cb092]/20 text-[#9cb092]'
+                            : 'bg-white/[0.06] text-[#b2c3b1]/50'
+                        }`}
+                      >
+                        {rsvpSettings.enabled ? 'Enabled' : 'Disabled'}
+                      </span>
+                    </p>
+                    <p className="font-display text-[9px] text-[#b2c3b1]/50 truncate mt-0.5">
+                      {rsvpSettings.enabled
+                        ? `Guests can respond with — ${rsvpSummary}`
+                        : "Guests won't be asked to RSVP"}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setRsvpEditing(true)}
+                  className="flex-shrink-0 font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092] hover:text-[#adc4a3] transition-colors flex items-center gap-1.5 border border-[#9cb092]/40 hover:border-[#9cb092]/70 px-3 py-1.5"
+                >
+                  <span className="material-icons text-sm">tune</span>
+                  Edit RSVP Settings
+                </button>
+              </div>
+            ) : (
+              <div className="max-h-[34vh] overflow-y-auto scrollbar-subtle pr-1 space-y-3">
+                {/* Master enable */}
+                <RsvpToggleRow
+                  label="Collect RSVPs from guests"
+                  sub="Let guests confirm whether they'll attend."
+                  on={rsvpSettings.enabled}
+                  onToggle={() => patchRsvp({ enabled: !rsvpSettings.enabled })}
+                />
+
+                {rsvpSettings.enabled && (
+                  <div className="space-y-3 pl-1 border-l border-[#9cb092]/15">
+                    {/* Response options */}
+                    <div className="pl-3">
+                      <p className="font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]/60 mb-1.5">
+                        Response Options
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(['yes', 'no', 'maybe'] as const).map((k) => {
+                          const on = rsvpSettings.responseOptions[k];
+                          const label = k === 'yes' ? 'Yes' : k === 'no' ? 'No' : 'Maybe';
+                          return (
+                            <button
+                              key={k}
+                              onClick={() =>
+                                patchRsvp({
+                                  responseOptions: { ...rsvpSettings.responseOptions, [k]: !on },
+                                })
+                              }
+                              className={`px-3 py-1 font-display text-[10px] tracking-[0.1em] uppercase transition-colors border ${
+                                on
+                                  ? 'bg-[#9cb092]/15 border-[#9cb092]/50 text-[#9cb092]'
+                                  : 'bg-white/[0.03] border-white/10 text-[#b2c3b1]/45'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="pl-3">
+                      <RsvpToggleRow
+                        label="Guests Count"
+                        sub="Ask how many people are coming."
+                        on={rsvpSettings.collectGuestCount}
+                        onToggle={() => patchRsvp({ collectGuestCount: !rsvpSettings.collectGuestCount })}
+                      />
+                    </div>
+                    <div className="pl-3">
+                      <RsvpToggleRow
+                        label="Kids Count"
+                        sub="Ask how many children are attending."
+                        on={rsvpSettings.collectKidsCount}
+                        onToggle={() => patchRsvp({ collectKidsCount: !rsvpSettings.collectKidsCount })}
+                      />
+                    </div>
+
+                    {/* Food preference */}
+                    <div className="pl-3">
+                      <RsvpToggleRow
+                        label="Food Preference"
+                        sub="Collect meal choices for catering."
+                        on={rsvpSettings.collectFoodPreference}
+                        onToggle={() =>
+                          patchRsvp({ collectFoodPreference: !rsvpSettings.collectFoodPreference })
+                        }
+                      />
+                      {rsvpSettings.collectFoodPreference && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {ALL_FOOD_OPTIONS.map((opt) => {
+                            const on = rsvpSettings.foodOptions.includes(opt);
+                            return (
+                              <button
+                                key={opt}
+                                onClick={() => toggleFoodOption(opt)}
+                                className={`px-2.5 py-1 font-display text-[9px] tracking-[0.08em] uppercase transition-colors border ${
+                                  on
+                                    ? 'bg-[#9cb092]/15 border-[#9cb092]/50 text-[#9cb092]'
+                                    : 'bg-white/[0.03] border-white/10 text-[#b2c3b1]/45'
+                                }`}
+                              >
+                                {opt}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pl-3">
+                      <RsvpToggleRow
+                        label="Additional Information"
+                        sub="Dietary restrictions, allergies, a message to the host."
+                        on={rsvpSettings.collectAdditionalInfo}
+                        onToggle={() =>
+                          patchRsvp({ collectAdditionalInfo: !rsvpSettings.collectAdditionalInfo })
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    onClick={() => setRsvpEditing(false)}
+                    className="font-display text-[9px] tracking-[0.2em] uppercase text-[#111914] bg-[#9cb092] hover:bg-[#adc4a3] transition-colors flex items-center gap-1.5 px-4 py-1.5 font-bold"
+                  >
+                    <span className="material-icons text-sm">check</span>
+                    Done
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* ── Footer ── */}
         <div className="flex-shrink-0 flex items-center justify-between gap-3 px-6 md:px-10 py-4 border-t border-white/[0.06] bg-[#0e1712]">
           <button
@@ -489,11 +699,46 @@ export default function PreviewStep({
             onClick={onProceed}
             className="py-3 px-8 font-display text-[11px] tracking-[0.22em] uppercase font-bold bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3] transition-colors flex items-center gap-2"
           >
-            Continue to Payment
+            Continue
             <span className="material-icons text-sm">arrow_forward</span>
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Compact labelled on/off row used inside the RSVP settings editor.
+function RsvpToggleRow({
+  label,
+  sub,
+  on,
+  onToggle,
+}: {
+  label: string;
+  sub: string;
+  on: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="font-display text-[11px] text-[#e4eee1] leading-tight">{label}</p>
+        <p className="font-display text-[9px] text-[#b2c3b1]/45 leading-tight mt-0.5">{sub}</p>
+      </div>
+      <button
+        onClick={onToggle}
+        aria-pressed={on}
+        className={`relative flex-shrink-0 w-9 h-5 rounded-full transition-colors duration-300 ${
+          on ? 'bg-[#9cb092]' : 'bg-white/15'
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-300 ${
+            on ? 'translate-x-[18px]' : 'translate-x-0.5'
+          }`}
+        />
+      </button>
     </div>
   );
 }

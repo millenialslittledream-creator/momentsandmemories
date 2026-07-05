@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo, type ReactElement } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import gsap from 'gsap';
 import Navigation from '@/sections/Navigation';
@@ -16,7 +16,7 @@ import GuestPopup from '@/sections/create/GuestPopup';
 import PaymentModal from '@/sections/create/PaymentModal';
 import DateTimePicker from '@/sections/create/DateTimePicker';
 import StepIndicator from '@/sections/create/StepIndicator';
-import PreviewStep from '@/sections/create/PreviewStep';
+import PreviewStep, { DEFAULT_RSVP_SETTINGS, type RSVPSettings } from '@/sections/create/PreviewStep';
 import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRenderer';
 import CanvasEditor from '@/components/CanvasEditor';
 import type { TextElementData } from '@/components/CanvasEditor/types';
@@ -29,23 +29,30 @@ function isTextElement(el: { type: string }): el is TextElementData {
 }
 
 type EventTypeFilter = EventType;
-type ModalPhase = 'choose-multi' | 'upload' | 'canvas-template-picker' | 'canvas-editor' | 'editor' | 'signin' | 'guests' | 'preview' | 'payment' | 'sent' | null;
+type ModalPhase = 'upload' | 'canvas-template-picker' | 'canvas-editor' | 'editor' | 'signin' | 'guests' | 'preview' | 'payment' | 'sent' | null;
+
+// The entry flow now has four stages:
+//   'picker'        — "What are we celebrating today?" event grid (first thing users see)
+//   'loading'       — brief "Creating your perfect experience…" transition after a pick
+//   'choose-design' — "How would you like to design your invitation?" method cards
+//   'gallery'       — the template gallery, filtered to the chosen event
+type FlowStage = 'picker' | 'loading' | 'choose-design' | 'gallery';
+
+// Events that have a premium (event-website) design collection. In phase 1 we
+// only offer premium versions for weddings and birthdays, so the "Use our
+// premium designs" card is gated to these.
+const PREMIUM_EVENTS: EventType[] = ['marriage', 'birthday'];
 
 const MULTI_EVENTS_HELP = "Send different invites to different guest groups.";
 
-// Suggested placeholder names cycled through invitation slots so users see
-// concrete examples ("Family and close friends", "Wedding guests", etc.).
-const SLOT_NAME_PLACEHOLDERS = [
-  'Family and close friends',
-  'Wedding guests',
-  'Reception only',
-  'Mehendi guests',
-  'Sangeet guests',
+// Example invitation-group names shown beside each upload slot so hosts
+// understand what "Invitation Name" means (Family vs Friends vs Colleagues…).
+const INVITE_NAME_EXAMPLES = [
+  ['Family & Close Friends', 'Relatives', 'Elders', 'VIP Guests'],
+  ['Close Friends', 'College Friends', 'Neighbors', 'Colleagues'],
+  ['Reception Only', 'Extended Family', 'Work Friends', 'Plus Ones'],
+  ['Mehendi Guests', 'Sangeet Guests', 'Cousins', 'Family Friends'],
 ];
-
-function slotPlaceholder(idx: number) {
-  return SLOT_NAME_PLACEHOLDERS[idx % SLOT_NAME_PLACEHOLDERS.length];
-}
 
 interface UploadedTemplate {
   url: string;
@@ -61,16 +68,6 @@ interface InvitationSlot {
   name: string;
   formData?: Record<string, string>;
 }
-
-const FILTERS: { id: EventTypeFilter; label: string }[] = [
-  { id: 'birthday',     label: 'Birthday' },
-  { id: 'marriage',     label: 'Wedding' },
-  { id: 'babyshower',   label: 'Baby Shower' },
-  { id: 'bridetobe',    label: 'Pre-Wedding Party' },
-  { id: 'genderreveal', label: 'Gender Reveal' },
-  { id: 'housewarming', label: 'Housewarming' },
-  { id: 'custom',       label: 'Others' },
-];
 
 const SUPPORTS_MULTI_EVENTS: EventType[] = ['marriage', 'custom'];
 
@@ -172,9 +169,30 @@ function renderEditorField(
 // Sentinel for the upload-your-own tile.
 const UPLOAD_TILE_ID = '__upload_your_own__';
 
+// Shared textured background used across the site (shop page, gallery). The
+// entry flow (event picker + loading transition) reuses it so the whole
+// experience feels consistent.
+const ENTRY_BG_TEXTURE =
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuD0yNSOWSBJLsv1-47TiuxQ15AFQ4nsrk2tyl20R-zvNNsiDXBNDhZVYz1yHqSCTtqtGcVjl35j2rrDIrA-d5xW6tM2FPDinMxC7wGNXKzBCT0JhfwdSkLFQPVqU1yfc1GtqRHSfxSmlitg3lWmrbcCqzLdzR4XsiD9nN9-_O7fp4ViDdX7MFMvLLa9exuWvETBq8HCVRb7NcpP7tWvqDoEWCeegHipJmlKBCM4gpRO9AROi6bPaa2gmQvHKabiYnelhLueCkgQ9QIe';
+
+// The two stacked layers (textured image + dark wash) that produce that look.
+// Rendered inside the fixed entry-flow overlays so they fully cover the screen.
+function EntryBackground() {
+  return (
+    <>
+      <div
+        className="absolute inset-0 z-0 opacity-30 mix-blend-multiply pointer-events-none"
+        style={{ backgroundImage: `url('${ENTRY_BG_TEXTURE}')` }}
+      />
+      <div className="absolute inset-0 z-[1] bg-[#111914]/70 pointer-events-none" />
+    </>
+  );
+}
+
 // ── Main component ──────────────────────────────────────────────────────
 export default function CreateEvite() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const pageRef = useRef<HTMLDivElement>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
@@ -183,12 +201,20 @@ export default function CreateEvite() {
   const mainImgRef = useRef<HTMLImageElement>(null);
 
   const [activeFilter, setActiveFilter] = useState<EventTypeFilter>('birthday');
+  // Entry flow: users first pick an event, watch a short transition, then land
+  // on the gallery pre-filtered to that event.
+  const [flowStage, setFlowStage] = useState<FlowStage>('picker');
+  const [pickerEvent, setPickerEvent] = useState<EventType | null>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const chooseDesignRef = useRef<HTMLDivElement>(null);
+  const loadingBarRef = useRef<HTMLDivElement>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [uploadedTemplate, setUploadedTemplate] = useState<UploadedTemplate | null>(null);
   const [modalPhase, setModalPhase] = useState<ModalPhase>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [guests, setGuests] = useState<Guest[]>([createGuest()]);
-  const [deliveryPreference, setDeliveryPreference] = useState<'email' | 'phone' | 'both'>('email');
+  const [deliveryPreference, setDeliveryPreference] = useState<'email' | 'phone' | 'both' | 'link'>('email');
+  const [rsvpSettings, setRsvpSettings] = useState<RSVPSettings>(DEFAULT_RSVP_SETTINGS);
   const [hasSubEvents, setHasSubEvents] = useState(false);
   const [showEventCountPopup, setShowEventCountPopup] = useState(false);
   const [multipleInvitations, setMultipleInvitations] = useState(false);
@@ -389,6 +415,14 @@ export default function CreateEvite() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   }, []);
 
+  // Entry-flow: user picks an event → filter the gallery to it and play a
+  // short "creating your experience" transition before revealing the templates.
+  const chooseEvent = useCallback((eventId: EventType) => {
+    setPickerEvent(eventId);
+    setActiveFilter(eventId);
+    setFlowStage('loading');
+  }, []);
+
   const animateModalIn = useCallback(() => {
     requestAnimationFrame(() => {
       if (editorBackdropRef.current && editorPanelRef.current) {
@@ -437,17 +471,14 @@ export default function CreateEvite() {
     setPhotoOverlay(null);
     setSelectedOverrideKey(null);
     setRightPanelTab('details');
-    // For wedding/custom (events that support multiple invitation sets), ask
-    // the user up front whether different guests should get different invites.
-    // Everyone else goes straight to single-template upload.
-    if (SUPPORTS_MULTI_EVENTS.includes(activeFilter)) {
-      setModalPhase('choose-multi');
-    } else {
-      setMultipleInvitations(false);
-      setModalPhase('upload');
-    }
+    // Everyone starts on the single-invitation upload ("No, same invite to all
+    // guests" is the default). For wedding/others the upload modal shows a
+    // "Multiple Invitations" toggle so the host can opt into different invites
+    // for different guest groups; all other events only ever upload one design.
+    setMultipleInvitations(false);
+    setModalPhase('upload');
     animateModalIn();
-  }, [animateModalIn, activeFilter]);
+  }, [animateModalIn]);
 
   const openCanvasEditor = useCallback(() => {
     setSelectedTemplateId(null);
@@ -480,12 +511,6 @@ export default function CreateEvite() {
     setModalPhase('editor');
     animateModalIn();
   }, [animateModalIn]);
-
-  // Choose-multi dialog handlers — record the user's choice and proceed.
-  const chooseMultiInvitations = useCallback((multi: boolean) => {
-    setMultipleInvitations(multi);
-    setModalPhase('upload');
-  }, []);
 
   const closeAnyModal = useCallback(() => {
     if (!editorBackdropRef.current || !editorPanelRef.current) {
@@ -750,6 +775,27 @@ export default function CreateEvite() {
     setFormData((prev) => ({ ...prev, sub_events_count: String(count) }));
   };
 
+  // Selecting "Yes, different invitations" seeds two empty, unnamed slots so
+  // the host starts from the same two-invitation layout the examples show
+  // (unless they already have real slots in progress).
+  const selectMultiInvitations = (multi: boolean) => {
+    setMultipleInvitations(multi);
+    if (multi) {
+      setInvitationSlots((prev) => {
+        // The default seed slot is named "Main Invitation" — treat that as empty
+        // so a first-time "Yes" still expands to the two-slot starting layout.
+        const hasContent = prev.some(
+          (s) => s.url || (s.name.trim() && s.name !== 'Main Invitation')
+        );
+        if (prev.length >= 2 || hasContent) return prev;
+        return [
+          { id: 'slot-1', url: '', type: null, fileName: '', name: '' },
+          { id: `slot-${Date.now()}`, url: '', type: null, fileName: '', name: '' },
+        ];
+      });
+    }
+  };
+
   // ── Invitation slots helpers (multiple invitations in upload) ───
   const addInvitationSlot = () => {
     setInvitationSlots((prev) => [
@@ -855,6 +901,68 @@ export default function CreateEvite() {
     gsap.fromTo(pageRef.current, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'power2.out' });
   }, []);
 
+  // Restore the "choose design" step when returning from a route that lives
+  // outside this component (e.g. the premium website builder). The builder's
+  // Back button sends us to /create?stage=design&event=<id> so the user lands
+  // back on the design-method screen instead of the event picker.
+  useEffect(() => {
+    if (searchParams.get('stage') !== 'design') return;
+    const ev = searchParams.get('event');
+    if (ev && eventTypes.some((e) => e.id === ev)) {
+      setActiveFilter(ev as EventType);
+      setPickerEvent(ev as EventType);
+      setFlowStage('choose-design');
+    }
+    // Run once on mount — we only consume the query params on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Event-picker card staggered entrance.
+  useEffect(() => {
+    if (flowStage !== 'picker' || !pickerRef.current) return;
+    const cards = pickerRef.current.querySelectorAll<HTMLElement>('.picker-card');
+    gsap.fromTo(
+      cards,
+      { opacity: 0, y: 20, scale: 0.96 },
+      {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        stagger: 0.05,
+        duration: 0.4,
+        ease: 'power3.out',
+        // Clear the inline transform GSAP leaves behind, otherwise it overrides
+        // the CSS hover:scale and the cards won't enlarge on hover.
+        clearProps: 'transform',
+      }
+    );
+  }, [flowStage]);
+
+  // Loading transition — fill the progress bar, then reveal the gallery.
+  useEffect(() => {
+    if (flowStage !== 'loading') return;
+    if (loadingBarRef.current) {
+      gsap.fromTo(
+        loadingBarRef.current,
+        { width: '0%' },
+        { width: '100%', duration: 2.8, ease: 'power1.inOut' }
+      );
+    }
+    const t = setTimeout(() => setFlowStage('choose-design'), 3000);
+    return () => clearTimeout(t);
+  }, [flowStage]);
+
+  // Design-method card staggered entrance.
+  useEffect(() => {
+    if (flowStage !== 'choose-design' || !chooseDesignRef.current) return;
+    const cards = chooseDesignRef.current.querySelectorAll<HTMLElement>('.design-card');
+    gsap.fromTo(
+      cards,
+      { opacity: 0, y: 20, scale: 0.96 },
+      { opacity: 1, y: 0, scale: 1, stagger: 0.07, duration: 0.42, ease: 'power3.out', clearProps: 'transform' }
+    );
+  }, [flowStage]);
+
   useEffect(() => {
     if (galleryRef.current) {
       const cards = galleryRef.current.querySelectorAll<HTMLElement>('.template-card');
@@ -913,7 +1021,7 @@ export default function CreateEvite() {
       />
       <div className="fixed inset-0 z-[1] bg-[#111914]/70 pointer-events-none" />
 
-      <Navigation />
+      {flowStage === 'gallery' && <Navigation />}
 
       {/* ════════════════════════════════════════════════════════════
           GALLERY — base page
@@ -923,29 +1031,24 @@ export default function CreateEvite() {
           {/* Header */}
           <div className="flex items-end justify-between py-4 md:py-5 flex-shrink-0 border-b border-white/[0.07] flex-wrap gap-3">
             <div>
+              <p className="font-display text-[9px] tracking-[0.32em] uppercase text-[#9cb092]/70 mb-1">
+                {eventTypes.find((e) => e.id === activeFilter)?.label ?? 'Event'} designs
+              </p>
               <h1 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
-                What special moment are we <span className="text-[#9cb092] font-agatho italic">bringing to life today?</span>
+                Choose your <span className="text-[#9cb092] font-agatho italic">design</span>
               </h1>
               <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#b2c3b1]/40 mt-1">
-                Choose a design — or upload your own
+                Pick a design — or upload your own
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5 flex-wrap justify-end ml-auto">
-              {FILTERS.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setActiveFilter(f.id)}
-                  className={`font-display text-[9px] tracking-[0.16em] uppercase px-3 py-1.5 transition-all duration-200 ${
-                    activeFilter === f.id
-                      ? 'bg-[#9cb092] text-[#111914] font-semibold'
-                      : 'border border-white/15 text-[#b2c3b1]/55 hover:border-[#9cb092]/30 hover:text-[#9cb092]'
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={() => setFlowStage('choose-design')}
+              className="flex items-center gap-2 font-display text-[10px] tracking-[0.2em] uppercase px-4 py-2 border border-white/15 text-[#b2c3b1]/70 hover:border-[#9cb092]/40 hover:text-[#9cb092] transition-all duration-200 ml-auto"
+            >
+              <span className="material-icons text-[16px]">arrow_back</span>
+              Design options
+            </button>
           </div>
 
           {/* Scroll wrapper — grid inside grows to its content height */}
@@ -1032,7 +1135,7 @@ export default function CreateEvite() {
                   (multi-page site with RSVP, gallery, schedule, etc.). */}
               <button
                 key="__website_builder__"
-                onClick={() => navigate('/website-builder')}
+                onClick={() => navigate(`/website-builder?event=${activeFilter}`)}
                 className="template-card group text-left overflow-hidden bg-[#9cb092]/[0.06] border border-dashed border-[#9cb092]/40 hover:border-[#9cb092] hover:bg-[#9cb092]/[0.12] transition-all duration-300 flex flex-col"
               >
                 <div className="relative aspect-[9/16] overflow-hidden bg-[#192116] flex flex-col items-center justify-center text-center px-4">
@@ -1094,57 +1197,252 @@ export default function CreateEvite() {
       </div>
 
       {/* ════════════════════════════════════════════════════════════
-          CHOOSE-MULTI DIALOG — shown for wedding/custom before upload
+          EVENT PICKER — first step: "What are we celebrating today?"
+          Covers the gallery until the user picks an event.
           ════════════════════════════════════════════════════════════ */}
-      {modalPhase === 'choose-multi' && (
+      {flowStage === 'picker' && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeAnyModal();
-          }}
+          className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-[#EADDD7]"
+          data-lenis-prevent
         >
-          <div
-            className="relative w-full max-w-lg bg-[#111914] border border-white/[0.09] shadow-2xl flex flex-col"
-            onClick={(e) => e.stopPropagation()}
+          <EntryBackground />
+          <button
+            onClick={closeToHome}
+            className="absolute top-5 left-5 z-20 flex items-center gap-2 px-3 py-2 bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200 font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/70 hover:text-[#9cb092]"
           >
-            <button
-              onClick={closeToHome}
-              className="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
-            >
-              <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
-            </button>
+            <span className="material-icons text-[16px]">arrow_back</span>
+            Back to home
+          </button>
 
-            <div className="px-8 pt-10 pb-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center mx-auto mb-4">
-                <span className="material-icons text-[#9cb092]">group</span>
-              </div>
-              <h2 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight">
-                Will different guests receive <span className="text-[#9cb092] font-agatho italic">different invitations?</span>
-              </h2>
-              <p className="font-display text-[11px] tracking-wide text-[#b2c3b1]/55 leading-relaxed mt-4 max-w-md mx-auto">
-                Useful for weddings or celebrations where some guests are invited to specific functions only.
+          <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-4">
+            <div className="text-center mb-4 md:mb-6">
+              <p className="font-display text-[9px] tracking-[0.32em] uppercase text-[#9cb092]/70 mb-1.5">
+                Let&apos;s begin
+              </p>
+              <h1 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
+                What are we <span className="text-[#9cb092] font-agatho italic">celebrating today?</span>
+              </h1>
+              <p className="font-display text-[10px] tracking-wide text-[#b2c3b1]/55 mt-2 max-w-md mx-auto leading-relaxed">
+                Pick an event and we&apos;ll show you the designs made for it.
               </p>
             </div>
 
-            <div className="px-8 pb-8 grid grid-cols-2 gap-3">
-              <button
-                onClick={() => chooseMultiInvitations(false)}
-                className="py-3.5 border border-white/15 text-[#b2c3b1] font-display text-[11px] tracking-[0.22em] uppercase hover:border-[#9cb092]/40 hover:text-[#9cb092] transition-all"
-              >
-                No
-              </button>
-              <button
-                onClick={() => chooseMultiInvitations(true)}
-                className="py-3.5 bg-[#9cb092] text-[#111914] font-display text-[11px] tracking-[0.22em] uppercase font-bold hover:bg-[#adc4a3] transition-colors flex items-center justify-center gap-2"
-              >
-                Yes
-                <span className="material-icons text-sm">arrow_forward</span>
-              </button>
+            <div
+              ref={pickerRef}
+              className="flex flex-wrap justify-center gap-2.5 md:gap-3 w-full max-w-4xl"
+            >
+              {eventTypes.map((ev) => (
+                <button
+                  key={ev.id}
+                  onClick={() => chooseEvent(ev.id)}
+                  className="picker-card group relative bg-white/[0.06] hover:bg-white/[0.1] backdrop-blur-md border border-white/[0.08] hover:border-[#9cb092]/45 transition-transform duration-300 ease-out hover:scale-[1.18] hover:z-30 px-3 py-4 flex flex-col items-center justify-center text-center w-36 sm:w-40 min-h-[124px]"
+                >
+                  <div
+                    className="w-11 h-11 rounded-full flex items-center justify-center mb-1.5"
+                    style={{ backgroundColor: `${ev.color}22`, border: `1px solid ${ev.color}55` }}
+                  >
+                    <span className="material-icons text-xl" style={{ color: ev.color }}>
+                      {ev.icon}
+                    </span>
+                  </div>
+                  <h3 className="font-serif-exp text-sm md:text-base text-[#e4eee1] leading-tight">
+                    {ev.label}
+                  </h3>
+                  {/* Description stays hidden and simply fades in on hover */}
+                  <p className="font-display text-[9px] tracking-wide text-[#b2c3b1]/70 leading-relaxed mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    {ev.description}
+                  </p>
+                </button>
+              ))}
             </div>
           </div>
         </div>
       )}
+
+      {/* ════════════════════════════════════════════════════════════
+          CHOOSE-DESIGN — "How would you like to design your invitation?"
+          Method cards shown after the event is picked, before the gallery.
+          ════════════════════════════════════════════════════════════ */}
+      {flowStage === 'choose-design' && (
+        <div
+          className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-[#EADDD7]"
+          data-lenis-prevent
+        >
+          <EntryBackground />
+          <button
+            onClick={() => setFlowStage('picker')}
+            className="absolute top-5 left-5 z-20 flex items-center gap-2 px-3 py-2 bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200 font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/70 hover:text-[#9cb092]"
+          >
+            <span className="material-icons text-[16px]">arrow_back</span>
+            Change event
+          </button>
+
+          <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-4 overflow-y-auto scrollbar-subtle">
+            <div className="text-center mb-6 md:mb-8">
+              <h1 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
+                How would you like to design your{' '}
+                <span className="text-[#9cb092] font-agatho italic">
+                  {eventTypes.find((e) => e.id === activeFilter)?.label ?? 'event'}
+                </span>{' '}
+                invitation?
+              </h1>
+              <p className="font-display text-[10px] tracking-wide text-[#b2c3b1]/55 mt-2">
+                Choose the way that works best for you.
+              </p>
+            </div>
+
+            <div
+              ref={chooseDesignRef}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 w-full max-w-5xl"
+            >
+              {([
+                {
+                  key: 'upload',
+                  icon: 'cloud_upload',
+                  title: 'Upload Your Own Design',
+                  desc: "Upload your own design and we'll help you make it perfect.",
+                  cta: 'Choose This',
+                  onClick: openUploadFlow,
+                  premium: false,
+                },
+                {
+                  key: 'preexisting',
+                  icon: 'grid_view',
+                  title: 'Use Our Preexisting Designs',
+                  desc: 'Browse our beautiful collection of ready-made templates.',
+                  cta: 'Browse Templates',
+                  onClick: () => setFlowStage('gallery'),
+                  premium: false,
+                },
+                {
+                  key: 'scratch',
+                  icon: 'draw',
+                  title: 'Build from Scratch',
+                  desc: 'Start with a blank canvas and create your own unique design.',
+                  cta: 'Start Designing',
+                  onClick: openCanvasEditor,
+                  premium: false,
+                },
+                {
+                  key: 'premium',
+                  icon: 'workspace_premium',
+                  title: 'Use Our Premium Designs',
+                  desc: 'Unlock exclusive, premium templates for a stunning impression.',
+                  cta: 'Explore Premium',
+                  onClick: () => navigate(`/website-builder?event=${activeFilter}&return=design`),
+                  premium: true,
+                },
+              ] as const)
+                .filter((c) => !c.premium || PREMIUM_EVENTS.includes(activeFilter))
+                .map((c) => (
+                  <div
+                    key={c.key}
+                    className={`design-card relative flex flex-col items-center text-center px-5 py-7 border transition-all duration-300 ${
+                      c.premium
+                        ? 'border-[#9cb092]/45 bg-[#9cb092]/[0.08] hover:bg-[#9cb092]/[0.14]'
+                        : 'border-white/[0.08] bg-white/[0.05] hover:bg-white/[0.09] hover:border-[#9cb092]/40'
+                    }`}
+                    style={{ opacity: 0 }}
+                  >
+                    {c.premium && (
+                      <span className="absolute top-3 right-3 font-display text-[7px] tracking-[0.2em] uppercase text-[#111914] bg-[#9cb092] px-2 py-1 font-bold">
+                        Premium
+                      </span>
+                    )}
+                    <div
+                      className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 border ${
+                        c.premium
+                          ? 'bg-[#9cb092]/20 border-[#9cb092]/50'
+                          : 'bg-[#9cb092]/12 border-[#9cb092]/35'
+                      }`}
+                    >
+                      <span className="material-icons text-[#9cb092] text-2xl">{c.icon}</span>
+                    </div>
+                    <h3 className="font-serif-exp text-base text-[#e4eee1] leading-snug mb-2">
+                      {c.title}
+                    </h3>
+                    <p className="font-display text-[10px] text-[#b2c3b1]/60 leading-relaxed mb-5 flex-1">
+                      {c.desc}
+                    </p>
+                    <button
+                      onClick={c.onClick}
+                      className={`w-full py-3 font-display text-[10px] tracking-[0.2em] uppercase font-bold transition-colors ${
+                        c.premium
+                          ? 'bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]'
+                          : 'border border-[#9cb092]/40 text-[#9cb092] hover:bg-[#9cb092]/10'
+                      }`}
+                    >
+                      {c.cta}
+                    </button>
+                  </div>
+                ))}
+            </div>
+
+            {/* Reassurance strip */}
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 mt-8 max-w-4xl">
+              {[
+                { icon: 'verified', label: 'High Quality', sub: 'HD designs for print & digital' },
+                { icon: 'smartphone', label: 'Mobile Friendly', sub: 'Perfect on all devices' },
+                { icon: 'palette', label: 'Fully Customizable', sub: 'Edit colors, fonts & more' },
+                { icon: 'lock', label: 'Your Data is Safe', sub: 'We respect your privacy' },
+              ].map((f) => (
+                <div key={f.label} className="flex items-center gap-2.5">
+                  <span className="material-icons text-[#9cb092]/70 text-lg">{f.icon}</span>
+                  <div className="text-left">
+                    <p className="font-display text-[10px] tracking-[0.1em] uppercase text-[#e4eee1]/85 leading-tight">
+                      {f.label}
+                    </p>
+                    <p className="font-display text-[8px] text-[#b2c3b1]/45 leading-tight">{f.sub}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════
+          LOADING TRANSITION — "Creating your perfect experience…"
+          ════════════════════════════════════════════════════════════ */}
+      {flowStage === 'loading' && pickerEvent && (() => {
+        const ev = eventTypes.find((e) => e.id === pickerEvent);
+        if (!ev) return null;
+        return (
+          <div
+            className="fixed inset-0 z-40 flex flex-col items-center justify-center px-6 bg-[#EADDD7]"
+          >
+            <EntryBackground />
+            <div className="relative z-10 flex flex-col items-center text-center">
+              <div
+                className="w-24 h-24 rounded-2xl flex items-center justify-center mb-6 shadow-2xl"
+                style={{ backgroundColor: `${ev.color}1f`, border: `1px solid ${ev.color}55` }}
+              >
+                <span className="material-icons text-5xl" style={{ color: ev.color }}>
+                  {ev.icon}
+                </span>
+              </div>
+              <h2 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
+                {ev.label}
+              </h2>
+              <p className="font-display text-[11px] tracking-wide text-[#b2c3b1]/60 mt-3 max-w-xs leading-relaxed">
+                {ev.description}
+              </p>
+
+              {/* Progress bar */}
+              <div className="w-56 h-1 bg-white/10 rounded-full overflow-hidden mt-8">
+                <div
+                  ref={loadingBarRef}
+                  className="h-full rounded-full"
+                  style={{ width: '0%', backgroundColor: '#9cb092' }}
+                />
+              </div>
+              <p className="font-display text-[9px] tracking-[0.3em] uppercase text-[#b2c3b1]/45 mt-4">
+                Creating your perfect experience…
+              </p>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ════════════════════════════════════════════════════════════
           UPLOAD MODAL
@@ -1160,150 +1458,235 @@ export default function CreateEvite() {
         >
           <div
             ref={editorPanelRef}
-            className="relative w-full max-w-6xl max-h-[82vh] bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl flex flex-col"
+            className="relative w-full max-w-6xl h-[86vh] max-h-[86vh] bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={closeToHome}
-              className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
+              className="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
             >
               <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
             </button>
 
-            <div className="px-6 md:px-10 pt-8 pb-4 border-b border-white/[0.06]">
-              <div className="flex items-start justify-between gap-4 pr-10">
-                <div>
-                  <StepIndicator current={1} total={4} />
-                  <h2 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight mt-2">
-                    Upload Your Own <span className="text-[#9cb092] font-agatho italic">Design</span>
-                  </h2>
-                  <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/50 mt-3">
-                    Image or video
-                  </p>
-                </div>
-
-                {/* Multiple Invitations toggle — wedding & custom only */}
-                {SUPPORTS_MULTI_EVENTS.includes(activeFilter) && (
-                  <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-display text-[9px] tracking-[0.12em] uppercase text-[#b2c3b1]/60 text-right">
-                        Multiple Invitations
-                      </span>
-                      <button
-                        onClick={() => setMultipleInvitations((v) => !v)}
-                        className={`relative w-10 h-5 rounded-full transition-colors duration-300 ${multipleInvitations ? 'bg-[#9cb092]' : 'bg-white/15'}`}
-                        aria-pressed={multipleInvitations}
-                      >
-                        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-300 ${multipleInvitations ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
-                      </button>
-                    </div>
-                    <p className="font-display text-[8px] text-[#b2c3b1]/45 leading-relaxed text-right max-w-[220px]">
-                      {MULTI_EVENTS_HELP}
-                    </p>
-                  </div>
-                )}
+            <div className="px-6 md:px-10 pt-4 pb-3 border-b border-white/[0.06]">
+              <StepIndicator current={1} total={4} />
+              <div className="flex items-baseline gap-3 flex-wrap mt-1.5">
+                <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight">
+                  Upload Your Own <span className="text-[#9cb092] font-agatho italic">Design</span>
+                </h2>
+                <p className="font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]/45">
+                  Image or video
+                </p>
               </div>
             </div>
 
-            <div data-lenis-prevent className="px-6 md:px-10 py-6 space-y-5 max-h-[60vh] overflow-y-auto scrollbar-subtle">
+            <div data-lenis-prevent className="flex-1 min-h-0 px-6 md:px-10 py-5 space-y-5 overflow-y-auto scrollbar-subtle">
 
-              {/* ── Multiple invitations: list of slots ── */}
-              {multipleInvitations ? (
-                <div className="space-y-3">
-                  <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#b2c3b1]/55">
-                    Upload an image or video for each of your invitations
-                  </p>
-                  {invitationSlots.map((slot, slotIdx) => (
-                    <div key={slot.id} className="flex gap-3 items-stretch border border-white/[0.07] bg-white/[0.02] p-3">
-                      {/* Upload area */}
-                      <div className="flex-shrink-0 w-[100px]">
-                        {slot.url ? (
-                          <div className="relative h-full min-h-[80px] bg-[#0d1512] border border-white/10 overflow-hidden flex items-center justify-center">
-                            {slot.type === 'image' ? (
-                              <img src={slot.url} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <video src={slot.url} muted className="w-full h-full object-cover" />
-                            )}
-                          </div>
-                        ) : (
-                          <label className="cursor-pointer h-full min-h-[80px] flex flex-col items-center justify-center gap-1 px-2 py-3 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all text-center">
-                            <span className="material-icons text-[#9cb092]" style={{ fontSize: '18px' }}>upload</span>
-                            <span className="font-display text-[8px] tracking-[0.12em] uppercase text-[#9cb092] block">Upload</span>
-                            <span className="font-display text-[7px] text-[#b2c3b1]/45 leading-tight">Image or video</span>
-                            <input
-                              type="file"
-                              accept="image/*,video/mp4,video/quicktime"
-                              className="hidden"
-                              onChange={(e) => {
-                                const f = e.target.files?.[0];
-                                if (!f) return;
-                                const kind = f.type.startsWith('video') ? 'video' : 'image';
-                                handleSlotFilePicked(slot.id, f, kind);
-                                e.target.value = '';
-                              }}
-                            />
-                          </label>
-                        )}
+              {/* ── Different-invitations question (wedding & others only) ──
+                  Non-supporting events skip this entirely and go straight to a
+                  single image/video upload. */}
+              {SUPPORTS_MULTI_EVENTS.includes(activeFilter) && (
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <p className="font-agatho italic text-base text-[#9cb092]">Let&apos;s personalize your invites</p>
+                    <h3 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight mt-0.5">
+                      Will different guests receive{' '}
+                      <span className="text-[#9cb092] font-agatho italic">different invitations?</span>
+                    </h3>
+                    <p className="font-display text-[10px] tracking-wide text-[#b2c3b1]/55 mt-1.5 max-w-lg mx-auto leading-relaxed">
+                      Upload multiple invitation designs and send the right invite to the right guests.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
+                    {/* YES */}
+                    <button
+                      onClick={() => selectMultiInvitations(true)}
+                      className={`relative text-center px-5 py-5 border transition-all duration-200 ${
+                        multipleInvitations
+                          ? 'border-[#9cb092] bg-[#9cb092]/10'
+                          : 'border-white/10 bg-white/[0.03] hover:border-[#9cb092]/40'
+                      }`}
+                    >
+                      {multipleInvitations && (
+                        <span className="material-icons absolute top-2 right-2 text-[#9cb092] text-base">check_circle</span>
+                      )}
+                      <div className="w-10 h-10 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/35 flex items-center justify-center mx-auto mb-2.5">
+                        <span className="material-icons text-[#9cb092] text-lg">groups</span>
                       </div>
+                      <p className="font-serif-exp text-[13px] text-[#e4eee1] leading-snug mb-1">
+                        Yes, send different invitations to different guests
+                      </p>
+                      <p className="font-display text-[9px] text-[#b2c3b1]/50 leading-relaxed">
+                        Upload and manage multiple invitation designs.
+                      </p>
+                    </button>
 
-                      {/* Name + controls */}
-                      <div className="flex-1 flex flex-col gap-2 justify-between">
-                        <div className="space-y-1">
-                          <label className="font-display text-[8px] tracking-[0.15em] uppercase text-[#b2c3b1]/55">
-                            Invitation Name (who is this for?)
-                          </label>
-                          <input
-                            type="text"
-                            value={slot.name}
-                            onChange={(e) => updateSlotName(slot.id, e.target.value)}
-                            placeholder={`e.g. ${slotPlaceholder(slotIdx)}`}
-                            className="bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-3 h-9 text-xs rounded-sm w-full outline-none transition-colors"
-                          />
-                          {slot.url && (
-                            <p className="font-display text-[8px] text-[#b2c3b1]/40">
-                              {slot.type === 'image' ? 'JPG, PNG (≤ 10MB)' : 'MP4, MOV (≤ 50MB)'} · {slot.fileName}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {slot.url && (
-                            <label className="cursor-pointer font-display text-[9px] tracking-[0.15em] uppercase text-[#9cb092] hover:text-[#adc4a3] transition-colors flex items-center gap-1 border border-white/15 px-2.5 py-1.5 hover:border-[#9cb092]/40">
-                              <span className="material-icons text-sm">refresh</span>
-                              Replace
-                              <input
-                                type="file"
-                                accept="image/*,video/mp4,video/quicktime"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const f = e.target.files?.[0];
-                                  if (!f) return;
-                                  const kind = f.type.startsWith('video') ? 'video' : 'image';
-                                  handleSlotFilePicked(slot.id, f, kind);
-                                  e.target.value = '';
-                                }}
-                              />
-                            </label>
-                          )}
+                    {/* NO */}
+                    <button
+                      onClick={() => selectMultiInvitations(false)}
+                      className={`relative text-center px-5 py-5 border transition-all duration-200 ${
+                        !multipleInvitations
+                          ? 'border-[#9cb092] bg-[#9cb092]/10'
+                          : 'border-white/10 bg-white/[0.03] hover:border-[#9cb092]/40'
+                      }`}
+                    >
+                      {!multipleInvitations && (
+                        <span className="material-icons absolute top-2 right-2 text-[#9cb092] text-base">check_circle</span>
+                      )}
+                      <div className="w-10 h-10 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/35 flex items-center justify-center mx-auto mb-2.5">
+                        <span className="material-icons text-[#9cb092] text-lg">person</span>
+                      </div>
+                      <p className="font-serif-exp text-[13px] text-[#e4eee1] leading-snug mb-1">
+                        No, send the same invitation to all guests
+                      </p>
+                      <p className="font-display text-[9px] text-[#b2c3b1]/50 leading-relaxed">
+                        Upload one invitation design and send it to everyone.
+                      </p>
+                    </button>
+                  </div>
+
+                  <div className="border-t border-white/[0.06] pt-1" />
+                </div>
+              )}
+
+              {/* ── Multiple invitations: card grid of slots ── */}
+              {multipleInvitations ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {invitationSlots.map((slot, slotIdx) => {
+                      const examples = INVITE_NAME_EXAMPLES[slotIdx % INVITE_NAME_EXAMPLES.length];
+                      return (
+                        <div
+                          key={slot.id}
+                          className="relative border border-white/[0.09] bg-white/[0.02] p-4 pt-10 flex flex-col"
+                        >
+                          {/* Number badge */}
+                          <span className="absolute top-3 left-3 w-6 h-6 rounded-md bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center font-display text-[11px] text-[#9cb092] font-bold">
+                            {slotIdx + 1}
+                          </span>
                           {invitationSlots.length > 1 && (
                             <button
                               onClick={() => removeInvitationSlot(slot.id)}
-                              className="w-7 h-7 flex items-center justify-center border border-white/10 text-[#b2c3b1]/40 hover:text-red-400/80 hover:border-red-400/30 transition-all"
+                              className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center border border-white/10 text-[#b2c3b1]/40 hover:text-red-400/80 hover:border-red-400/30 transition-all"
+                              title="Remove this invitation"
                             >
-                              <span className="material-icons text-sm">delete_outline</span>
+                              <span className="material-icons text-sm">close</span>
                             </button>
                           )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
 
-                  <button
-                    onClick={addInvitationSlot}
-                    className="w-full py-2.5 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
-                  >
-                    <span className="material-icons text-sm">add</span>
-                    Add Another Invitation
-                  </button>
+                          <div className="grid grid-cols-2 gap-3">
+                            {/* Upload area */}
+                            <div>
+                              {slot.url ? (
+                                <div className="relative aspect-[3/4] bg-[#0d1512] border border-white/10 overflow-hidden flex items-center justify-center">
+                                  {slot.type === 'image' ? (
+                                    <img src={slot.url} alt="" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <video src={slot.url} muted className="w-full h-full object-cover" />
+                                  )}
+                                </div>
+                              ) : (
+                                <label className="cursor-pointer aspect-[3/4] flex flex-col items-center justify-center gap-1.5 px-2 border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/70 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all text-center">
+                                  <span className="material-icons text-[#9cb092] text-2xl">cloud_upload</span>
+                                  <span className="font-display text-[9px] tracking-[0.1em] uppercase text-[#9cb092] leading-tight">
+                                    Upload Invitation {slotIdx + 1}
+                                  </span>
+                                  <span className="font-display text-[8px] text-[#b2c3b1]/45 leading-tight">
+                                    JPG, PNG or MP4
+                                    <br />
+                                    (Max. 10MB)
+                                  </span>
+                                  <input
+                                    type="file"
+                                    accept="image/*,video/mp4,video/quicktime"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const f = e.target.files?.[0];
+                                      if (!f) return;
+                                      const kind = f.type.startsWith('video') ? 'video' : 'image';
+                                      handleSlotFilePicked(slot.id, f, kind);
+                                      e.target.value = '';
+                                    }}
+                                  />
+                                </label>
+                              )}
+                              {slot.url && (
+                                <label className="cursor-pointer mt-2 font-display text-[9px] tracking-[0.12em] uppercase text-[#9cb092] hover:text-[#adc4a3] transition-colors flex items-center justify-center gap-1 border border-white/15 py-1.5 hover:border-[#9cb092]/40">
+                                  <span className="material-icons text-sm">refresh</span>
+                                  Replace
+                                  <input
+                                    type="file"
+                                    accept="image/*,video/mp4,video/quicktime"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const f = e.target.files?.[0];
+                                      if (!f) return;
+                                      const kind = f.type.startsWith('video') ? 'video' : 'image';
+                                      handleSlotFilePicked(slot.id, f, kind);
+                                      e.target.value = '';
+                                    }}
+                                  />
+                                </label>
+                              )}
+                            </div>
+
+                            {/* Invite name examples */}
+                            <div>
+                              <p className="font-display text-[9px] tracking-[0.1em] uppercase text-[#9cb092]/80 mb-1.5">
+                                Invite Name (Examples)
+                              </p>
+                              <ul className="space-y-1">
+                                {examples.map((ex) => (
+                                  <li
+                                    key={ex}
+                                    className="font-display text-[10px] text-[#b2c3b1]/60 flex items-center gap-1.5 leading-tight"
+                                  >
+                                    <span className="w-1 h-1 rounded-full bg-[#9cb092]/60 flex-shrink-0" />
+                                    {ex}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+
+                          {/* Name input */}
+                          <div className="mt-3">
+                            <input
+                              type="text"
+                              value={slot.name}
+                              onChange={(e) => updateSlotName(slot.id, e.target.value)}
+                              placeholder="Enter a name for this invitation"
+                              className={`bg-white/[0.06] border text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-3 h-9 text-xs rounded-sm w-full outline-none transition-colors ${
+                                slot.url && !slot.name.trim()
+                                  ? 'border-amber-400/50 focus:border-amber-400'
+                                  : 'border-white/15 focus:border-[#9cb092]'
+                              }`}
+                            />
+                            {slot.url && !slot.name.trim() && (
+                              <p className="font-display text-[8px] text-amber-400/70 mt-1">
+                                Give this invitation a name so you can assign guests to it.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Add Another Invitation card */}
+                    <button
+                      onClick={addInvitationSlot}
+                      className="border border-dashed border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all flex flex-col items-center justify-center gap-2.5 p-4 min-h-[220px] text-center"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center">
+                        <span className="material-icons text-[#9cb092]">add</span>
+                      </div>
+                      <span className="font-serif-exp text-sm text-[#e4eee1]">Add Another Invitation</span>
+                      <span className="font-display text-[9px] text-[#b2c3b1]/50 leading-relaxed max-w-[160px]">
+                        You can add more invitations later
+                      </span>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 /* ── Single upload ── */
@@ -1398,23 +1781,27 @@ export default function CreateEvite() {
               </p>
             </div>
 
-            <div className="px-6 md:px-10 py-5 border-t border-white/[0.06] bg-[#0e1712] flex items-center justify-between gap-3">
+            <div className="px-6 md:px-10 py-2.5 border-t border-white/[0.06] bg-[#0e1712] flex items-center justify-between gap-3">
               <button
                 onClick={closeAnyModal}
-                className="py-3 px-5 border border-white/15 text-[#b2c3b1] font-display text-[10px] tracking-[0.2em] uppercase hover:border-[#9cb092]/40 hover:text-[#9cb092] transition-all flex items-center gap-2"
+                className="py-2 px-4 border border-white/15 text-[#b2c3b1] font-display text-[10px] tracking-[0.2em] uppercase hover:border-[#9cb092]/40 hover:text-[#9cb092] transition-all flex items-center gap-2"
               >
                 <span className="material-icons text-sm">arrow_back</span>
                 Back
               </button>
               {(() => {
+                // Multi-invitation: every uploaded invitation must be given a
+                // name (it's how guests are later assigned to the right invite),
+                // and at least one invitation must be uploaded.
+                const filledForProceed = invitationSlots.filter((s) => s.url);
                 const canProceed = multipleInvitations
-                  ? invitationSlots.some((s) => s.url)
+                  ? filledForProceed.length > 0 && filledForProceed.every((s) => s.name.trim())
                   : !!uploadedTemplate;
                 return (
                   <button
                     onClick={proceedFromUpload}
                     disabled={!canProceed}
-                    className={`py-3 px-8 font-display text-[11px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center gap-2 ${
+                    className={`py-2 px-7 font-display text-[11px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center gap-2 ${
                       canProceed
                         ? 'bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]'
                         : 'bg-white/5 text-white/20 cursor-not-allowed border border-white/10'
@@ -2340,6 +2727,8 @@ export default function CreateEvite() {
           guests={guests}
           templateOverrides={fieldOverrides}
           templatePhotoOverlay={photoOverlay}
+          rsvpSettings={rsvpSettings}
+          onRsvpSettingsChange={setRsvpSettings}
           invitationSets={
             multipleInvitations
               ? invitationSlots
