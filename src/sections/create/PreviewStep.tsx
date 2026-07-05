@@ -650,21 +650,19 @@ export default function PreviewStep({
                     </div>
                   </div>
 
-                  {/* Count toggles side by side */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <RsvpToggleRow
-                      label="Guests Count"
-                      sub="How many are coming."
-                      on={rsvpSettings.collectGuestCount}
-                      onToggle={() => patchRsvp({ collectGuestCount: !rsvpSettings.collectGuestCount })}
-                    />
-                    <RsvpToggleRow
-                      label="Kids Count"
-                      sub="How many children."
-                      on={rsvpSettings.collectKidsCount}
-                      onToggle={() => patchRsvp({ collectKidsCount: !rsvpSettings.collectKidsCount })}
-                    />
-                  </div>
+                  {/* Count toggles — full-width rows so the switches align */}
+                  <RsvpToggleRow
+                    label="Guests Count"
+                    sub="Ask how many people are coming."
+                    on={rsvpSettings.collectGuestCount}
+                    onToggle={() => patchRsvp({ collectGuestCount: !rsvpSettings.collectGuestCount })}
+                  />
+                  <RsvpToggleRow
+                    label="Kids Count"
+                    sub="Ask how many children are attending."
+                    on={rsvpSettings.collectKidsCount}
+                    onToggle={() => patchRsvp({ collectKidsCount: !rsvpSettings.collectKidsCount })}
+                  />
 
                   {/* Food preference */}
                   <div>

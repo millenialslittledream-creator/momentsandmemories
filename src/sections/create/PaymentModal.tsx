@@ -45,6 +45,9 @@ export default function PaymentModal({
   const pricePerEvite = 2.99;
   const eviteTotal = guestCount * pricePerEvite;
   const grandTotal = eviteTotal + tip;
+  // Nothing to charge (e.g. shareable-link flow with 0 guests and no tip) —
+  // skip the card form entirely and let the user finish for free.
+  const isFree = grandTotal <= 0;
 
   const deliveryLabel =
     deliveryPreference === 'email'
@@ -70,6 +73,7 @@ export default function PaymentModal({
     'bg-white/[0.06] border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30';
 
   const isFormValid = () => {
+    if (isFree) return true;
     if (payMethod === 'paypal') return true;
     return cardData.number && cardData.expiry && cardData.cvc && cardData.name;
   };
@@ -287,7 +291,19 @@ export default function PaymentModal({
               </div>
             </div>
 
+            {/* Free — nothing to charge */}
+            {isFree && (
+              <div className="border border-[#9cb092]/25 bg-[#9cb092]/[0.06] p-5 text-center">
+                <span className="material-icons text-[#9cb092] text-2xl mb-1">celebration</span>
+                <p className="font-serif-exp text-base text-[#e4eee1]">It's on us — no payment needed!</p>
+                <p className="font-display text-[10px] text-[#b2c3b1]/55 leading-relaxed mt-1">
+                  Your total is $0.00, so just hit send and your invitations are ready to share.
+                </p>
+              </div>
+            )}
+
             {/* Payment Details */}
+            {!isFree && (
             <div className="border border-white/[0.07] bg-white/[0.02] p-5">
               <h3 className="font-display text-[10px] tracking-[0.22em] uppercase text-[#9cb092] mb-4 flex items-center gap-2">
                 <span className="material-icons text-[14px]">payment</span>
@@ -418,8 +434,9 @@ export default function PaymentModal({
                 </p>
               </div>
             </div>
+            )}
 
-            {/* Complete payment */}
+            {/* Complete payment / send */}
             <button
               onClick={handleSubmit}
               disabled={!isFormValid() || submitting}
@@ -433,6 +450,11 @@ export default function PaymentModal({
                 <>
                   <span className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
                   Processing…
+                </>
+              ) : isFree ? (
+                <>
+                  <span className="material-icons text-sm">send</span>
+                  Send Invitations — Free
                 </>
               ) : (
                 <>
