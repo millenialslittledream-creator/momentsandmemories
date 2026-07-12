@@ -90,10 +90,10 @@ export default function Navigation() {
             : 'bg-transparent text-[#f2f6ef]'
           }`}
       >
-        {/* Logo — main page uses logomainpage, all other pages use logopage2 */}
+        {/* Logo — landing page uses its own logo; all other pages share one */}
         <button onClick={() => handleNavClick('hero', '/')} className="transition-all duration-500 cursor-pointer select-none">
           <img
-            src={location.pathname === '/' ? '/logomainpage.png' : '/logopage2.png'}
+            src={location.pathname === '/' ? '/logo-landing.png' : '/logo-pages.png'}
             alt="Moments & Memories"
             className="h-20 md:h-24 w-auto object-contain"
           />

@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { createGuest, type Guest } from './GuestDetails';
 import FlowStepper from './FlowStepper';
+import FlowLogo from './FlowLogo';
 
 export interface InvitationSetSummary {
   id: string;
@@ -82,6 +83,11 @@ export default function GuestPopup({
     }));
   }, [formData]);
   const hasSubEvents = subEvents.length >= 2;
+  // When the host uploaded multiple invitation sets (wedding / "others" +
+  // "upload your own design"), the Invitation Set column already decides which
+  // invite each guest receives — so the per-event tick columns are redundant
+  // and we hide them.
+  const showEventColumns = hasSubEvents && !hasMultipleSets;
 
   useEffect(() => {
     if (backdropRef.current && panelRef.current) {
@@ -332,7 +338,7 @@ export default function GuestPopup({
             {hasMultipleSets && (
               <th className={`${headerCellClass} min-w-[160px]`}>Invitation Set</th>
             )}
-            {hasSubEvents && (
+            {showEventColumns && (
               <>
                 <th className={`${headerCellClass} text-center min-w-[60px]`}>All</th>
                 {subEvents.map((ev) => (
@@ -402,7 +408,7 @@ export default function GuestPopup({
                   </select>
                 </td>
               )}
-              {hasSubEvents && (
+              {showEventColumns && (
                 <>
                   <td className="px-2 py-1.5 text-center">
                     <EventCheckbox
@@ -448,7 +454,7 @@ export default function GuestPopup({
   return (
     <div
       ref={backdropRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
       style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onBack();
@@ -456,12 +462,14 @@ export default function GuestPopup({
     >
       <div
         ref={panelRef}
-        className="relative w-full max-w-6xl max-h-[82vh] flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
+        className="relative w-full h-full flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
+        <FlowLogo onClick={handleClose} />
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
+          aria-label="Close"
+          className="absolute top-4 right-4 z-40 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
         >
           <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
         </button>
@@ -626,9 +634,14 @@ export default function GuestPopup({
               <h3 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight">
                 {subPopupTitle}
               </h3>
-              {hasSubEvents && (
+              {showEventColumns && (
                 <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/55 mt-3">
                   Tick which events each guest should be invited to.
+                </p>
+              )}
+              {hasMultipleSets && (
+                <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/55 mt-3">
+                  Assign each guest to an invitation set — that decides which invite they receive.
                 </p>
               )}
             </div>

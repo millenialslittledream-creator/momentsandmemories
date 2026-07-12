@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import FlowStepper from './FlowStepper';
+import FlowLogo from './FlowLogo';
 
 interface PaymentModalProps {
   guestCount: number;
@@ -96,7 +97,7 @@ export default function PaymentModal({
   return (
     <div
       ref={backdropRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
       style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onBack();
@@ -104,9 +105,10 @@ export default function PaymentModal({
     >
       <div
         ref={panelRef}
-        className="relative w-full max-w-5xl max-h-[92vh] flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
+        className="relative w-full h-full flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
+        <FlowLogo onClick={onBack} />
         {/* Header */}
         <div className="flex-shrink-0 px-6 md:px-10 pt-4 pb-4 border-b border-white/[0.06] bg-[#0e1712]">
           <FlowStepper current={6} className="max-w-2xl mx-auto mb-3" />

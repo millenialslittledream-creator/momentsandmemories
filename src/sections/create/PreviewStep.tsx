@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
 import FlowStepper from './FlowStepper';
+import FlowLogo from './FlowLogo';
 import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRenderer';
 import { eventTypes, type EventType } from '@/data/eventFields';
 import type { EviteTemplate, TemplateFieldLayout } from '@/data/eviteTemplates';
@@ -257,7 +258,7 @@ export default function PreviewStep({
   return (
     <div
       ref={backdropRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
       style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onBack();
@@ -265,13 +266,15 @@ export default function PreviewStep({
     >
       <div
         ref={panelRef}
-        className="relative w-full max-w-6xl h-[92vh] max-h-[92vh] flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
+        className="relative w-full h-full flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
+        <FlowLogo onClick={onClose} />
         {onClose && (
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
+            aria-label="Close"
+            className="absolute top-3 right-3 z-40 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
           >
             <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
           </button>

@@ -252,14 +252,16 @@ export default function CanvasEditor({
     <div data-testid="canvas-editor" className="fixed inset-0 z-50 flex flex-col bg-[#0d1512]">
       {/* Top toolbar */}
       <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/[0.07] bg-[#111914]">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={handleClose} aria-label="Close editor">
-            <span className="material-icons text-base">arrow_back</span>
-          </Button>
-          <p className="font-display text-[10px] tracking-[0.28em] uppercase text-[#9cb092]">
+        <button
+          onClick={handleClose}
+          aria-label="Moments & Memories — home"
+          className="flex items-center gap-2.5 select-none transition-opacity duration-200 hover:opacity-80"
+        >
+          <img src="/logo-pages.png" alt="Moments & Memories" className="h-9 w-auto object-contain" />
+          <span className="font-display text-[10px] tracking-[0.28em] uppercase text-[#9cb092] hidden sm:inline">
             Design Editor
-          </p>
-        </div>
+          </span>
+        </button>
 
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={addText}>
@@ -298,10 +300,13 @@ export default function CanvasEditor({
             {saveStatus === 'error' && 'Save failed'}
           </span>
 
-          <Button size="sm" onClick={handleFinish} disabled={elements.length === 0}>
-            Done
-            <span className="material-icons text-base ml-1">check</span>
-          </Button>
+          <button
+            onClick={handleClose}
+            aria-label="Close"
+            className="w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200"
+          >
+            <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
+          </button>
         </div>
       </div>
 
@@ -442,6 +447,29 @@ export default function CanvasEditor({
         </div>
 
         <PropertyPanel element={selectedElement} onChange={updateElement} />
+      </div>
+
+      {/* Bottom bar — Back (left) + Done (right), consistent placement site-wide */}
+      <div className="flex-shrink-0 flex items-center justify-between gap-3 px-4 py-3 border-t border-white/[0.07] bg-[#111914]">
+        <button
+          onClick={handleClose}
+          className="py-2.5 px-5 border border-white/15 text-[#b2c3b1] font-display text-[10px] tracking-[0.2em] uppercase hover:border-[#9cb092]/40 hover:text-[#9cb092] transition-all flex items-center gap-2"
+        >
+          <span className="material-icons text-sm">arrow_back</span>
+          Back
+        </button>
+        <button
+          onClick={handleFinish}
+          disabled={elements.length === 0}
+          className={`py-2.5 px-8 font-display text-[11px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center gap-2 ${
+            elements.length === 0
+              ? 'bg-white/5 text-white/20 cursor-not-allowed border border-white/10'
+              : 'bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]'
+          }`}
+        >
+          Done
+          <span className="material-icons text-sm">check</span>
+        </button>
       </div>
     </div>
   );

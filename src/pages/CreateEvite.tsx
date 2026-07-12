@@ -16,20 +16,16 @@ import GuestPopup from '@/sections/create/GuestPopup';
 import PaymentModal from '@/sections/create/PaymentModal';
 import DateTimePicker from '@/sections/create/DateTimePicker';
 import FlowStepper from '@/sections/create/FlowStepper';
+import FlowLogo from '@/sections/create/FlowLogo';
 import PreviewStep, { DEFAULT_RSVP_SETTINGS, type RSVPSettings } from '@/sections/create/PreviewStep';
 import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRenderer';
 import CanvasEditor from '@/components/CanvasEditor';
-import type { TextElementData } from '@/components/CanvasEditor/types';
-import { canvasTemplates, getCanvasTemplatesForEventType, type CanvasTemplate } from '@/data/canvasTemplates';
+import { type CanvasTemplate } from '@/data/canvasTemplates';
 import type { TemplateFieldLayout } from '@/data/eviteTemplates';
 import { FONT_CATEGORIES, COLOR_SWATCHES } from '@/components/CanvasEditor/types';
 
-function isTextElement(el: { type: string }): el is TextElementData {
-  return el.type === 'text';
-}
-
 type EventTypeFilter = EventType;
-type ModalPhase = 'upload' | 'canvas-template-picker' | 'canvas-editor' | 'editor' | 'signin' | 'guests' | 'preview' | 'payment' | 'sent' | null;
+type ModalPhase = 'upload' | 'canvas-editor' | 'editor' | 'signin' | 'guests' | 'preview' | 'payment' | 'sent' | null;
 
 // The entry flow now has four stages:
 //   'picker'        — "What are we celebrating today?" event grid (first thing users see)
@@ -42,8 +38,6 @@ type FlowStage = 'picker' | 'loading' | 'choose-design' | 'gallery';
 // only offer premium versions for weddings and birthdays, so the "Use our
 // premium designs" card is gated to these.
 const PREMIUM_EVENTS: EventType[] = ['marriage', 'birthday'];
-
-const MULTI_EVENTS_HELP = "Send different invites to different guest groups.";
 
 // Example invitation-group names shown beside each upload slot so hosts
 // understand what "Invitation Name" means (Family vs Friends vs Colleagues…).
@@ -166,9 +160,6 @@ function renderEditorField(
   }
 }
 
-// Sentinel for the upload-your-own tile.
-const UPLOAD_TILE_ID = '__upload_your_own__';
-
 // Shared textured background used across the site (shop page, gallery). The
 // entry flow (event picker + loading transition) reuses it so the whole
 // experience feels consistent.
@@ -216,7 +207,6 @@ export default function CreateEvite() {
   const [deliveryPreference, setDeliveryPreference] = useState<'email' | 'phone' | 'both' | 'link'>('email');
   const [rsvpSettings, setRsvpSettings] = useState<RSVPSettings>(DEFAULT_RSVP_SETTINGS);
   const [hasSubEvents, setHasSubEvents] = useState(false);
-  const [showEventCountPopup, setShowEventCountPopup] = useState(false);
   const [multipleInvitations, setMultipleInvitations] = useState(false);
   const [currentSlotIdx, setCurrentSlotIdx] = useState(0);
   const [invitationSlots, setInvitationSlots] = useState<InvitationSlot[]>([
@@ -245,13 +235,6 @@ export default function CreateEvite() {
   const visibleTemplates = useMemo(() => {
     if (activeFilter === 'custom') return eviteTemplates;
     return eviteTemplates.filter((t) => t.eventType === activeFilter);
-  }, [activeFilter]);
-
-  // Premade canvas (Konva) starter designs offered before opening a blank
-  // canvas. 'custom' shows every premade design since there's no inherent match.
-  const visibleCanvasTemplates = useMemo(() => {
-    if (activeFilter === 'custom') return canvasTemplates;
-    return getCanvasTemplatesForEventType(activeFilter);
   }, [activeFilter]);
 
   // For the editor modal's prev/next navigation we use only real templates
@@ -489,22 +472,6 @@ export default function CreateEvite() {
     setModalPhase('canvas-editor');
   }, []);
 
-  const openCanvasTemplatePicker = useCallback(() => {
-    setSelectedTemplateId(null);
-    setUploadedTemplate(null);
-    setModalPhase('canvas-template-picker');
-    animateModalIn();
-  }, [animateModalIn]);
-
-  const pickCanvasTemplate = useCallback((template: CanvasTemplate) => {
-    setSelectedTemplateId(null);
-    setUploadedTemplate(null);
-    setPickedCanvasTemplate(template);
-    setFormData({});
-    setHasSubEvents(false);
-    setModalPhase('canvas-editor');
-  }, []);
-
   const handleCanvasEditorFinish = useCallback((pngDataUrl: string) => {
     setUploadedTemplate({ url: pngDataUrl, type: 'image', fileName: 'custom-design.png' });
     setPickedCanvasTemplate(null);
@@ -590,14 +557,15 @@ export default function CreateEvite() {
     for (const field of editorFields) {
       if (field.required && !formData[field.name]?.trim()) return false;
     }
-    if (hasSubEvents && supportsMultipleEvents) {
-      if (subEventCount < 1) return false;
+    // Additional events are optional; only validate the rows the host actually
+    // added (each must at least be named so guests can be assigned to it).
+    if (supportsMultipleEvents && subEventCount > 0) {
       for (let i = 0; i < subEventCount; i++) {
         if (!formData[`sub_${i}_name`]?.trim()) return false;
       }
     }
     return true;
-  }, [editorFields, formData, currentEventType, hasSubEvents, supportsMultipleEvents, subEventCount]);
+  }, [editorFields, formData, currentEventType, supportsMultipleEvents, subEventCount]);
 
   // Customize is gated behind a fully-filled details form. If validity is lost
   // while the user is on the Customize tab (e.g. clearing a field, switching
@@ -640,6 +608,18 @@ export default function CreateEvite() {
   }, [user, multipleInvitations, invitationSlots, currentSlotIdx, formData]);
 
   const backToEditor = useCallback(() => setModalPhase('editor'), []);
+
+  // Back from the editor: uploaded designs return to the upload modal (so the
+  // image isn't lost); gallery templates return to the gallery grid.
+  const backFromEditor = useCallback(() => {
+    if (uploadedTemplate) {
+      setModalPhase('upload');
+    } else {
+      setSelectedTemplateId(null);
+      setModalPhase(null);
+    }
+  }, [uploadedTemplate]);
+
   const proceedToPreview = useCallback(() => setModalPhase('preview'), []);
   const proceedToPayment = useCallback(() => setModalPhase('payment'), []);
   const backToGuests = useCallback(() => setModalPhase('guests'), []);
@@ -728,6 +708,9 @@ export default function CreateEvite() {
   const addSubEvent = () => {
     const next = subEventCount + 1;
     handleFieldChange('sub_events_count', String(next));
+    // Keep the (now hidden) multi-events flag in sync so variant-template
+    // navigation and the draft backup stay consistent.
+    setHasSubEvents(true);
   };
 
   const removeSubEvent = (index: number) => {
@@ -746,33 +729,8 @@ export default function CreateEvite() {
       next['sub_events_count'] = String(Math.max(0, count - 1));
       return next;
     });
-  };
-
-  const toggleHasSubEvents = () => {
-    if (hasSubEvents) {
-      // Turning OFF — clear all sub-event data immediately.
-      setHasSubEvents(false);
-      setFormData((prev) => {
-        const out = { ...prev };
-        const count = parseInt(out['sub_events_count'] || '0', 10) || 0;
-        const fields = ['name', 'date', 'time', 'timezone', 'venue', 'guestCount'];
-        for (let i = 0; i < count; i++) {
-          for (const f of fields) delete out[`sub_${i}_${f}`];
-        }
-        out['sub_events_count'] = '';
-        return out;
-      });
-    } else {
-      // Turning ON — ask how many events first via popup.
-      setShowEventCountPopup(true);
-    }
-  };
-
-  // Called when the user picks a count from the "how many events?" popup.
-  const confirmEventCount = (count: number) => {
-    setShowEventCountPopup(false);
-    setHasSubEvents(true);
-    setFormData((prev) => ({ ...prev, sub_events_count: String(count) }));
+    // Removing the last event clears the hidden multi-events flag.
+    if (subEventCount - 1 <= 0) setHasSubEvents(false);
   };
 
   // Selecting "Yes, different invitations" seeds two empty, unnamed slots so
@@ -877,7 +835,7 @@ export default function CreateEvite() {
   // ── Escape closes modal ──────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && (modalPhase === 'editor' || modalPhase === 'upload' || modalPhase === 'signin' || modalPhase === 'canvas-editor' || modalPhase === 'canvas-template-picker'))
+      if (e.key === 'Escape' && (modalPhase === 'editor' || modalPhase === 'upload' || modalPhase === 'signin' || modalPhase === 'canvas-editor'))
         closeAnyModal();
     };
     window.addEventListener('keydown', onKey);
@@ -1028,27 +986,18 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       <div className="flex-1 overflow-hidden relative z-10 flex flex-col pt-16">
         <div className="flex-1 flex flex-col overflow-hidden px-6 md:px-10">
-          {/* Header */}
-          <div className="flex items-end justify-between py-4 md:py-5 flex-shrink-0 border-b border-white/[0.07] flex-wrap gap-3">
-            <div>
-              <p className="font-display text-[9px] tracking-[0.32em] uppercase text-[#9cb092]/70 mb-1">
-                {eventTypes.find((e) => e.id === activeFilter)?.label ?? 'Event'} designs
-              </p>
-              <h1 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
-                Choose your <span className="text-[#9cb092] font-agatho italic">design</span>
-              </h1>
-              <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#b2c3b1]/40 mt-1">
-                Pick a design — or upload your own
-              </p>
-            </div>
-
-            <button
-              onClick={() => setFlowStage('choose-design')}
-              className="flex items-center gap-2 font-display text-[10px] tracking-[0.2em] uppercase px-4 py-2 border border-white/15 text-[#b2c3b1]/70 hover:border-[#9cb092]/40 hover:text-[#9cb092] transition-all duration-200 ml-auto"
-            >
-              <span className="material-icons text-[16px]">arrow_back</span>
-              Design options
-            </button>
+          {/* Header — the Back control lives in the bottom bar (bottom-left),
+              consistent with every other screen in the flow. */}
+          <div className="py-4 md:py-5 flex-shrink-0 border-b border-white/[0.07]">
+            <p className="font-display text-[9px] tracking-[0.32em] uppercase text-[#9cb092]/70 mb-1">
+              {eventTypes.find((e) => e.id === activeFilter)?.label ?? 'Event'} designs
+            </p>
+            <h1 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
+              Choose your <span className="text-[#9cb092] font-agatho italic">design</span>
+            </h1>
+            <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#b2c3b1]/40 mt-1">
+              Pick one of our ready-made designs below
+            </p>
           </div>
 
           {/* Scroll wrapper — grid inside grows to its content height */}
@@ -1057,105 +1006,12 @@ export default function CreateEvite() {
               ref={galleryRef}
               className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 pt-4 pb-6"
             >
-              {/* Upload-your-own tile — always first, regardless of filter */}
-              <button
-                key={UPLOAD_TILE_ID}
-                onClick={openUploadFlow}
-                className="template-card group text-left overflow-hidden bg-[#9cb092]/[0.06] border border-dashed border-[#9cb092]/40 hover:border-[#9cb092] hover:bg-[#9cb092]/[0.12] transition-all duration-300 flex flex-col"
-              >
-                <div className="relative aspect-[9/16] overflow-hidden bg-[#192116] flex flex-col items-center justify-center text-center px-4">
-                  <div className="w-12 h-12 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <span className="material-icons text-[#9cb092] text-2xl">add</span>
-                  </div>
-                  <p className="font-serif-exp text-sm text-[#e4eee1] leading-snug mb-1">
-                    Upload Your Own Design
-                  </p>
-                  <p className="font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 leading-relaxed">
-                    Image · Video
-                  </p>
-                </div>
-                <div className="px-2.5 py-2">
-                  <h3 className="font-serif-exp text-[11px] text-[#9cb092] leading-tight truncate">
-                    Custom upload
-                  </h3>
-                </div>
-              </button>
-
-              {/* Build-your-own canvas editor tile — always second */}
-              <button
-                key="__canvas_editor__"
-                onClick={openCanvasEditor}
-                className="template-card group text-left overflow-hidden bg-[#9cb092]/[0.06] border border-dashed border-[#9cb092]/40 hover:border-[#9cb092] hover:bg-[#9cb092]/[0.12] transition-all duration-300 flex flex-col"
-              >
-                <div className="relative aspect-[9/16] overflow-hidden bg-[#192116] flex flex-col items-center justify-center text-center px-4">
-                  <div className="w-12 h-12 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <span className="material-icons text-[#9cb092] text-2xl">brush</span>
-                  </div>
-                  <p className="font-serif-exp text-sm text-[#e4eee1] leading-snug mb-1">
-                    Build Your Own Design
-                  </p>
-                  <p className="font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 leading-relaxed">
-                    Text · Images · Video
-                  </p>
-                </div>
-                <div className="px-2.5 py-2">
-                  <h3 className="font-serif-exp text-[11px] text-[#9cb092] leading-tight truncate">
-                    Design editor
-                  </h3>
-                </div>
-              </button>
-
-              {/* Start-from-premade-design tile — always third, when designs exist for this category */}
-              {visibleCanvasTemplates.length > 0 && (
-                <button
-                  key="__canvas_template_picker__"
-                  onClick={openCanvasTemplatePicker}
-                  className="template-card group text-left overflow-hidden bg-[#9cb092]/[0.06] border border-dashed border-[#9cb092]/40 hover:border-[#9cb092] hover:bg-[#9cb092]/[0.12] transition-all duration-300 flex flex-col"
-                >
-                  <div className="relative aspect-[9/16] overflow-hidden bg-[#192116] flex flex-col items-center justify-center text-center px-4">
-                    <div className="w-12 h-12 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                      <span className="material-icons text-[#9cb092] text-2xl">auto_awesome</span>
-                    </div>
-                    <p className="font-serif-exp text-sm text-[#e4eee1] leading-snug mb-1">
-                      Start from a Premade Design
-                    </p>
-                    <p className="font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 leading-relaxed">
-                      Editable Font · Color
-                    </p>
-                  </div>
-                  <div className="px-2.5 py-2">
-                    <h3 className="font-serif-exp text-[11px] text-[#9cb092] leading-tight truncate">
-                      Styled starter
-                    </h3>
-                  </div>
-                </button>
-              )}
-
-              {/* Build-an-event-website tile — opens the full website builder
-                  (multi-page site with RSVP, gallery, schedule, etc.). */}
-              <button
-                key="__website_builder__"
-                onClick={() => navigate(`/website-builder?event=${activeFilter}`)}
-                className="template-card group text-left overflow-hidden bg-[#9cb092]/[0.06] border border-dashed border-[#9cb092]/40 hover:border-[#9cb092] hover:bg-[#9cb092]/[0.12] transition-all duration-300 flex flex-col"
-              >
-                <div className="relative aspect-[9/16] overflow-hidden bg-[#192116] flex flex-col items-center justify-center text-center px-4">
-                  <div className="w-12 h-12 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <span className="material-icons text-[#9cb092] text-2xl">language</span>
-                  </div>
-                  <p className="font-serif-exp text-sm text-[#e4eee1] leading-snug mb-1">
-                    Build an Event Website
-                  </p>
-                  <p className="font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 leading-relaxed">
-                    Pages · RSVP · Gallery
-                  </p>
-                </div>
-                <div className="px-2.5 py-2">
-                  <h3 className="font-serif-exp text-[11px] text-[#9cb092] leading-tight truncate">
-                    Event website
-                  </h3>
-                </div>
-              </button>
-
+              {/* NOTE: the design-method tiles (upload / build-your-own /
+                  premade / event-website) intentionally do NOT appear here.
+                  The user has already chosen "Use our pre-existing designs" on
+                  the previous screen, so this gallery shows only ready-made
+                  templates. The other methods remain reachable via the Back
+                  button (Design options). */}
               {visibleTemplates.map((t) => (
                 <button
                   key={t.id}
@@ -1187,11 +1043,22 @@ export default function CreateEvite() {
               {visibleTemplates.length === 0 && (
                 <div className="col-span-full flex items-center justify-center py-10">
                   <p className="font-display text-[11px] tracking-[0.25em] uppercase text-[#b2c3b1]/30">
-                    No designs in this category yet — try uploading your own
+                    No designs in this category yet — go back to try another way to design
                   </p>
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Bottom bar — Back on the left (consistent placement site-wide) */}
+          <div className="flex-shrink-0 flex items-center py-4 border-t border-white/[0.07]">
+            <button
+              onClick={() => setFlowStage('choose-design')}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200 font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/70 hover:text-[#9cb092]"
+            >
+              <span className="material-icons text-[16px]">arrow_back</span>
+              Back
+            </button>
           </div>
         </div>
       </div>
@@ -1206,15 +1073,16 @@ export default function CreateEvite() {
           data-lenis-prevent
         >
           <EntryBackground />
+          <FlowLogo />
           <button
             onClick={closeToHome}
-            className="absolute top-5 left-5 z-20 flex items-center gap-2 px-3 py-2 bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200 font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/70 hover:text-[#9cb092]"
+            aria-label="Close"
+            className="absolute top-3 right-4 z-40 w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200"
           >
-            <span className="material-icons text-[16px]">arrow_back</span>
-            Back to home
+            <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
           </button>
 
-          <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-4">
+          <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-4 pt-20">
             <FlowStepper current={1} className="max-w-2xl mx-auto mb-6" />
             <div className="text-center mb-4 md:mb-6">
               <p className="font-display text-[9px] tracking-[0.32em] uppercase text-[#9cb092]/70 mb-1.5">
@@ -1236,26 +1104,42 @@ export default function CreateEvite() {
                 <button
                   key={ev.id}
                   onClick={() => chooseEvent(ev.id)}
-                  className="picker-card group relative bg-white/[0.06] hover:bg-white/[0.1] backdrop-blur-md border border-white/[0.08] hover:border-[#9cb092]/45 transition-transform duration-300 ease-out hover:scale-[1.18] hover:z-30 px-3 py-4 flex flex-col items-center justify-center text-center w-36 sm:w-40 min-h-[124px]"
+                  className="picker-card group relative overflow-hidden bg-[#f3ead9] hover:bg-[#f9f2e6] border border-[#c4a882]/40 hover:border-[#9cb092]/70 shadow-sm hover:shadow-xl transition-all duration-300 ease-out hover:scale-[1.07] hover:z-30 px-3 py-5 flex flex-col items-center justify-center text-center w-40 h-[152px]"
                 >
+                  {/* Soft accent wash in the event's colour so each box feels less bland */}
                   <div
-                    className="w-11 h-11 rounded-full flex items-center justify-center mb-1.5"
-                    style={{ backgroundColor: `${ev.color}22`, border: `1px solid ${ev.color}55` }}
+                    className="pointer-events-none absolute inset-x-0 top-0 h-14 opacity-60"
+                    style={{ background: `linear-gradient(to bottom, ${ev.color}33, transparent)` }}
+                  />
+                  <div
+                    className="relative w-12 h-12 rounded-full flex items-center justify-center mb-2"
+                    style={{ backgroundColor: `${ev.color}30`, border: `1px solid ${ev.color}` }}
                   >
-                    <span className="material-icons text-xl" style={{ color: ev.color }}>
+                    <span className="material-icons text-2xl" style={{ color: ev.color }}>
                       {ev.icon}
                     </span>
                   </div>
-                  <h3 className="font-serif-exp text-sm md:text-base text-[#e4eee1] leading-tight">
+                  <h3 className="relative font-serif-exp text-sm md:text-base text-[#2a3328] leading-tight">
                     {ev.label}
                   </h3>
                   {/* Description stays hidden and simply fades in on hover */}
-                  <p className="font-display text-[9px] tracking-wide text-[#b2c3b1]/70 leading-relaxed mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <p className="relative font-display text-[9px] tracking-wide text-[#5a6b52]/85 leading-snug mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     {ev.description}
                   </p>
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Bottom bar — Back on the left (consistent placement site-wide) */}
+          <div className="relative z-20 flex-shrink-0 flex items-center justify-between px-5 py-3 border-t border-white/[0.07]">
+            <button
+              onClick={closeToHome}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200 font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/70 hover:text-[#9cb092]"
+            >
+              <span className="material-icons text-[16px]">arrow_back</span>
+              Back to Home
+            </button>
           </div>
         </div>
       )}
@@ -1270,15 +1154,16 @@ export default function CreateEvite() {
           data-lenis-prevent
         >
           <EntryBackground />
+          <FlowLogo />
           <button
-            onClick={() => setFlowStage('picker')}
-            className="absolute top-5 left-5 z-20 flex items-center gap-2 px-3 py-2 bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200 font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/70 hover:text-[#9cb092]"
+            onClick={closeToHome}
+            aria-label="Close"
+            className="absolute top-3 right-4 z-40 w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200"
           >
-            <span className="material-icons text-[16px]">arrow_back</span>
-            Change event
+            <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
           </button>
 
-          <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-4 overflow-y-auto scrollbar-subtle">
+          <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-4 pt-20 overflow-y-auto scrollbar-subtle">
             <FlowStepper current={2} className="max-w-2xl mx-auto mb-6" />
             <div className="text-center mb-6 md:mb-8">
               <h1 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
@@ -1295,7 +1180,7 @@ export default function CreateEvite() {
 
             <div
               ref={chooseDesignRef}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 w-full max-w-5xl"
+              className="flex flex-wrap justify-center gap-3 md:gap-4 w-full max-w-5xl mx-auto"
             >
               {([
                 {
@@ -1339,39 +1224,39 @@ export default function CreateEvite() {
                 .map((c) => (
                   <div
                     key={c.key}
-                    className={`design-card relative flex flex-col items-center text-center px-5 py-7 border transition-all duration-300 ${
+                    className={`design-card relative flex flex-col items-center text-center px-5 py-7 border shadow-sm hover:shadow-xl transition-all duration-300 w-full sm:w-[240px] ${
                       c.premium
-                        ? 'border-[#9cb092]/45 bg-[#9cb092]/[0.08] hover:bg-[#9cb092]/[0.14]'
-                        : 'border-white/[0.08] bg-white/[0.05] hover:bg-white/[0.09] hover:border-[#9cb092]/40'
+                        ? 'border-[#c4a882] bg-[#ece0c8] hover:bg-[#f2e8d5]'
+                        : 'border-[#c4a882]/40 bg-[#f3ead9] hover:bg-[#f9f2e6] hover:border-[#9cb092]/70'
                     }`}
                     style={{ opacity: 0 }}
                   >
                     {c.premium && (
-                      <span className="absolute top-3 right-3 font-display text-[7px] tracking-[0.2em] uppercase text-[#111914] bg-[#9cb092] px-2 py-1 font-bold">
+                      <span className="absolute top-3 right-3 font-display text-[7px] tracking-[0.2em] uppercase text-[#f7f2e8] bg-[#8a7346] px-2 py-1 font-bold">
                         Premium
                       </span>
                     )}
                     <div
                       className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 border ${
                         c.premium
-                          ? 'bg-[#9cb092]/20 border-[#9cb092]/50'
-                          : 'bg-[#9cb092]/12 border-[#9cb092]/35'
+                          ? 'bg-[#9cb092]/25 border-[#7a8a6f]/60'
+                          : 'bg-[#9cb092]/18 border-[#7a8a6f]/45'
                       }`}
                     >
-                      <span className="material-icons text-[#9cb092] text-2xl">{c.icon}</span>
+                      <span className="material-icons text-[#5f7256] text-2xl">{c.icon}</span>
                     </div>
-                    <h3 className="font-serif-exp text-base text-[#e4eee1] leading-snug mb-2">
+                    <h3 className="font-serif-exp text-base text-[#2a3328] leading-snug mb-2">
                       {c.title}
                     </h3>
-                    <p className="font-display text-[10px] text-[#b2c3b1]/60 leading-relaxed mb-5 flex-1">
+                    <p className="font-display text-[10px] text-[#5a6b52] leading-relaxed mb-5 flex-1">
                       {c.desc}
                     </p>
                     <button
                       onClick={c.onClick}
                       className={`w-full py-3 font-display text-[10px] tracking-[0.2em] uppercase font-bold transition-colors ${
                         c.premium
-                          ? 'bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]'
-                          : 'border border-[#9cb092]/40 text-[#9cb092] hover:bg-[#9cb092]/10'
+                          ? 'bg-[#5f7256] text-[#f7f2e8] hover:bg-[#6f8465]'
+                          : 'border border-[#7a8a6f]/55 text-[#4a5942] hover:bg-[#9cb092]/20'
                       }`}
                     >
                       {c.cta}
@@ -1399,6 +1284,17 @@ export default function CreateEvite() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Bottom bar — Back on the left (consistent placement site-wide) */}
+          <div className="relative z-20 flex-shrink-0 flex items-center justify-between px-5 py-3 border-t border-white/[0.07]">
+            <button
+              onClick={() => setFlowStage('picker')}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200 font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/70 hover:text-[#9cb092]"
+            >
+              <span className="material-icons text-[16px]">arrow_back</span>
+              Change Event
+            </button>
           </div>
         </div>
       )}
@@ -1452,7 +1348,7 @@ export default function CreateEvite() {
       {modalPhase === 'upload' && (
         <div
           ref={editorBackdropRef}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
           style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
           onClick={(e) => {
             if (e.target === e.currentTarget) closeAnyModal();
@@ -1460,12 +1356,14 @@ export default function CreateEvite() {
         >
           <div
             ref={editorPanelRef}
-            className="relative w-full max-w-6xl h-[86vh] max-h-[86vh] bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl flex flex-col"
+            className="relative w-full h-full bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
+            <FlowLogo onClick={closeToHome} />
             <button
               onClick={closeToHome}
-              className="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
+              aria-label="Close"
+              className="absolute top-3 right-3 z-40 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
             >
               <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
             </button>
@@ -1820,101 +1718,6 @@ export default function CreateEvite() {
       )}
 
       {/* ════════════════════════════════════════════════════════════
-          PREMADE CANVAS TEMPLATE PICKER — choose a styled starter design
-          before the canvas editor opens with it pre-loaded.
-          ════════════════════════════════════════════════════════════ */}
-      {modalPhase === 'canvas-template-picker' && (
-        <div
-          ref={editorBackdropRef}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
-          style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeAnyModal();
-          }}
-        >
-          <div
-            ref={editorPanelRef}
-            className="relative w-full max-w-5xl max-h-[82vh] bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={closeAnyModal}
-              className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
-            >
-              <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
-            </button>
-
-            <div className="px-6 md:px-10 pt-8 pb-4 border-b border-white/[0.06]">
-              <h2 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight pr-10">
-                Start from a <span className="text-[#9cb092] font-agatho italic">styled design</span>
-              </h2>
-              <p className="font-display text-[11px] tracking-wide text-[#b2c3b1]/55 leading-relaxed mt-2">
-                Pick a starting point — every font and color stays fully editable in the next step.
-              </p>
-            </div>
-
-            <div className="flex-1 overflow-y-auto scrollbar-subtle px-6 md:px-10 py-6">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {visibleCanvasTemplates.map((ct) => {
-                  const textElements = ct.elements.filter(isTextElement);
-                  const heading = textElements.find((el) => el.fontSize >= 60) ?? textElements[0];
-                  const sub = textElements.find((el) => el !== heading);
-                  return (
-                    <button
-                      key={ct.id}
-                      onClick={() => pickCanvasTemplate(ct)}
-                      className="group text-left overflow-hidden border border-white/[0.07] hover:border-[#9cb092]/40 transition-all duration-300 flex flex-col"
-                    >
-                      <div
-                        className="relative aspect-[2/3] overflow-hidden flex flex-col items-center justify-center text-center px-4 gap-2"
-                        style={{ backgroundColor: ct.background.type === 'color' ? ct.background.value : '#eeeeee' }}
-                      >
-                        {heading && (
-                          <p
-                            className="leading-tight px-1"
-                            style={{
-                              fontFamily: `'${heading.fontFamily}', serif`,
-                              color: heading.fill,
-                              fontSize: '22px',
-                            }}
-                          >
-                            {heading.text}
-                          </p>
-                        )}
-                        {sub && (
-                          <p
-                            className="leading-snug px-1"
-                            style={{
-                              fontFamily: `'${sub.fontFamily}', sans-serif`,
-                              color: sub.fill,
-                              fontSize: '9px',
-                              letterSpacing: '0.05em',
-                            }}
-                          >
-                            {sub.text}
-                          </p>
-                        )}
-                      </div>
-                      <div className="px-2.5 py-2 bg-white/[0.03]">
-                        <h3 className="font-serif-exp text-[11px] text-[#9cb092] leading-tight truncate">
-                          {ct.name}
-                        </h3>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-              {visibleCanvasTemplates.length === 0 && (
-                <p className="font-display text-[11px] tracking-[0.25em] uppercase text-[#b2c3b1]/30 text-center py-10">
-                  No styled designs in this category yet
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════════════════════════════════════════════════
           BUILD-YOUR-OWN CANVAS EDITOR
           ════════════════════════════════════════════════════════════ */}
       {modalPhase === 'canvas-editor' && (
@@ -1937,7 +1740,7 @@ export default function CreateEvite() {
       {(selectedTemplate || uploadedTemplate) && modalPhase === 'editor' && (
         <div
           ref={editorBackdropRef}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
           style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
           onClick={(e) => {
             if (e.target === e.currentTarget) closeAnyModal();
@@ -1945,9 +1748,10 @@ export default function CreateEvite() {
         >
           <div
             ref={editorPanelRef}
-            className="relative w-full max-w-[1400px] max-h-[82vh] flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
+            className="relative w-full h-full flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
+            <FlowLogo onClick={closeToHome} />
             {/* ── Modal top bar: stepper on top, then title + controls ── */}
             <div className="flex-shrink-0 px-6 md:px-8 py-3 border-b border-white/[0.07] bg-[#0e1712]">
               <FlowStepper current={3} className="max-w-2xl mx-auto mb-2.5" />
@@ -1966,31 +1770,10 @@ export default function CreateEvite() {
                 )}
               </div>
 
-              {/* Right: multi-events toggle + close */}
+              {/* Right: close only. The "Multiple Events" toggle was removed —
+                 hosts add extra events straight from the "Add Another Event"
+                 button in the Additional Events section of the form below. */}
               <div className="flex items-center gap-3">
-                {/* Multiple Events toggle — visible whenever the event type
-                   supports it (wedding/custom). For multi-invite uploads with
-                   2+ slots we pre-flip it ON in proceedFromUpload so the host
-                   can fill Mehendi/Sangeet/Wedding/Reception details right
-                   here on the same screen, but they can still turn it off. */}
-                {supportsMultipleEvents && (
-                  <div className="flex items-center gap-2">
-                    <div className="text-right hidden md:block">
-                      <span className="font-display text-[9px] tracking-[0.12em] uppercase text-[#b2c3b1]/60 block">Multiple Events</span>
-                      <span className="font-display text-[8px] text-[#b2c3b1]/40 block leading-tight">
-                        {MULTI_EVENTS_HELP}
-                      </span>
-                    </div>
-                    <button
-                      onClick={toggleHasSubEvents}
-                      className={`relative w-10 h-5 rounded-full transition-colors duration-300 ${hasSubEvents ? 'bg-[#9cb092]' : 'bg-white/15'}`}
-                      aria-pressed={hasSubEvents}
-                    >
-                      <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-300 ${hasSubEvents ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
-                    </button>
-                  </div>
-                )}
-
                 <button
                   onClick={closeToHome}
                   className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
@@ -2519,24 +2302,32 @@ export default function CreateEvite() {
                   })()}
                 </div>
 
-                {/* Sub-events section — horizontal table layout when multiple events ON */}
-                {supportsMultipleEvents && hasSubEvents && (
+                {/* Additional Events — always available for wedding/custom.
+                    The old top toggle is gone; hosts just click "Add Another
+                    Event" to add rows (Mehendi, Sangeet, Reception, …). */}
+                {supportsMultipleEvents && (
                   <div className="border-t border-white/[0.07] pt-4 mt-4 space-y-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]/80 flex items-center gap-1.5">
-                        <span className="material-icons text-sm">celebration</span>
-                        Additional Events
-                      </p>
+                    <div className="flex items-start justify-between gap-3 mb-1">
+                      <div>
+                        <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]/80 flex items-center gap-1.5">
+                          <span className="material-icons text-sm">celebration</span>
+                          Additional Events
+                        </p>
+                        <p className="font-display text-[9px] text-[#b2c3b1]/45 leading-relaxed mt-1 normal-case tracking-normal">
+                          Hosting more than one event? Add them here — optional.
+                        </p>
+                      </div>
                       <button
                         onClick={addSubEvent}
-                        className="font-display text-[9px] tracking-[0.15em] uppercase text-[#9cb092] hover:text-[#adc4a3] flex items-center gap-1 transition-colors border border-[#9cb092]/30 px-2.5 py-1 hover:border-[#9cb092]/60"
+                        className="flex-shrink-0 font-display text-[9px] tracking-[0.15em] uppercase text-[#9cb092] hover:text-[#adc4a3] flex items-center gap-1 transition-colors border border-[#9cb092]/30 px-2.5 py-1 hover:border-[#9cb092]/60"
                       >
                         <span className="material-icons text-sm">add</span>
                         Add Another Event
                       </button>
                     </div>
 
-                    {/* Table header */}
+                    {/* Event rows — only rendered once at least one event is added. */}
+                    {subEventCount > 0 && (
                     <div className="overflow-x-auto border border-white/[0.06]">
                       <table className="w-full min-w-[520px] border-collapse">
                         <thead>
@@ -2609,16 +2400,30 @@ export default function CreateEvite() {
                         </tbody>
                       </table>
                     </div>
+                    )}
                   </div>
                 )}
               </div>
               )}
 
-              <div className="flex-shrink-0 px-6 md:px-8 py-4 border-t border-white/[0.06] bg-[#0e1712]">
+            </div>
+            </div>{/* end two-column body */}
+
+            {/* Footer — full width so Back sits at the page's bottom-left and
+                Continue at the bottom-right (consistent placement site-wide) */}
+            <div className="flex-shrink-0 px-6 md:px-8 py-4 border-t border-white/[0.06] bg-[#0e1712]">
+              <div className="flex items-center justify-between gap-3">
+                <button
+                  onClick={backFromEditor}
+                  className="py-3 px-5 border border-white/15 text-[#b2c3b1] font-display text-[10px] tracking-[0.2em] uppercase hover:border-[#9cb092]/40 hover:text-[#9cb092] transition-all flex items-center gap-2"
+                >
+                  <span className="material-icons text-sm">arrow_back</span>
+                  Back
+                </button>
                 <button
                   onClick={proceedFromEditor}
                   disabled={!isEditorValid}
-                  className={`w-full py-3.5 font-display text-[11px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center justify-center gap-2 ${
+                  className={`py-3 px-8 font-display text-[11px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center gap-2 ${
                     isEditorValid
                       ? 'bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]'
                       : 'bg-white/5 text-white/20 cursor-not-allowed border border-white/10'
@@ -2627,14 +2432,13 @@ export default function CreateEvite() {
                   Continue
                   <span className="material-icons text-sm">arrow_forward</span>
                 </button>
-                {!isEditorValid && (
-                  <p className="font-display text-[9px] tracking-[0.12em] uppercase text-[#b2c3b1]/40 text-center mt-2">
-                    Fill required fields to continue
-                  </p>
-                )}
               </div>
+              {!isEditorValid && (
+                <p className="font-display text-[9px] tracking-[0.12em] uppercase text-[#b2c3b1]/40 text-center mt-2">
+                  Fill required fields to continue
+                </p>
+              )}
             </div>
-            </div>{/* end two-column body */}
           </div>
         </div>
       )}
@@ -2760,56 +2564,6 @@ export default function CreateEvite() {
           onBack={backToPreview}
           onConfirm={handlePaymentConfirm}
         />
-      )}
-
-      {/* ════════════════════════════════════════════════════════════
-          HOW MANY EVENTS? POPUP
-          Shown when the Multiple Events toggle is flipped ON. User
-          picks 2 / 3 / 4 / 5 and we seed that many sub-event rows.
-          ════════════════════════════════════════════════════════════ */}
-      {showEventCountPopup && (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(13, 21, 18, 0.88)', backdropFilter: 'blur(6px)' }}
-          onClick={() => setShowEventCountPopup(false)}
-        >
-          <div
-            className="relative w-full max-w-sm bg-[#111914] border border-white/[0.09] shadow-2xl p-8 text-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Icon */}
-            <div className="w-12 h-12 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center mx-auto mb-5">
-              <span className="material-icons text-[#9cb092]">celebration</span>
-            </div>
-
-            <h2 className="font-serif-exp text-xl text-[#e4eee1] leading-tight mb-1">
-              How many <span className="text-[#9cb092] font-agatho italic">events</span>?
-            </h2>
-            <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/50 mb-7">
-              e.g. Mehendi · Sangeet · Wedding · Reception
-            </p>
-
-            {/* Count buttons */}
-            <div className="grid grid-cols-4 gap-3 mb-6">
-              {[2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => confirmEventCount(n)}
-                  className="py-5 border border-white/15 hover:border-[#9cb092] hover:bg-[#9cb092]/10 text-[#e4eee1] font-serif-exp text-3xl transition-all duration-200 hover:scale-105"
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setShowEventCountPopup(false)}
-              className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/40 hover:text-[#b2c3b1] transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
       )}
 
       {/* ════════════════════════════════════════════════════════════
