@@ -475,18 +475,18 @@ export default function GuestPopup({
         </button>
 
         {/* Header */}
-        <div className="flex-shrink-0 px-6 md:px-10 pt-4 pb-4 border-b border-white/[0.06]">
-          <FlowStepper current={4} className="max-w-2xl mx-auto mb-3" />
-          <h2 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight">
+        <div className="flex-shrink-0 px-6 md:px-10 pt-2.5 pb-3 border-b border-white/[0.06]">
+          <FlowStepper current={4} className="max-w-2xl mx-auto mb-2" />
+          <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight">
             Who's on the <span className="text-[#9cb092] font-agatho italic">guest list?</span>
           </h2>
-          <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/55 mt-3">
+          <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/55 mt-1.5">
             Pick how you'd like to deliver — and how to add your guests.
           </p>
         </div>
 
         {/* Body */}
-        <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-6 md:px-10 py-6 space-y-7">
+        <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-6 md:px-10 py-5 space-y-6">
           {/* Section 1: Delivery method */}
           <div>
             <h3 className="font-serif-exp text-base text-[#e4eee1] mb-3 flex items-center gap-2">
@@ -583,10 +583,10 @@ export default function GuestPopup({
         </div>
 
         {/* Footer */}
-        <div className="flex-shrink-0 flex items-center justify-between gap-3 px-6 md:px-10 py-5 border-t border-white/[0.06] bg-[#0e1712]">
+        <div className="flex-shrink-0 flex items-center justify-between gap-3 px-6 md:px-10 py-2.5 border-t border-white/[0.06] bg-[#0e1712]">
           <button
             onClick={onBack}
-            className="py-3 px-5 border border-white/15 text-[#b2c3b1] font-display text-[10px] tracking-[0.2em] uppercase hover:border-[#9cb092]/40 hover:text-[#9cb092] transition-all flex items-center gap-2"
+            className="py-2.5 px-5 border border-white/15 text-[#b2c3b1] font-display text-[10px] tracking-[0.2em] uppercase hover:border-[#9cb092]/40 hover:text-[#9cb092] transition-all flex items-center gap-2"
           >
             <span className="material-icons text-sm">arrow_back</span>
             Back
@@ -595,7 +595,7 @@ export default function GuestPopup({
           <button
             onClick={handleProceed}
             disabled={!canProceed}
-            className={`py-3 px-8 font-display text-[11px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center gap-2 ${
+            className={`py-2.5 px-8 font-display text-[11px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center gap-2 ${
               canProceed
                 ? 'bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]'
                 : 'bg-white/5 text-white/20 cursor-not-allowed border border-white/10'

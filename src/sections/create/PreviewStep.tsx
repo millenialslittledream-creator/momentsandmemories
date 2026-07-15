@@ -280,17 +280,10 @@ export default function PreviewStep({
           </button>
         )}
 
-        {/* ── Header ── */}
-        <div className="flex-shrink-0 px-6 md:px-8 py-3 border-b border-white/[0.06] bg-[#0e1712]">
-          <FlowStepper current={5} className="max-w-2xl mx-auto mb-3" />
-          <div className="pr-10">
-            <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight">
-              Preview &amp; <span className="text-[#9cb092] font-agatho italic">Send</span>
-            </h2>
-            <p className="font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]/45 mt-0.5">
-              Preview how your guests will see the invitation and send it to them.
-            </p>
-          </div>
+        {/* ── Header — just the stepper; the title lives in the left column
+             so the middle preview gets more room ── */}
+        <div className="flex-shrink-0 px-6 md:px-8 py-2 border-b border-white/[0.06] bg-[#0e1712]">
+          <FlowStepper current={5} className="max-w-2xl mx-auto" />
         </div>
 
         {/* ── Body — three columns ── */}
@@ -298,8 +291,16 @@ export default function PreviewStep({
           data-lenis-prevent
           className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-6 md:px-8 py-5 grid grid-cols-1 lg:grid-cols-[0.85fr_1.05fr_0.95fr] gap-6"
         >
-          {/* COL 1 — Select invitation version */}
+          {/* COL 1 — Title + select invitation version */}
           <div>
+            <div className="mb-5">
+              <h2 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight">
+                Preview &amp; <span className="text-[#9cb092] font-agatho italic">Send</span>
+              </h2>
+              <p className="font-display text-[9px] tracking-[0.14em] uppercase text-[#b2c3b1]/45 mt-1 leading-relaxed">
+                See how your guests receive the invitation, then send it.
+              </p>
+            </div>
             <p className="font-display text-[9px] tracking-[0.22em] uppercase text-[#9cb092]/70 mb-3">
               {isMulti ? 'Select Invitation Version' : 'Your Invitation'}
             </p>
@@ -466,7 +467,7 @@ export default function PreviewStep({
 
         {/* ── RSVP settings summary bar (edit opens a compact popup) ── */}
         <div className="flex-shrink-0 border-t border-white/[0.06] bg-[#0e1712]">
-          <div className="px-6 md:px-10 py-2.5 flex items-center justify-between gap-3 flex-wrap">
+          <div className="px-6 md:px-10 py-2 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3 min-w-0">
               <span className="material-icons text-[#9cb092] text-base">how_to_reg</span>
               <div className="min-w-0">
@@ -496,7 +497,7 @@ export default function PreviewStep({
         </div>
 
         {/* ── Footer ── */}
-        <div className="flex-shrink-0 flex items-center justify-between gap-3 px-6 md:px-10 py-3 border-t border-white/[0.06] bg-[#0e1712]">
+        <div className="flex-shrink-0 flex items-center justify-between gap-3 px-6 md:px-10 py-2 border-t border-white/[0.06] bg-[#0e1712]">
           <button
             onClick={onBack}
             className="py-2.5 px-5 border border-white/15 text-[#b2c3b1] font-display text-[10px] tracking-[0.2em] uppercase hover:border-[#9cb092]/40 hover:text-[#9cb092] transition-all flex items-center gap-2"
@@ -657,11 +658,11 @@ function RsvpToggleRow({
       <button
         onClick={onToggle}
         aria-pressed={on}
-        className={`relative flex-shrink-0 w-9 h-5 rounded-full transition-colors duration-300 ${on ? 'bg-[#9cb092]' : 'bg-white/15'}`}
+        className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-300 ${on ? 'bg-[#9cb092]' : 'bg-white/20'}`}
       >
         <span
-          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-300 ${
-            on ? 'translate-x-[18px]' : 'translate-x-0.5'
+          className={`absolute top-1/2 -translate-y-1/2 left-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-300 ${
+            on ? 'translate-x-5' : 'translate-x-0'
           }`}
         />
       </button>

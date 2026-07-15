@@ -5,18 +5,28 @@ import { useNavigate } from 'react-router-dom';
  * modal. The global Navigation bar is hidden during most of the flow, so this
  * keeps the logo visible everywhere. Clicking it returns home.
  */
-export default function FlowLogo({ onClick }: { onClick?: () => void }) {
+export default function FlowLogo({
+  onClick,
+  size = 'md',
+}: {
+  onClick?: () => void;
+  /** 'lg' — the roomy full-screen entry stages (picker / choose-design /
+   *  gallery), where the logo can match the landing header. 'md' — the
+   *  compact step modals, where a huge logo would collide with the title. */
+  size?: 'md' | 'lg';
+}) {
   const navigate = useNavigate();
+  const height = size === 'lg' ? 'h-16 md:h-20' : 'h-11 md:h-12';
   return (
     <button
       onClick={onClick ?? (() => navigate('/'))}
       aria-label="Moments & Memories — home"
-      className="absolute top-2.5 left-4 z-40 select-none transition-opacity duration-200 hover:opacity-80"
+      className="absolute top-1.5 left-4 z-40 select-none transition-opacity duration-200 hover:opacity-80"
     >
       <img
         src="/logo-pages.png"
         alt="Moments & Memories"
-        className="h-9 md:h-11 w-auto object-contain drop-shadow-lg"
+        className={`${height} w-auto object-contain drop-shadow-lg`}
       />
     </button>
   );

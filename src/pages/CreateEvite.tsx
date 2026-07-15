@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useRef, useMemo, type ReactElement } 
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import gsap from 'gsap';
-import Navigation from '@/sections/Navigation';
 import { useAuth } from '@/context/AuthContext';
 import { eviteTemplates } from '@/data/eviteTemplates';
 import {
@@ -17,6 +16,7 @@ import PaymentModal from '@/sections/create/PaymentModal';
 import DateTimePicker from '@/sections/create/DateTimePicker';
 import FlowStepper from '@/sections/create/FlowStepper';
 import FlowLogo from '@/sections/create/FlowLogo';
+import EventIllustration from '@/sections/create/EventIllustration';
 import PreviewStep, { DEFAULT_RSVP_SETTINGS, type RSVPSettings } from '@/sections/create/PreviewStep';
 import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRenderer';
 import CanvasEditor from '@/components/CanvasEditor';
@@ -33,11 +33,6 @@ type ModalPhase = 'upload' | 'canvas-editor' | 'editor' | 'signin' | 'guests' | 
 //   'choose-design' — "How would you like to design your invitation?" method cards
 //   'gallery'       — the template gallery, filtered to the chosen event
 type FlowStage = 'picker' | 'loading' | 'choose-design' | 'gallery';
-
-// Events that have a premium (event-website) design collection. In phase 1 we
-// only offer premium versions for weddings and birthdays, so the "Use our
-// premium designs" card is gated to these.
-const PREMIUM_EVENTS: EventType[] = ['marriage', 'birthday'];
 
 // Example invitation-group names shown beside each upload slot so hosts
 // understand what "Invitation Name" means (Family vs Friends vs Colleagues…).
@@ -979,16 +974,31 @@ export default function CreateEvite() {
       />
       <div className="fixed inset-0 z-[1] bg-[#111914]/70 pointer-events-none" />
 
-      {flowStage === 'gallery' && <Navigation />}
-
       {/* ════════════════════════════════════════════════════════════
-          GALLERY — base page
+          GALLERY — base page. Uses the same flow chrome as every other
+          step (logo top-left · stepper · close top-right) instead of the
+          marketing nav bar.
           ════════════════════════════════════════════════════════════ */}
-      <div className="flex-1 overflow-hidden relative z-10 flex flex-col pt-16">
+      <div className="flex-1 overflow-hidden relative z-10 flex flex-col">
+        {flowStage === 'gallery' && (
+          <>
+            <FlowLogo onClick={closeToHome} size="lg" />
+            <button
+              onClick={closeToHome}
+              aria-label="Close"
+              className="absolute top-3 right-4 z-40 w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200"
+            >
+              <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
+            </button>
+          </>
+        )}
+        <div className="flex-shrink-0 px-6 md:px-10 pt-3 pb-3">
+          <FlowStepper current={2} className="max-w-2xl mx-auto" />
+        </div>
         <div className="flex-1 flex flex-col overflow-hidden px-6 md:px-10">
           {/* Header — the Back control lives in the bottom bar (bottom-left),
               consistent with every other screen in the flow. */}
-          <div className="py-4 md:py-5 flex-shrink-0 border-b border-white/[0.07]">
+          <div className="py-3 md:py-4 flex-shrink-0 border-b border-white/[0.07]">
             <p className="font-display text-[9px] tracking-[0.32em] uppercase text-[#9cb092]/70 mb-1">
               {eventTypes.find((e) => e.id === activeFilter)?.label ?? 'Event'} designs
             </p>
@@ -1073,7 +1083,7 @@ export default function CreateEvite() {
           data-lenis-prevent
         >
           <EntryBackground />
-          <FlowLogo />
+          <FlowLogo size="lg" />
           <button
             onClick={closeToHome}
             aria-label="Close"
@@ -1082,50 +1092,47 @@ export default function CreateEvite() {
             <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
           </button>
 
-          <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-4 pt-20">
-            <FlowStepper current={1} className="max-w-2xl mx-auto mb-6" />
-            <div className="text-center mb-4 md:mb-6">
-              <p className="font-display text-[9px] tracking-[0.32em] uppercase text-[#9cb092]/70 mb-1.5">
+          <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-3 pt-16">
+            <FlowStepper current={1} className="max-w-2xl mx-auto mb-4" />
+            <div className="text-center mb-4">
+              <p className="font-display text-[9px] tracking-[0.32em] uppercase text-[#9cb092]/70 mb-1">
                 Let&apos;s begin
               </p>
-              <h1 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
+              <h1 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight">
                 What are we <span className="text-[#9cb092] font-agatho italic">celebrating today?</span>
               </h1>
-              <p className="font-display text-[10px] tracking-wide text-[#b2c3b1]/55 mt-2 max-w-md mx-auto leading-relaxed">
+              <p className="font-display text-[10px] tracking-wide text-[#b2c3b1]/55 mt-1.5 max-w-md mx-auto leading-relaxed">
                 Pick an event and we&apos;ll show you the designs made for it.
               </p>
             </div>
 
             <div
               ref={pickerRef}
-              className="flex flex-wrap justify-center gap-2.5 md:gap-3 w-full max-w-4xl"
+              className="flex flex-wrap justify-center gap-3 w-full max-w-4xl"
             >
               {eventTypes.map((ev) => (
                 <button
                   key={ev.id}
                   onClick={() => chooseEvent(ev.id)}
-                  className="picker-card group relative overflow-hidden bg-[#f3ead9] hover:bg-[#f9f2e6] border border-[#c4a882]/40 hover:border-[#9cb092]/70 shadow-sm hover:shadow-xl transition-all duration-300 ease-out hover:scale-[1.07] hover:z-30 px-3 py-5 flex flex-col items-center justify-center text-center w-40 h-[152px]"
+                  title={ev.description}
+                  className="picker-card group relative overflow-hidden rounded-2xl bg-[#f3ead9] hover:bg-[#f9f2e6] border border-[#c4a882]/40 hover:border-[#9cb092]/70 shadow-sm hover:shadow-xl transition-all duration-300 ease-out hover:-translate-y-1 hover:z-30 flex flex-col w-40 h-[192px]"
                 >
-                  {/* Soft accent wash in the event's colour so each box feels less bland */}
+                  {/* Illustration — soft accent wash behind a hand-drawn scene */}
                   <div
-                    className="pointer-events-none absolute inset-x-0 top-0 h-14 opacity-60"
-                    style={{ background: `linear-gradient(to bottom, ${ev.color}33, transparent)` }}
-                  />
-                  <div
-                    className="relative w-12 h-12 rounded-full flex items-center justify-center mb-2"
-                    style={{ backgroundColor: `${ev.color}30`, border: `1px solid ${ev.color}` }}
+                    className="relative flex-1 flex items-center justify-center px-3 pt-3"
+                    style={{ background: `linear-gradient(to bottom, ${ev.color}26, transparent 85%)` }}
                   >
-                    <span className="material-icons text-2xl" style={{ color: ev.color }}>
-                      {ev.icon}
+                    <EventIllustration id={ev.id} color={ev.color} className="w-full h-full max-h-[94px]" />
+                  </div>
+                  {/* Label + arrow */}
+                  <div className="px-2 pb-3 pt-1 flex flex-col items-center">
+                    <h3 className="font-serif-exp text-[15px] text-[#2a3328] leading-tight">
+                      {ev.label}
+                    </h3>
+                    <span className="mt-1.5 w-7 h-7 rounded-full border border-[#7a8a6f]/45 flex items-center justify-center group-hover:bg-[#9cb092]/20 group-hover:border-[#9cb092]/60 transition-colors">
+                      <span className="material-icons text-[#5f7256] text-[16px]">arrow_forward</span>
                     </span>
                   </div>
-                  <h3 className="relative font-serif-exp text-sm md:text-base text-[#2a3328] leading-tight">
-                    {ev.label}
-                  </h3>
-                  {/* Description stays hidden and simply fades in on hover */}
-                  <p className="relative font-display text-[9px] tracking-wide text-[#5a6b52]/85 leading-snug mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    {ev.description}
-                  </p>
                 </button>
               ))}
             </div>
@@ -1154,7 +1161,7 @@ export default function CreateEvite() {
           data-lenis-prevent
         >
           <EntryBackground />
-          <FlowLogo />
+          <FlowLogo size="lg" />
           <button
             onClick={closeToHome}
             aria-label="Close"
@@ -1163,17 +1170,17 @@ export default function CreateEvite() {
             <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
           </button>
 
-          <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-4 pt-20 overflow-y-auto scrollbar-subtle">
-            <FlowStepper current={2} className="max-w-2xl mx-auto mb-6" />
-            <div className="text-center mb-6 md:mb-8">
-              <h1 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
+          <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-3 pt-16 overflow-y-auto scrollbar-subtle">
+            <FlowStepper current={2} className="max-w-2xl mx-auto mb-4" />
+            <div className="text-center mb-4">
+              <h1 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight">
                 How would you like to design your{' '}
                 <span className="text-[#9cb092] font-agatho italic">
                   {eventTypes.find((e) => e.id === activeFilter)?.label ?? 'event'}
                 </span>{' '}
                 invitation?
               </h1>
-              <p className="font-display text-[10px] tracking-wide text-[#b2c3b1]/55 mt-2">
+              <p className="font-display text-[10px] tracking-wide text-[#b2c3b1]/55 mt-1.5">
                 Choose the way that works best for you.
               </p>
             </div>
@@ -1220,11 +1227,10 @@ export default function CreateEvite() {
                   premium: true,
                 },
               ] as const)
-                .filter((c) => !c.premium || PREMIUM_EVENTS.includes(activeFilter))
                 .map((c) => (
                   <div
                     key={c.key}
-                    className={`design-card relative flex flex-col items-center text-center px-5 py-7 border shadow-sm hover:shadow-xl transition-all duration-300 w-full sm:w-[240px] ${
+                    className={`design-card relative flex flex-col items-center text-center px-4 py-5 border shadow-sm hover:shadow-xl transition-all duration-300 w-full sm:w-[220px] ${
                       c.premium
                         ? 'border-[#c4a882] bg-[#ece0c8] hover:bg-[#f2e8d5]'
                         : 'border-[#c4a882]/40 bg-[#f3ead9] hover:bg-[#f9f2e6] hover:border-[#9cb092]/70'
@@ -1232,28 +1238,28 @@ export default function CreateEvite() {
                     style={{ opacity: 0 }}
                   >
                     {c.premium && (
-                      <span className="absolute top-3 right-3 font-display text-[7px] tracking-[0.2em] uppercase text-[#f7f2e8] bg-[#8a7346] px-2 py-1 font-bold">
+                      <span className="absolute top-2.5 right-2.5 font-display text-[7px] tracking-[0.2em] uppercase text-[#f7f2e8] bg-[#8a7346] px-2 py-0.5 font-bold">
                         Premium
                       </span>
                     )}
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 border ${
+                      className={`w-11 h-11 rounded-full flex items-center justify-center mb-3 border ${
                         c.premium
                           ? 'bg-[#9cb092]/25 border-[#7a8a6f]/60'
                           : 'bg-[#9cb092]/18 border-[#7a8a6f]/45'
                       }`}
                     >
-                      <span className="material-icons text-[#5f7256] text-2xl">{c.icon}</span>
+                      <span className="material-icons text-[#5f7256] text-xl">{c.icon}</span>
                     </div>
-                    <h3 className="font-serif-exp text-base text-[#2a3328] leading-snug mb-2">
+                    <h3 className="font-serif-exp text-sm text-[#2a3328] leading-snug mb-1.5">
                       {c.title}
                     </h3>
-                    <p className="font-display text-[10px] text-[#5a6b52] leading-relaxed mb-5 flex-1">
+                    <p className="font-display text-[9px] text-[#5a6b52] leading-relaxed mb-3 flex-1">
                       {c.desc}
                     </p>
                     <button
                       onClick={c.onClick}
-                      className={`w-full py-3 font-display text-[10px] tracking-[0.2em] uppercase font-bold transition-colors ${
+                      className={`w-full py-2.5 font-display text-[9px] tracking-[0.2em] uppercase font-bold transition-colors ${
                         c.premium
                           ? 'bg-[#5f7256] text-[#f7f2e8] hover:bg-[#6f8465]'
                           : 'border border-[#7a8a6f]/55 text-[#4a5942] hover:bg-[#9cb092]/20'
@@ -1266,7 +1272,7 @@ export default function CreateEvite() {
             </div>
 
             {/* Reassurance strip */}
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 mt-8 max-w-4xl">
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 mt-5 max-w-4xl">
               {[
                 { icon: 'verified', label: 'High Quality', sub: 'HD designs for print & digital' },
                 { icon: 'smartphone', label: 'Mobile Friendly', sub: 'Perfect on all devices' },
