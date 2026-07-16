@@ -404,21 +404,23 @@ export default function PaymentModal({
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => setSaveCard((v) => !v)}
-                    className="flex items-center gap-2.5"
-                  >
-                    <span
-                      className={`w-4 h-4 flex-shrink-0 border rounded-sm flex items-center justify-center transition-all ${
-                        saveCard ? 'bg-[#9cb092] border-[#9cb092] text-[#111914]' : 'border-white/20 bg-white/5'
-                      }`}
-                    >
-                      {saveCard && <span className="material-icons text-[12px]">check</span>}
-                    </span>
+                  <div className="flex items-center justify-between gap-3">
                     <span className="font-display text-[10px] text-[#b2c3b1]/70">
                       Save card for faster payments
                     </span>
-                  </button>
+                    <button
+                      onClick={() => setSaveCard((v) => !v)}
+                      aria-pressed={saveCard}
+                      aria-label="Save card for faster payments"
+                      className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-300 ${saveCard ? 'bg-[#9cb092]' : 'bg-white/20'}`}
+                    >
+                      <span
+                        className={`absolute top-1/2 -translate-y-1/2 left-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-300 ${
+                          saveCard ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="border border-white/10 bg-white/[0.02] p-6 text-center">
