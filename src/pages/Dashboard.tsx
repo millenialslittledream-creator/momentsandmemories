@@ -459,13 +459,21 @@ export default function Dashboard() {
                         <span className="material-icons text-sm">menu_book</span>
                         <span className="hidden sm:inline">Book</span>
                       </button>
-                      {/* Expand toggle */}
+                      {/* RSVP / guest-responses toggle — accented + labelled so
+                          it's obvious where the "who we sent to + responses"
+                          list lives. */}
                       {event.status === 'published' && (
                         <button
                           onClick={() => setExpandedEventId(expandedEventId === event.id ? null : event.id)}
-                          title="Analytics & Messages"
-                          className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
+                          title="See who you invited, their RSVPs & messages"
+                          className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 border transition-colors font-display text-[9px] tracking-[0.15em] uppercase ${
+                            expandedEventId === event.id
+                              ? 'border-[#9cb092]/50 text-[#9cb092] bg-[#9cb092]/10'
+                              : 'border-[#9cb092]/25 text-[#9cb092]/80 hover:border-[#9cb092]/50 hover:text-[#9cb092]'
+                          }`}
                         >
+                          <span className="material-icons text-sm">how_to_reg</span>
+                          <span className="hidden sm:inline">RSVPs</span>
                           <span className="material-icons text-sm">
                             {expandedEventId === event.id ? 'expand_less' : 'expand_more'}
                           </span>
