@@ -128,8 +128,19 @@ const PRODUCTS: Product[] = [
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
+const SORTS = [
+  { id: 'featured',  label: 'Featured'        },
+  { id: 'price-asc', label: 'Price: Low → High' },
+  { id: 'price-desc',label: 'Price: High → Low' },
+] as const;
+type SortId = typeof SORTS[number]['id'];
+
+const PRICE_MAX = 1200;
+
 export default function Shop() {
   const [activeFilter, setActiveFilter] = useState<FilterId>('all');
+  const [maxPrice, setMaxPrice]         = useState<number>(PRICE_MAX);
+  const [sortBy, setSortBy]             = useState<SortId>('featured');
   const [selected, setSelected]         = useState<Product | null>(null);
   const [imgIdx, setImgIdx]             = useState(0);
 
@@ -139,7 +150,14 @@ export default function Shop() {
   const modalRef    = useRef<HTMLDivElement>(null);
   const mainImgRef  = useRef<HTMLImageElement>(null);
 
-  const products = PRODUCTS.filter(p => p.tags.includes(activeFilter));
+  const products = PRODUCTS
+    .filter(p => p.tags.includes(activeFilter))
+    .filter(p => p.price <= maxPrice)
+    .sort((a, b) => {
+      if (sortBy === 'price-asc') return a.price - b.price;
+      if (sortBy === 'price-desc') return b.price - a.price;
+      return Number(b.isBestseller) - Number(a.isBestseller); // featured
+    });
 
   // ── Page entrance animation ──────────────────────────────────────────────
   useEffect(() => {
@@ -156,7 +174,7 @@ export default function Shop() {
         { opacity: 1, y: 0, scale: 1, stagger: 0.04, duration: 0.35, ease: 'power3.out' }
       );
     }
-  }, [activeFilter]);
+  }, [activeFilter, maxPrice, sortBy]);
 
   // ── Animate image swap inside modal ──────────────────────────────────────
   useEffect(() => {
@@ -246,28 +264,101 @@ export default function Shop() {
                 Discover gifts that create memories
               </p>
             </div>
-
-            {/* Filter pills */}
-            <div className="flex items-center gap-1.5 flex-wrap justify-end">
-              {FILTERS.map(f => (
-                <button
-                  key={f.id}
-                  onClick={() => setActiveFilter(f.id)}
-                  className={`font-display text-[9px] tracking-[0.16em] uppercase px-3 py-1.5 transition-all duration-200 ${
-                    activeFilter === f.id
-                      ? 'bg-[#9cb092] text-[#111914] font-semibold'
-                      : 'border border-white/15 text-[#b2c3b1]/55 hover:border-[#9cb092]/30 hover:text-[#9cb092]'
-                  }`}
-                >{f.label}</button>
-              ))}
-            </div>
+            <p className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/45">
+              {products.length} {products.length === 1 ? 'item' : 'items'}
+            </p>
           </div>
 
-          {/* Product grid */}
-          <div
-            ref={galleryRef}
-            className="flex-1 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 pt-4 overflow-hidden content-start"
-          >
+          {/* Category chips — mobile only (sidebar is hidden on small screens) */}
+          <div className="md:hidden flex items-center gap-1.5 flex-wrap py-3 flex-shrink-0 border-b border-white/[0.05]">
+            {FILTERS.map(f => (
+              <button
+                key={f.id}
+                onClick={() => setActiveFilter(f.id)}
+                className={`font-display text-[9px] tracking-[0.16em] uppercase px-3 py-1.5 transition-all duration-200 ${
+                  activeFilter === f.id
+                    ? 'bg-[#9cb092] text-[#111914] font-semibold'
+                    : 'border border-white/15 text-[#b2c3b1]/55'
+                }`}
+              >{f.label}</button>
+            ))}
+          </div>
+
+          {/* Two-column: filter sidebar + product grid */}
+          <div className="flex-1 min-h-0 flex gap-6 pt-4 overflow-hidden">
+            {/* ── Filter sidebar ── */}
+            <aside className="hidden md:block w-52 flex-shrink-0 overflow-y-auto scrollbar-subtle pr-1">
+              {/* Category */}
+              <div className="mb-6">
+                <p className="font-display text-[9px] tracking-[0.24em] uppercase text-[#9cb092]/80 mb-2.5">Category</p>
+                <div className="space-y-0.5">
+                  {FILTERS.map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => setActiveFilter(f.id)}
+                      className={`w-full text-left px-3 py-1.5 font-display text-[11px] tracking-wide transition-colors border-l-2 ${
+                        activeFilter === f.id
+                          ? 'border-[#9cb092] text-[#9cb092] bg-[#9cb092]/[0.08]'
+                          : 'border-transparent text-[#b2c3b1]/60 hover:text-[#9cb092] hover:border-[#9cb092]/40'
+                      }`}
+                    >{f.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price range */}
+              <div className="mb-6 border-t border-white/[0.06] pt-5">
+                <p className="font-display text-[9px] tracking-[0.24em] uppercase text-[#9cb092]/80 mb-3">Price Range</p>
+                <input
+                  type="range"
+                  min={0}
+                  max={PRICE_MAX}
+                  step={50}
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(Number(e.target.value))}
+                  className="w-full accent-[#9cb092] cursor-pointer"
+                />
+                <div className="flex items-center justify-between mt-1.5 font-display text-[10px] text-[#b2c3b1]/55">
+                  <span>$0</span>
+                  <span className="text-[#9cb092]">up to ${maxPrice}</span>
+                </div>
+              </div>
+
+              {/* Sort by */}
+              <div className="border-t border-white/[0.06] pt-5">
+                <p className="font-display text-[9px] tracking-[0.24em] uppercase text-[#9cb092]/80 mb-2.5">Sort By</p>
+                <div className="space-y-0.5">
+                  {SORTS.map(s => (
+                    <button
+                      key={s.id}
+                      onClick={() => setSortBy(s.id)}
+                      className={`w-full text-left px-3 py-1.5 font-display text-[11px] tracking-wide transition-colors border-l-2 ${
+                        sortBy === s.id
+                          ? 'border-[#9cb092] text-[#9cb092] bg-[#9cb092]/[0.08]'
+                          : 'border-transparent text-[#b2c3b1]/60 hover:text-[#9cb092] hover:border-[#9cb092]/40'
+                      }`}
+                    >{s.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {(activeFilter !== 'all' || maxPrice !== PRICE_MAX || sortBy !== 'featured') && (
+                <button
+                  onClick={() => { setActiveFilter('all'); setMaxPrice(PRICE_MAX); setSortBy('featured'); }}
+                  className="mt-6 font-display text-[9px] tracking-[0.2em] uppercase text-[#b2c3b1]/45 hover:text-[#9cb092] transition-colors flex items-center gap-1.5"
+                >
+                  <span className="material-icons text-[13px]">restart_alt</span>
+                  Reset filters
+                </button>
+              )}
+            </aside>
+
+            {/* ── Product grid ── */}
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle">
+              <div
+                ref={galleryRef}
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 pb-6 content-start"
+              >
             {products.map(p => (
               <button
                 key={p.id}
@@ -311,10 +402,12 @@ export default function Shop() {
             {products.length === 0 && (
               <div className="col-span-full flex items-center justify-center py-16">
                 <p className="font-display text-[11px] tracking-[0.25em] uppercase text-[#b2c3b1]/30">
-                  No products in this filter
+                  No products match these filters
                 </p>
               </div>
             )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
