@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import PageTransition from "@/components/PageTransition";
@@ -7,6 +7,8 @@ import GoogleIcon from "@/components/GoogleIcon";
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     firstName: "", lastName: "", email: "", password: "", confirmPassword: "",
@@ -53,7 +55,7 @@ const SignUp = () => {
         navigate("/verify-email", { state: { email: form.email } });
       } else if (data.session) {
         toast.success("Account created successfully!");
-        navigate("/");
+        navigate(redirectTo, { replace: true });
       } else {
         toast.error("Sign up failed. Please try again.");
         setErrors({ email: "Sign up failed. Please try again." });
@@ -73,7 +75,7 @@ const SignUp = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}${redirectTo}`,
         },
       });
       if (error) {
@@ -158,7 +160,10 @@ const SignUp = () => {
           </form>
 
           <div className="mt-6 pt-6 border-t border-black/5 w-full text-center">
-            <Link to="/sign-in" className="text-sm text-[#1a2418]/70 hover:text-primary transition-colors">
+            <Link
+              to={redirectTo !== '/' ? `/sign-in?redirect=${encodeURIComponent(redirectTo)}` : '/sign-in'}
+              className="text-sm text-[#1a2418]/70 hover:text-primary transition-colors"
+            >
               Already have an account? <span className="font-bold underline decoration-1 underline-offset-2">Sign In</span>
             </Link>
           </div>

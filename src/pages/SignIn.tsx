@@ -55,8 +55,10 @@ const SignIn = () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
+        // Honour the ?redirect= param so OAuth users land back where they left
+        // off (e.g. /create to resume the evite flow) instead of the homepage.
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}${redirectTo}`,
         },
       });
       if (error) {
@@ -127,7 +129,10 @@ const SignIn = () => {
           </form>
 
           <div className="mt-8 pt-6 border-t border-black/5 w-full text-center">
-            <Link to="/sign-up" className="text-sm text-[#1a2418]/70 hover:text-primary transition-colors">
+            <Link
+              to={redirectTo !== '/' ? `/sign-up?redirect=${encodeURIComponent(redirectTo)}` : '/sign-up'}
+              className="text-sm text-[#1a2418]/70 hover:text-primary transition-colors"
+            >
               New here? <span className="font-bold underline decoration-1 underline-offset-2">Create Account</span>
             </Link>
           </div>

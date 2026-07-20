@@ -1092,7 +1092,8 @@ export default function CreateEvite() {
             <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
           </button>
 
-          <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-3 pt-16">
+          <div className="relative z-10 flex-1 min-h-0 overflow-y-auto scrollbar-subtle">
+           <div className="min-h-full flex flex-col items-center justify-center px-6 py-3 pt-16">
             <FlowStepper current={1} className="max-w-2xl mx-auto mb-4" />
             <div className="text-center mb-4">
               <p className="font-display text-[9px] tracking-[0.32em] uppercase text-[#9cb092]/70 mb-1">
@@ -1115,27 +1116,28 @@ export default function CreateEvite() {
                   key={ev.id}
                   onClick={() => chooseEvent(ev.id)}
                   title={ev.description}
-                  className="picker-card group relative overflow-hidden rounded-2xl bg-[#f3ead9] hover:bg-[#f9f2e6] border border-[#c4a882]/40 hover:border-[#9cb092]/70 shadow-sm hover:shadow-xl transition-all duration-300 ease-out hover:-translate-y-1 hover:z-30 flex flex-col w-40 h-[192px]"
+                  className="picker-card group relative overflow-hidden rounded-2xl bg-[#f3ead9] hover:bg-[#f9f2e6] border border-[#c4a882]/40 hover:border-[#9cb092]/70 shadow-sm hover:shadow-xl transition-all duration-300 ease-out hover:-translate-y-1 hover:z-30 flex flex-col w-36 sm:w-40 h-[158px]"
                 >
                   {/* Illustration — soft accent wash behind a hand-drawn scene */}
                   <div
-                    className="relative flex-1 flex items-center justify-center px-3 pt-3"
+                    className="relative flex-1 flex items-center justify-center px-3 pt-2"
                     style={{ background: `linear-gradient(to bottom, ${ev.color}26, transparent 85%)` }}
                   >
-                    <EventIllustration id={ev.id} color={ev.color} className="w-full h-full max-h-[94px]" />
+                    <EventIllustration id={ev.id} color={ev.color} className="w-full h-full max-h-[74px]" />
                   </div>
                   {/* Label + arrow */}
-                  <div className="px-2 pb-3 pt-1 flex flex-col items-center">
-                    <h3 className="font-serif-exp text-[15px] text-[#2a3328] leading-tight">
+                  <div className="px-2 pb-2.5 pt-0.5 flex flex-col items-center">
+                    <h3 className="font-serif-exp text-[14px] text-[#2a3328] leading-tight">
                       {ev.label}
                     </h3>
-                    <span className="mt-1.5 w-7 h-7 rounded-full border border-[#7a8a6f]/45 flex items-center justify-center group-hover:bg-[#9cb092]/20 group-hover:border-[#9cb092]/60 transition-colors">
-                      <span className="material-icons text-[#5f7256] text-[16px]">arrow_forward</span>
+                    <span className="mt-1 w-6 h-6 rounded-full border border-[#7a8a6f]/45 flex items-center justify-center group-hover:bg-[#9cb092]/20 group-hover:border-[#9cb092]/60 transition-colors">
+                      <span className="material-icons text-[#5f7256] text-[15px]">arrow_forward</span>
                     </span>
                   </div>
                 </button>
               ))}
             </div>
+           </div>
           </div>
 
           {/* Bottom bar — Back on the left (consistent placement site-wide) */}
@@ -2568,6 +2570,7 @@ export default function CreateEvite() {
             multipleInvitations ? invitationSlots.filter((s) => s.url && s.type).length : 1
           }
           onBack={backToPreview}
+          onClose={closeToHome}
           onConfirm={handlePaymentConfirm}
         />
       )}

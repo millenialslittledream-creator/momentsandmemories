@@ -10,6 +10,7 @@ interface PaymentModalProps {
   deliveryPreference: 'email' | 'phone' | 'both' | 'link';
   invitationCount: number;
   onBack: () => void;
+  onClose?: () => void;
   onConfirm: () => void;
 }
 
@@ -29,6 +30,7 @@ export default function PaymentModal({
   deliveryPreference,
   invitationCount,
   onBack,
+  onClose,
   onConfirm,
 }: PaymentModalProps) {
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -108,7 +110,14 @@ export default function PaymentModal({
         className="relative w-full h-full flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <FlowLogo onClick={onBack} />
+        <FlowLogo onClick={onClose ?? onBack} />
+        <button
+          onClick={onClose ?? onBack}
+          aria-label="Close"
+          className="absolute top-3 right-3 z-40 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
+        >
+          <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
+        </button>
         {/* Header */}
         <div className="flex-shrink-0 px-6 md:px-10 pt-4 pb-4 border-b border-white/[0.06] bg-[#0e1712]">
           <FlowStepper current={6} className="max-w-2xl mx-auto mb-3" />

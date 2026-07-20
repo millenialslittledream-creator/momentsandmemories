@@ -228,14 +228,18 @@ export default function CanvasEditor({
 
   const sortedElements = useMemo(() => [...elements].sort((a, b) => a.zIndex - b.zIndex), [elements]);
 
-  const handleFinish = async () => {
+  const handleFinish = () => {
     setSelectedId(null);
-    const resolvedId = await persist();
-    // Wait a tick so the deselected Transformer doesn't appear in the exported image.
-    requestAnimationFrame(() => {
+    // Save the editable design in the background — a slow or failed save must
+    // NEVER trap the host on the canvas. The details step only needs the PNG.
+    void persist();
+    // Defer a tick so the deselected Transformer isn't baked into the export.
+    // Use setTimeout, not requestAnimationFrame: rAF is paused while the tab is
+    // backgrounded, which would otherwise stall the hand-off to the next step.
+    setTimeout(() => {
       const dataUrl = stageRef.current?.toDataURL({ pixelRatio: 1080 / containerWidth });
-      if (dataUrl) onFinish?.(dataUrl, resolvedId);
-    });
+      if (dataUrl) onFinish?.(dataUrl, templateId);
+    }, 40);
   };
 
   const editingElement = editingId ? (elements.find((e) => e.id === editingId) as TextElementData | undefined) : undefined;
