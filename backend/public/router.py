@@ -22,6 +22,14 @@ def get_public_website(slug: str):
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@router.get("/premium-sites/{slug}")
+def get_public_premium_site(slug: str):
+    try:
+        return service.get_public_premium_site(slug)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @router.get("/events/{event_id}/book")
 def get_public_book(event_id: str):
     try:

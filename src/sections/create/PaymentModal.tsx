@@ -120,7 +120,7 @@ export default function PaymentModal({
         </button>
         {/* Header */}
         <div className="flex-shrink-0 px-6 md:px-10 pt-4 pb-4 border-b border-white/[0.06] bg-[#0e1712]">
-          <FlowStepper current={6} className="max-w-2xl mx-auto mb-3" />
+          <FlowStepper current={7} className="max-w-2xl mx-auto mb-3" />
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight">

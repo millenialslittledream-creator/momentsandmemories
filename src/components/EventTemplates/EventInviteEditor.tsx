@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { eventTemplate, type EventKey } from './registry';
 import type { InviteContent } from '../WebsiteTemplates/inviteContent';
+import PremiumPublishBar from '@/components/PremiumPublishBar';
 
 /* field primitives (mirrors the wedding editor styling) -------------------- */
 const inputCls =
@@ -109,6 +110,15 @@ export default function EventInviteEditor({
               </button>
             ))}
           </div>
+
+          <span className="h-6 w-px bg-white/10 hidden sm:block" />
+          <PremiumPublishBar
+            eventKey={eventKey}
+            designId={designId}
+            themeId={themeId}
+            content={content}
+            slugSeed={def.label}
+          />
         </div>
       </div>
 

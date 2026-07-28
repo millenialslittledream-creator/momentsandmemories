@@ -476,7 +476,7 @@ export default function GuestPopup({
 
         {/* Header */}
         <div className="flex-shrink-0 px-6 md:px-10 pt-2.5 pb-3 border-b border-white/[0.06]">
-          <FlowStepper current={4} className="max-w-2xl mx-auto mb-2" />
+          <FlowStepper current={5} className="max-w-2xl mx-auto mb-2" />
           <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight">
             Who's on the <span className="text-[#9cb092] font-agatho italic">guest list?</span>
           </h2>

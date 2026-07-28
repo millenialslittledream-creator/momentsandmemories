@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { BIRTHDAY_DESIGNS, birthdayDesignById } from './designs';
 import { BIRTHDAY_THEMES, birthdayThemeById } from './birthdayThemes';
 import { DEFAULT_BIRTHDAY, type BirthdayContent } from './birthdayContent';
+import PremiumPublishBar from '@/components/PremiumPublishBar';
 
 /* ── primitives ─────────────────────────────────────────────────────────── */
 const inputCls =
@@ -130,6 +131,16 @@ export default function BirthdayEditor({
               </button>
             ))}
           </div>
+
+          <span className="h-6 w-px bg-white/10 hidden sm:block" />
+          <PremiumPublishBar
+            eventKey="birthday"
+            designId={designId}
+            themeId={themeId}
+            content={content}
+            slugSeed={content.honoree}
+            accent="#d4890f"
+          />
         </div>
       </div>
 

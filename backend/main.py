@@ -16,6 +16,7 @@ from messaging.router import router as messaging_router
 from media.router import router as media_router
 from custom_templates.router import router as custom_templates_router
 from event_websites.router import router as event_websites_router
+from premium_websites.router import router as premium_websites_router
 from invitation_books.router import router as invitation_books_router
 from gallery.router import router as gallery_router
 from evite_customizations.router import router as evite_customizations_router
@@ -46,6 +47,7 @@ app.include_router(messaging_router)
 app.include_router(media_router)
 app.include_router(custom_templates_router)
 app.include_router(event_websites_router)
+app.include_router(premium_websites_router)
 app.include_router(invitation_books_router)
 app.include_router(gallery_router)
 app.include_router(evite_customizations_router)

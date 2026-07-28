@@ -20,6 +20,13 @@ Run these SQL files in order in Supabase Dashboard → SQL Editor.
 | 014_create_media_uploads.sql | media_uploads table (canvas editor — uploaded images/video) |
 | 015_create_user_templates.sql | user_templates table (canvas editor — saved custom designs) |
 | 016_create_user_uploads_bucket.sql | `user-uploads` Storage bucket + owner-scoped policies |
+| 017_create_event_websites.sql | event_websites table (section-builder sites at /w/:slug) |
+| 018_create_invitation_books.sql | invitation_books table (page-turn book) |
+| 018_rsvp_analytics_fields.sql | party_size / kids_count / food_preference on invitees |
+| 019_create_event_gallery_photos.sql | event_gallery_photos table |
+| 020_create_evite_customizations.sql | evite_customizations table (font/colour/size/position overrides + photo) |
+| 021_event_form_data.sql | `form_data` JSONB on events (re-render the designed public evite) |
+| 022_premium_websites.sql | premium_websites table (published premium designs at /site/:slug) |
 
 **Note:** The `users` table already exists — do NOT run any migration that recreates it.
 Run files in numbered order as later ones reference earlier tables via foreign keys.

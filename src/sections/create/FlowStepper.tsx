@@ -1,7 +1,7 @@
-// The six top-level steps of the create flow. `current` is 1-based:
-//   1 Choose Event · 2 Choose Design · 3 Event Details · 4 Guests
-//   5 Preview & Send · 6 Payment
-const STEPS = ['Choose Event', 'Choose Design', 'Event Details', 'Guests', 'Preview & Send', 'Payment'];
+// The seven top-level steps of the create flow. `current` is 1-based:
+//   1 Choose Event · 2 Choose Design · 3 Event Details · 4 Share
+//   5 Guests · 6 Preview & Send · 7 Payment
+const STEPS = ['Choose Event', 'Choose Design', 'Event Details', 'Share', 'Guests', 'Preview & Send', 'Payment'];
 
 // Warm beige/gold used for the progress line + completed steps, so the stepper
 // picks up the beige accent the brand wants without changing the overall theme.

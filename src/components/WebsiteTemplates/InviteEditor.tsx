@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { DESIGNS, designById } from './designs';
 import { WEDDING_THEMES, themeById } from './themes';
 import { DEFAULT_WEDDING, type InviteContent } from './inviteContent';
+import PremiumPublishBar from '@/components/PremiumPublishBar';
 
 /* small field primitives ------------------------------------------------- */
 const inputCls =
@@ -126,6 +127,15 @@ export default function InviteEditor({
               </button>
             ))}
           </div>
+
+          <span className="h-6 w-px bg-white/10 hidden sm:block" />
+          <PremiumPublishBar
+            eventKey="marriage"
+            designId={designId}
+            themeId={themeId}
+            content={content}
+            slugSeed={[content.brideName, content.groomName].filter(Boolean).join(' ')}
+          />
         </div>
       </div>
 

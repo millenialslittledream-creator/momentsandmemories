@@ -4,11 +4,19 @@ from middleware.logging import log_event as _log
 from events.schemas import CreateEventRequest, UpdateEventRequest, InviteeIn
 
 
+VALID_EVENT_STATUSES = {"draft", "published", "archived"}
+
+
 def create_event(user_id: str, data: CreateEventRequest) -> dict:
     db = database.get_db()
     payload = {k: v for k, v in data.model_dump().items() if v is not None}
     payload["user_id"] = user_id
-    payload["status"] = "draft"
+    # Honor the requested publish state (the create flow publishes the evite at
+    # the Share step so its link works right away); default to a private draft.
+    status = payload.get("status") or "draft"
+    if status not in VALID_EVENT_STATUSES:
+        raise ValueError(f"Invalid status: {status!r}")
+    payload["status"] = status
     result = db.table("events").insert(payload).execute()
     event = result.data[0]
     _log("events", "event.created", user_id=user_id, metadata={"event_id": event["id"]})

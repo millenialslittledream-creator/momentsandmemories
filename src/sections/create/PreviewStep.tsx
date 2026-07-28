@@ -283,7 +283,7 @@ export default function PreviewStep({
         {/* ── Header — just the stepper; the title lives in the left column
              so the middle preview gets more room ── */}
         <div className="flex-shrink-0 px-6 md:px-8 py-2 border-b border-white/[0.06] bg-[#0e1712]">
-          <FlowStepper current={5} className="max-w-2xl mx-auto" />
+          <FlowStepper current={6} className="max-w-2xl mx-auto" />
         </div>
 
         {/* ── Body — three columns ── */}

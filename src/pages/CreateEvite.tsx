@@ -25,7 +25,7 @@ import type { TemplateFieldLayout } from '@/data/eviteTemplates';
 import { FONT_CATEGORIES, COLOR_SWATCHES } from '@/components/CanvasEditor/types';
 
 type EventTypeFilter = EventType;
-type ModalPhase = 'upload' | 'canvas-editor' | 'editor' | 'signin' | 'guests' | 'preview' | 'payment' | 'sent' | null;
+type ModalPhase = 'upload' | 'canvas-editor' | 'editor' | 'signin' | 'share' | 'guests' | 'preview' | 'payment' | 'sent' | null;
 
 // The entry flow now has four stages:
 //   'picker'        — "What are we celebrating today?" event grid (first thing users see)
@@ -217,6 +217,12 @@ export default function CreateEvite() {
   const [photoOverlay, setPhotoOverlay] = useState<PhotoOverlay | null>(null);
   const [selectedOverrideKey, setSelectedOverrideKey] = useState<string | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
+
+  // ── Publish / share (the evite goes live at the Share step) ──────────
+  const [publishedEventId, setPublishedEventId] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState('');
+  const [linkCopied, setLinkCopied] = useState(false);
 
   // ── Derived state ────────────────────────────────────────────────
   const selectedTemplate = useMemo(
@@ -586,14 +592,14 @@ export default function CreateEvite() {
       );
     }
     if (user) {
-      setModalPhase('guests');
+      setModalPhase('share');
     } else {
       try {
         const existing = localStorage.getItem('mm_evite_draft');
         const parsed = existing ? JSON.parse(existing) : {};
         localStorage.setItem(
           'mm_evite_draft',
-          JSON.stringify({ ...parsed, pendingPhase: 'guests' })
+          JSON.stringify({ ...parsed, pendingPhase: 'share' })
         );
       } catch {
         /* ignore */
@@ -620,9 +626,41 @@ export default function CreateEvite() {
   const backToGuests = useCallback(() => setModalPhase('guests'), []);
   const backToPreview = useCallback(() => setModalPhase('preview'), []);
 
-  const handlePaymentConfirm = useCallback(async () => {
+  // ── Publish the evite so its public link works immediately ───────────
+  // Called on entering the Share step (and as a fallback at payment).
+  // Upserts: creates a published event the first time, updates it on
+  // re-entry (e.g. the host went Back, tweaked the design, and returned).
+  // Returns the event id, or null on failure.
+  const publishEvite = useCallback(async (): Promise<string | null> => {
+    setPublishing(true);
+    setPublishError('');
     try {
-      const evt = await api.createEvent({
+      // Uploaded / canvas designs are local blob:/data: URLs — upload them so
+      // the public page has a real, hosted cover image to render.
+      let coverImageUrl: string | null = null;
+      if (uploadedTemplate?.url) {
+        if (uploadedTemplate.url.startsWith('blob:') || uploadedTemplate.url.startsWith('data:')) {
+          try {
+            const res = await fetch(uploadedTemplate.url);
+            const blob = await res.blob();
+            const file = new File([blob], uploadedTemplate.fileName || 'invitation.png', {
+              type: blob.type || 'image/png',
+            });
+            const up = await api.uploadMedia(file);
+            coverImageUrl = up.public_url;
+          } catch (e) {
+            console.warn('Cover image upload failed:', e);
+          }
+        } else {
+          coverImageUrl = uploadedTemplate.url;
+        }
+      } else if (selectedTemplate && !selectedTemplate.layout) {
+        // Stock template without a positioned layout — its flat preview image
+        // already conveys the design.
+        coverImageUrl = selectedTemplate.previewImage;
+      }
+
+      const payload: Record<string, unknown> = {
         title:
           formData.eventName ||
           formData.celebrantName ||
@@ -636,27 +674,26 @@ export default function CreateEvite() {
         event_time: formData.eventTime || null,
         location: formData.venue || null,
         template_id: selectedTemplateId,
+        cover_image_url: coverImageUrl,
+        form_data: formData,
         status: 'published',
-      });
+      };
 
-      const filledGuests = guests.filter((g) => g.name.trim());
-      if (filledGuests.length > 0) {
-        const invitees = filledGuests.map((g) => ({
-          name: g.name,
-          email: g.email || undefined,
-          phone: g.phone || undefined,
-          source: 'manual' as const,
-        }));
-        await api.addInvitees(evt.id, invitees);
+      let eventId = publishedEventId;
+      if (eventId) {
+        await api.updateEvent(eventId, payload);
+      } else {
+        const evt = await api.createEvent(payload);
+        eventId = evt.id;
+        setPublishedEventId(eventId);
       }
 
-      // Persist the user's font/color/position overrides + photo overlay
-      // now that a real event id exists. Doesn't block send-completion if
-      // it fails — same pattern as the invitee save above.
-      if (selectedTemplateId && (Object.keys(fieldOverrides).length > 0 || photoOverlay)) {
+      // Persist the font/color/size/position overrides + photo overlay so the
+      // public page re-renders the design exactly as the host arranged it.
+      if (eventId && selectedTemplateId && (Object.keys(fieldOverrides).length > 0 || photoOverlay)) {
         try {
           await api.createEviteCustomization({
-            event_id: evt.id,
+            event_id: eventId,
             template_id: selectedTemplateId,
             field_overrides: fieldOverrides,
             photo_overlay: photoOverlay as unknown as Record<string, unknown> | null,
@@ -666,16 +703,43 @@ export default function CreateEvite() {
         }
       }
 
+      return eventId;
+    } catch (e) {
+      console.warn('Evite publish failed:', e);
+      setPublishError(e instanceof Error ? e.message : 'Could not publish your evite. Please try again.');
+      return null;
+    } finally {
+      setPublishing(false);
+    }
+  }, [uploadedTemplate, selectedTemplate, selectedTemplateId, formData, fieldOverrides, photoOverlay, publishedEventId]);
+
+  const handlePaymentConfirm = useCallback(async () => {
+    try {
+      // The evite was already created + published at the Share step; reuse it.
+      // Fallback to publishing now if we somehow arrived here without an id.
+      const eventId = publishedEventId ?? (await publishEvite());
+
+      const filledGuests = guests.filter((g) => g.name.trim());
+      if (eventId && filledGuests.length > 0) {
+        const invitees = filledGuests.map((g) => ({
+          name: g.name,
+          email: g.email || undefined,
+          phone: g.phone || undefined,
+          source: 'manual' as const,
+        }));
+        await api.addInvitees(eventId, invitees);
+      }
+
       try {
         localStorage.removeItem('mm_evite_draft');
       } catch {
         /* ignore */
       }
     } catch (e) {
-      console.warn('Evite save skipped (likely logged out or offline):', e);
+      console.warn('Evite send skipped (likely logged out or offline):', e);
     }
     setModalPhase('sent');
-  }, [formData, selectedTemplateId, guests, fieldOverrides, photoOverlay]);
+  }, [publishedEventId, publishEvite, guests]);
 
   const resetFlow = useCallback(() => {
     setSelectedTemplateId(null);
@@ -691,7 +755,7 @@ export default function CreateEvite() {
       const parsed = existing ? JSON.parse(existing) : {};
       localStorage.setItem(
         'mm_evite_draft',
-        JSON.stringify({ ...parsed, pendingPhase: 'guests' })
+        JSON.stringify({ ...parsed, pendingPhase: 'share' })
       );
     } catch {
       /* ignore */
@@ -836,6 +900,16 @@ export default function CreateEvite() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [modalPhase, closeAnyModal]);
+
+  // Publish the evite the moment the host reaches the Share step so its link
+  // works right away. Also covers resuming here after a sign-in redirect. The
+  // guard prevents duplicate publishes; failures surface a Retry button below.
+  useEffect(() => {
+    if (modalPhase === 'share' && !publishedEventId && !publishing) {
+      publishEvite();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modalPhase, publishedEventId]);
 
   // ── Image fade-in when swapping templates ────────────────────────
   useEffect(() => {
@@ -1963,39 +2037,57 @@ export default function CreateEvite() {
                     </span>
                   </div>
                 )}
+
+                {/* Customize entry — the design's "Edit" affordance lives on the
+                    preview itself (filling the black space around the artwork)
+                    instead of a separate tab. Only stock templates with a
+                    positioned layout can be customized. */}
+                {!uploadedTemplate && selectedTemplate?.layout && rightPanelTab === 'details' && (
+                  <button
+                    onClick={() => { if (isEditorValid) setRightPanelTab('customize'); }}
+                    disabled={!isEditorValid}
+                    title={isEditorValid ? 'Customize fonts, colors, size & position' : 'Fill in all required details to customize'}
+                    className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-5 py-2.5 backdrop-blur-sm border font-display text-[10px] tracking-[0.2em] uppercase transition-all ${
+                      isEditorValid
+                        ? 'bg-[#9cb092]/90 text-[#111914] border-[#9cb092] hover:bg-[#9cb092] shadow-lg'
+                        : 'bg-black/55 text-[#b2c3b1]/45 border-white/10 cursor-not-allowed'
+                    }`}
+                  >
+                    <span className="material-icons text-[15px]">{isEditorValid ? 'edit' : 'lock'}</span>
+                    {isEditorValid ? 'Customize Design' : 'Fill details to customize'}
+                  </button>
+                )}
+                {!uploadedTemplate && selectedTemplate?.layout && rightPanelTab === 'customize' && (
+                  <button
+                    onClick={() => setRightPanelTab('details')}
+                    className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-[#111914]/85 backdrop-blur-sm border border-[#9cb092]/50 text-[#9cb092] font-display text-[9px] tracking-[0.18em] uppercase transition-all hover:bg-[#111914] shadow-lg"
+                  >
+                    <span className="material-icons text-[13px]">check</span>
+                    Done
+                  </button>
+                )}
               </div>
             </div>
 
             {/* ── RIGHT: form (scrollable) ────────────────────────── */}
             <div className="flex-1 md:flex-1 min-h-0 flex flex-col overflow-hidden">
-              {/* Details / Customize Design tab pair — Customize only applies to
-                  stock templates with a positioned layout (the 32 hardcoded
-                  designs); uploaded/canvas designs have no field layout to edit. */}
-              {selectedTemplate?.layout && (
-                <div className="flex-shrink-0 flex items-center gap-1 px-6 md:px-8 pt-4 border-b border-white/[0.06] bg-[#0e1712]">
-                  {(['details', 'customize'] as const).map((tab) => {
-                    // Customization stays locked until every required detail is
-                    // filled — same gate as the Continue button.
-                    const locked = tab === 'customize' && !isEditorValid;
-                    return (
-                      <button
-                        key={tab}
-                        onClick={() => { if (!locked) setRightPanelTab(tab); }}
-                        disabled={locked}
-                        title={locked ? 'Fill in all required details to unlock customization' : undefined}
-                        className={`px-4 py-2 font-display text-[10px] tracking-[0.18em] uppercase transition-colors border-b-2 flex items-center gap-1.5 ${
-                          locked
-                            ? 'border-transparent text-[#b2c3b1]/25 cursor-not-allowed'
-                            : rightPanelTab === tab
-                            ? 'border-[#9cb092] text-[#9cb092]'
-                            : 'border-transparent text-[#b2c3b1]/55 hover:text-[#9cb092]'
-                        }`}
-                      >
-                        {tab === 'details' ? 'Details' : 'Customize Design'}
-                        {locked && <span className="material-icons text-[11px]">lock</span>}
-                      </button>
-                    );
-                  })}
+              {/* The design's customization controls open from the "Customize
+                  Design" button on the preview (left), not a tab. This slim
+                  header only appears while customizing, to step back to the
+                  details form. */}
+              {selectedTemplate?.layout && rightPanelTab === 'customize' && (
+                <div className="flex-shrink-0 flex items-center justify-between gap-2 px-6 md:px-8 py-3 border-b border-white/[0.06] bg-[#0e1712]">
+                  <p className="font-display text-[10px] tracking-[0.18em] uppercase text-[#9cb092] flex items-center gap-1.5">
+                    <span className="material-icons text-[14px]">tune</span>
+                    Customize Design
+                  </p>
+                  <button
+                    onClick={() => setRightPanelTab('details')}
+                    className="font-display text-[9px] tracking-[0.18em] uppercase text-[#b2c3b1]/60 hover:text-[#9cb092] transition-colors flex items-center gap-1.5"
+                  >
+                    <span className="material-icons text-[13px]">arrow_back</span>
+                    Back to details
+                  </button>
                 </div>
               )}
 
@@ -2071,6 +2163,41 @@ export default function CreateEvite() {
                             </optgroup>
                           ))}
                         </select>
+                      </div>
+
+                      {/* Size */}
+                      <div>
+                        <label className="block font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 mb-1.5">
+                          Size
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setOverride(selectedOverrideKey, { fontSize: Math.max(8, Math.round(selectedOverrideField.fontSize - 4)) })}
+                            className="w-9 h-9 flex-shrink-0 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10"
+                            title="Smaller"
+                          >
+                            <span className="material-icons text-[#9cb092] text-base">remove</span>
+                          </button>
+                          <input
+                            type="range"
+                            min={8}
+                            max={400}
+                            step={1}
+                            value={Math.round(selectedOverrideField.fontSize)}
+                            onChange={(e) => setOverride(selectedOverrideKey, { fontSize: Number(e.target.value) })}
+                            className="flex-1 accent-[#9cb092] cursor-pointer"
+                          />
+                          <button
+                            onClick={() => setOverride(selectedOverrideKey, { fontSize: Math.min(400, Math.round(selectedOverrideField.fontSize + 4)) })}
+                            className="w-9 h-9 flex-shrink-0 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10"
+                            title="Bigger"
+                          >
+                            <span className="material-icons text-[#9cb092] text-base">add</span>
+                          </button>
+                          <span className="font-display text-[10px] text-[#b2c3b1]/60 w-8 text-right tabular-nums">
+                            {Math.round(selectedOverrideField.fontSize)}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Color */}
@@ -2503,6 +2630,166 @@ export default function CreateEvite() {
       )}
 
       {/* ════════════════════════════════════════════════════════════
+          SHARE STEP (Step 4) — the evite is published here, so its link
+          works immediately. Copy / share it, or continue to invite guests.
+          ════════════════════════════════════════════════════════════ */}
+      {modalPhase === 'share' && (selectedTemplate || uploadedTemplate) && (() => {
+        const shareUrl = publishedEventId ? `${window.location.origin}/event/${publishedEventId}` : '';
+        const shareTitle =
+          formData.eventName ||
+          formData.celebrantName ||
+          formData.brideName ||
+          formData.motherName ||
+          formData.parentNames ||
+          formData.hostName ||
+          'our celebration';
+        const shareMsg = `You're invited to ${shareTitle}! View the invitation:`;
+        const waHref = `https://wa.me/?text=${encodeURIComponent(`${shareMsg} ${shareUrl}`)}`;
+        const mailHref = `mailto:?subject=${encodeURIComponent(`You're invited: ${shareTitle}`)}&body=${encodeURIComponent(`${shareMsg}\n\n${shareUrl}`)}`;
+        const copyLink = () => {
+          if (!shareUrl) return;
+          navigator.clipboard.writeText(shareUrl);
+          setLinkCopied(true);
+          setTimeout(() => setLinkCopied(false), 2000);
+        };
+        const nativeShare = async () => {
+          if (!shareUrl) return;
+          if (navigator.share) {
+            try { await navigator.share({ title: shareTitle, text: shareMsg, url: shareUrl }); } catch { /* cancelled */ }
+          } else {
+            copyLink();
+          }
+        };
+        const shareTileClass =
+          'group flex flex-col items-center justify-center gap-1.5 py-4 border border-white/10 bg-white/[0.03] hover:border-[#9cb092]/40 hover:bg-[#9cb092]/[0.05] transition-all duration-200 font-display text-[10px] tracking-[0.15em] uppercase text-[#e4eee1]';
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
+            style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
+          >
+            <div className="relative w-full h-full flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl">
+              <FlowLogo onClick={closeToHome} />
+              <button
+                onClick={closeToHome}
+                aria-label="Close"
+                className="absolute top-4 right-4 z-40 w-8 h-8 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 hover:border-[#9cb092]/40"
+              >
+                <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
+              </button>
+
+              {/* Header */}
+              <div className="flex-shrink-0 px-6 md:px-10 pt-2.5 pb-3 border-b border-white/[0.06]">
+                <FlowStepper current={4} className="max-w-2xl mx-auto mb-2" />
+                <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight">
+                  Your invitation is <span className="text-[#9cb092] font-agatho italic">live</span>
+                </h2>
+                <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/55 mt-1.5">
+                  Copy the link and share it anywhere — or invite guests directly.
+                </p>
+              </div>
+
+              {/* Body */}
+              <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-6 md:px-10 py-6 flex flex-col items-center justify-center">
+                <div className="w-full max-w-xl">
+                  {publishing && !publishedEventId ? (
+                    <div className="flex flex-col items-center gap-3 py-10">
+                      <div className="w-6 h-6 border-2 border-[#9cb092]/30 border-t-[#9cb092] rounded-full animate-spin" />
+                      <p className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/60">
+                        Publishing your invitation…
+                      </p>
+                    </div>
+                  ) : publishError && !publishedEventId ? (
+                    <div className="flex flex-col items-center gap-4 py-10 text-center">
+                      <span className="material-icons text-3xl text-red-400/70">error_outline</span>
+                      <p className="font-display text-[11px] text-red-400/80 max-w-sm leading-relaxed">{publishError}</p>
+                      <button
+                        onClick={() => publishEvite()}
+                        className="py-2.5 px-6 border border-[#9cb092]/40 font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] hover:bg-[#9cb092]/10 transition-all flex items-center gap-2"
+                      >
+                        <span className="material-icons text-sm">refresh</span>
+                        Try again
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Link + copy */}
+                      <p className="font-display text-[9px] tracking-[0.22em] uppercase text-[#9cb092]/80 mb-2 flex items-center gap-1.5">
+                        <span className="material-icons text-sm">link</span>
+                        Your shareable link
+                      </p>
+                      <div className="flex items-stretch gap-2 mb-6">
+                        <div className="flex-1 flex items-center px-3 h-12 bg-white/[0.05] border border-white/15 overflow-hidden">
+                          <span className="font-display text-[12px] text-[#e4eee1]/85 truncate">{shareUrl}</span>
+                        </div>
+                        <button
+                          onClick={copyLink}
+                          className={`flex-shrink-0 px-5 h-12 flex items-center gap-2 font-display text-[10px] tracking-[0.2em] uppercase font-bold transition-colors ${
+                            linkCopied
+                              ? 'bg-[#9cb092]/20 text-[#9cb092] border border-[#9cb092]/50'
+                              : 'bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]'
+                          }`}
+                        >
+                          <span className="material-icons text-base">{linkCopied ? 'check' : 'content_copy'}</span>
+                          {linkCopied ? 'Copied' : 'Copy'}
+                        </button>
+                      </div>
+
+                      {/* Share options */}
+                      <p className="font-display text-[9px] tracking-[0.22em] uppercase text-[#9cb092]/80 mb-2">
+                        Share via
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <a href={waHref} target="_blank" rel="noopener noreferrer" className={shareTileClass}>
+                          <span className="material-icons text-xl text-[#b2c3b1]/70 group-hover:text-[#9cb092] transition-colors">chat</span>
+                          WhatsApp
+                        </a>
+                        <a href={mailHref} className={shareTileClass}>
+                          <span className="material-icons text-xl text-[#b2c3b1]/70 group-hover:text-[#9cb092] transition-colors">mail</span>
+                          Email
+                        </a>
+                        <button onClick={nativeShare} className={shareTileClass}>
+                          <span className="material-icons text-xl text-[#b2c3b1]/70 group-hover:text-[#9cb092] transition-colors">ios_share</span>
+                          More
+                        </button>
+                      </div>
+
+                      <p className="font-display text-[9px] text-[#b2c3b1]/45 leading-relaxed mt-6 text-center">
+                        Anyone with this link can view your invitation. Add guests on the next step to send it
+                        by email or SMS and collect RSVPs.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex-shrink-0 flex items-center justify-between gap-3 px-6 md:px-10 py-2.5 border-t border-white/[0.06] bg-[#0e1712]">
+                <button
+                  onClick={backToEditor}
+                  className="py-2.5 px-5 border border-white/15 text-[#b2c3b1] font-display text-[10px] tracking-[0.2em] uppercase hover:border-[#9cb092]/40 hover:text-[#9cb092] transition-all flex items-center gap-2"
+                >
+                  <span className="material-icons text-sm">arrow_back</span>
+                  Back
+                </button>
+                <button
+                  onClick={() => setModalPhase('guests')}
+                  disabled={!publishedEventId}
+                  className={`py-2.5 px-8 font-display text-[11px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center gap-2 ${
+                    publishedEventId
+                      ? 'bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]'
+                      : 'bg-white/5 text-white/20 cursor-not-allowed border border-white/10'
+                  }`}
+                >
+                  Invite guests
+                  <span className="material-icons text-sm">arrow_forward</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ════════════════════════════════════════════════════════════
           GUEST POPUP
           ════════════════════════════════════════════════════════════ */}
       {modalPhase === 'guests' && (selectedTemplate || uploadedTemplate) && (
@@ -2511,7 +2798,7 @@ export default function CreateEvite() {
           onGuestsChange={setGuests}
           deliveryPreference={deliveryPreference}
           onDeliveryPreferenceChange={setDeliveryPreference}
-          onBack={backToEditor}
+          onBack={() => setModalPhase('share')}
           onClose={closeToHome}
           onProceed={proceedToPreview}
           formData={formData}

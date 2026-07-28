@@ -54,6 +54,9 @@ export const api = {
   createEvent: (data: Record<string, unknown>) =>
     apiFetch<{ id: string }>('/events', { method: 'POST', body: JSON.stringify(data) }),
 
+  updateEvent: (eventId: string, data: Record<string, unknown>) =>
+    apiFetch<{ id: string }>(`/events/${eventId}`, { method: 'PATCH', body: JSON.stringify(data) }),
+
   addInvitees: (eventId: string, invitees: Array<{ name: string; email?: string; phone?: string; source: string }>) =>
     apiFetch<unknown>(`/events/${eventId}/invitees`, { method: 'POST', body: JSON.stringify(invitees) }),
 
@@ -311,6 +314,58 @@ export const api = {
     apiFetch<unknown>(`/event-websites/${id}`, { method: 'DELETE' }),
 
   getPublicWebsite: (slug: string) => publicGet(`/public/websites/${slug}`),
+
+  // ── Premium event-website designs (wedding / birthday / event editors) ──────
+  createPremiumSite: (data: {
+    slug: string;
+    event_key: string;
+    design_id: string;
+    theme_id: string;
+    content?: Record<string, unknown>;
+    published?: boolean;
+  }) =>
+    apiFetch<{ id: string; slug: string; published: boolean }>(
+      '/premium-websites',
+      { method: 'POST', body: JSON.stringify(data) }
+    ),
+
+  listPremiumSites: () =>
+    apiFetch<Array<{ id: string; slug: string; event_key: string; design_id: string; theme_id: string; published: boolean; updated_at: string }>>(
+      '/premium-websites'
+    ),
+
+  getPremiumSite: (id: string) =>
+    apiFetch<{
+      id: string;
+      slug: string;
+      event_key: string;
+      design_id: string;
+      theme_id: string;
+      content: Record<string, unknown>;
+      published: boolean;
+    }>(`/premium-websites/${id}`),
+
+  updatePremiumSite: (
+    id: string,
+    data: {
+      slug?: string;
+      event_key?: string;
+      design_id?: string;
+      theme_id?: string;
+      content?: Record<string, unknown>;
+      published?: boolean;
+    }
+  ) => apiFetch<unknown>(`/premium-websites/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  getPublicPremiumSite: (slug: string) =>
+    publicGet<{
+      slug: string;
+      event_key: string;
+      design_id: string;
+      theme_id: string;
+      content: Record<string, unknown>;
+      published: boolean;
+    }>(`/public/premium-sites/${slug}`),
 
   // ── Invitation book (page-turn) ─────────────────────────────────────────
   createInvitationBook: (data: { event_id: string; title?: string; pages?: Array<BookPageDto>; published?: boolean }) =>

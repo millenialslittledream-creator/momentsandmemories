@@ -8,7 +8,7 @@ def get_public_event(event_id: str) -> dict:
     db = database.get_db()
     result = (
         db.table("events")
-        .select("id,title,description,event_date,event_time,location,cover_image_url,rsvp_enabled,status")
+        .select("id,title,description,event_date,event_time,location,cover_image_url,rsvp_enabled,status,template_id,form_data")
         .eq("id", event_id)
         .eq("status", "published")
         .execute()
@@ -24,12 +24,30 @@ def get_public_event(event_id: str) -> dict:
         .execute()
     )
     event["invitee_count"] = count_result.count or 0
+
+    # Attach the latest design customization (font/colour/size/position overrides
+    # + photo overlay) so the public page can re-render the exact designed
+    # invitation. Read via the service-role client, so RLS is not in the way.
+    cust = (
+        db.table("evite_customizations")
+        .select("template_id,field_overrides,photo_overlay")
+        .eq("event_id", event_id)
+        .order("updated_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    event["customization"] = cust.data[0] if cust.data else None
     return event
 
 
 def get_public_website(slug: str) -> dict:
     from event_websites.service import get_public_website_by_slug
     return get_public_website_by_slug(slug)
+
+
+def get_public_premium_site(slug: str) -> dict:
+    from premium_websites.service import get_public_premium_site_by_slug
+    return get_public_premium_site_by_slug(slug)
 
 
 def get_public_book(event_id: str) -> dict:

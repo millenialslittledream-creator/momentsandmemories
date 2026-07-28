@@ -23,6 +23,7 @@ const EventPublic = lazy(() => import('./pages/EventPublic'));
 const RSVPPage = lazy(() => import('./pages/RSVPPage'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const PublicWebsite = lazy(() => import('./pages/PublicWebsite'));
+const PublicPremiumSite = lazy(() => import('./pages/PublicPremiumSite'));
 const GuestGalleryUpload = lazy(() => import('./pages/GuestGalleryUpload'));
 // Event website builder hub — pick Wedding or Birthday, then one of 3 designs
 // (each with 3 colour themes) to open the full website editor. Reached from the
@@ -77,6 +78,7 @@ function App() {
               <Route path="/rsvp/:eventId/:inviteeId" element={<RSVPPage />} />
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/w/:slug" element={<PublicWebsite />} />
+              <Route path="/site/:slug" element={<PublicPremiumSite />} />
               <Route path="/gallery/:eventId" element={<GuestGalleryUpload />} />
               <Route path="/website-builder" element={<DevEviteHub />} />
             </Routes>
