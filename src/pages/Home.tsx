@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Navigation from '../sections/Navigation';
 import Hero from '../sections/Hero';
+import AboutSection from '../sections/AboutSection';
 import Footer from '../sections/Footer';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -26,6 +27,9 @@ export default function Home() {
       <main className="relative w-full">
         {/* Hero */}
         <Hero />
+
+        {/* About Us — scrolls into view below the hero */}
+        <AboutSection />
 
         {/* Footer */}
         <div id="footer">
