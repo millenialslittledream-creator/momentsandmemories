@@ -42,33 +42,39 @@ function Ornament() {
   );
 }
 
-// About content shown on the landing page (scroll down past the hero).
-// Light-themed to sit naturally within the home page; one dark "Our Vision"
-// band gives a gentle visual break. Anchored with id="about" so the footer
-// "About Us" link can scroll here.
+// About content for the dedicated /about page (rendered by pages/About.tsx).
+// Opens with a dark hero so the transparent nav bar stays legible, then flows
+// through light bands with one dark "Our Vision" break.
 export default function AboutSection() {
   const navigate = useNavigate();
 
   return (
-    <section id="about" className="relative w-full">
-      {/* ── Intro ── */}
-      <div className="hero-bokeh-bg relative px-6 pt-16 pb-14 md:pt-24 md:pb-20">
+    <section className="relative w-full">
+      {/* ── Hero (dark, so the transparent nav bar stays legible) ── */}
+      <div className="relative overflow-hidden bg-[#111914] px-6 pb-16 pt-36 md:pb-20 md:pt-44">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-70"
+          style={{
+            background:
+              'radial-gradient(ellipse 60% 70% at 50% 0%, rgba(156,176,146,0.22), transparent 70%), radial-gradient(ellipse 40% 50% at 85% 30%, rgba(215,195,150,0.16), transparent 75%)',
+          }}
+        />
         <div className="relative mx-auto max-w-3xl text-center">
-          <p className="font-display text-[11px] uppercase tracking-[0.32em] text-[#5a6c50]">
+          <p className="font-display text-[11px] uppercase tracking-[0.32em] text-[#9cb092]">
             About Us
           </p>
-          <h2 className="mt-5 font-serif-exp text-[26px] leading-[1.15] text-[#2a3328] md:text-4xl">
+          <h1 className="mt-5 font-serif-exp text-3xl leading-[1.15] text-[#f2f6ef] md:text-5xl">
             Every Celebration Deserves a<br className="hidden md:block" /> Beautiful Beginning
-          </h2>
-          <p className="mx-auto mt-6 max-w-2xl font-display text-[15px] leading-relaxed text-[#3d4a35]/90 md:text-base">
+          </h1>
+          <p className="mx-auto mt-7 max-w-2xl font-display text-[15px] leading-relaxed text-[#c9d4c2] md:text-base">
             At Moments &amp; Memories, we believe every celebration starts with a memorable
             invitation. Whether it’s a wedding, birthday, baby shower, housewarming, anniversary,
             graduation, or corporate event, our platform helps you create beautiful digital
             invitations and manage your guests with ease.
           </p>
-          <p className="mx-auto mt-4 max-w-2xl font-display text-[15px] leading-relaxed text-[#3d4a35]/90 md:text-base">
+          <p className="mx-auto mt-4 max-w-2xl font-display text-[15px] leading-relaxed text-[#c9d4c2] md:text-base">
             Moments &amp; Memories is proudly operated by{' '}
-            <span className="font-semibold text-[#2a3328]">MILLENNIALS LITTLE DREAM LLC</span>, a
+            <span className="font-semibold text-[#e4eee1]">MILLENNIALS LITTLE DREAM LLC</span>, a
             U.S.-registered company dedicated to making celebrations simpler, more personal, and more
             memorable. Our goal is to help families, friends, and communities create unforgettable
             experiences through beautifully designed invitations, effortless RSVP management, guest

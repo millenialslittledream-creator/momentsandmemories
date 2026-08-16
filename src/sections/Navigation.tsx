@@ -11,7 +11,7 @@ const NAV_ITEMS = [
   { label: 'Home', id: 'hero', path: '/' },
   { label: 'Create Evite', id: '', path: '/create' },
   { label: 'Shop Gifts', id: '', path: '/shop' },
-  { label: 'About Us', id: 'about', path: '/' },
+  { label: 'About Us', id: '', path: '/about' },
 ];
 
 export default function Navigation() {
