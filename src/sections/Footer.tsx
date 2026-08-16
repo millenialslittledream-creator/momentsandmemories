@@ -1,16 +1,22 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useLenis } from 'lenis/react';
 
 export default function Footer() {
   const navigate = useNavigate();
   const location = useLocation();
+  const lenis = useLenis();
 
   // Scroll to the About section on the landing page (navigate home first if needed).
   const goToAbout = () => {
-    const scroll = () =>
-      document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+    const scroll = () => {
+      const el = document.getElementById('about');
+      if (!el) return;
+      if (lenis) lenis.scrollTo(el, { offset: -80 });
+      else el.scrollIntoView({ behavior: 'smooth' });
+    };
     if (location.pathname !== '/') {
       navigate('/');
-      setTimeout(scroll, 200);
+      setTimeout(scroll, 250);
     } else {
       scroll();
     }

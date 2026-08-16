@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useLenis } from 'lenis/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useAuth } from '@/context/AuthContext';
@@ -10,6 +11,7 @@ const NAV_ITEMS = [
   { label: 'Home', id: 'hero', path: '/' },
   { label: 'Create Evite', id: '', path: '/create' },
   { label: 'Shop Gifts', id: '', path: '/shop' },
+  { label: 'About Us', id: 'about', path: '/' },
 ];
 
 export default function Navigation() {
@@ -18,7 +20,22 @@ export default function Navigation() {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const lenis = useLenis();
   const { user, signOut } = useAuth();
+
+  // Smooth-scroll to a section id (Lenis-aware, like ScrollToTop). Empty id or
+  // 'hero' scrolls to the top. The offset clears the fixed nav bar.
+  const scrollToId = (id: string) => {
+    if (!id || id === 'hero') {
+      if (lenis) lenis.scrollTo(0);
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (lenis) lenis.scrollTo(el, { offset: -80 });
+    else el.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,26 +72,12 @@ export default function Navigation() {
     setMenuOpen(false);
     if (location.pathname !== path) {
       navigate(path);
-
+      // Wait for the destination page (and its sections) to mount, then scroll.
       if (id && path === '/') {
-        setTimeout(() => {
-          if (id === 'hero') window.scrollTo({ top: 0, behavior: 'smooth' });
-          else {
-            const el = document.getElementById(id);
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 100);
+        setTimeout(() => scrollToId(id), 250);
       }
     } else {
-      if (id) {
-        if (id === 'hero') window.scrollTo({ top: 0, behavior: 'smooth' });
-        else {
-          const element = document.getElementById(id);
-          if (element) element.scrollIntoView({ behavior: 'smooth' });
-        }
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      scrollToId(id);
     }
   };
 
