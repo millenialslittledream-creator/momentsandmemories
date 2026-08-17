@@ -132,13 +132,23 @@ export default function DevEviteHub() {
 
   const closeEditor = () => setOpenDesignId(null);
 
+  // Exit the builder entirely (the editors' top-right X) — return to the create
+  // flow, mirroring the hub's own Back button below.
+  const exitToCreate = () => {
+    if (params.get('return') === 'design') {
+      navigate(`/create?stage=design&event=${params.get('event') ?? ''}`);
+    } else {
+      navigate('/create');
+    }
+  };
+
   if (openDesignId) {
     return (
       <Suspense fallback={<div className="fixed inset-0 bg-[#0c1013]" />}>
-        {view.editorKind === 'wedding' && <InviteEditor initialDesignId={openDesignId} onBack={closeEditor} />}
-        {view.editorKind === 'birthday' && <BirthdayEditor initialDesignId={openDesignId} onBack={closeEditor} />}
+        {view.editorKind === 'wedding' && <InviteEditor initialDesignId={openDesignId} onBack={closeEditor} onClose={exitToCreate} />}
+        {view.editorKind === 'birthday' && <BirthdayEditor initialDesignId={openDesignId} onBack={closeEditor} onClose={exitToCreate} />}
         {view.editorKind === 'event' && view.eventKey && (
-          <EventInviteEditor eventKey={view.eventKey} initialDesignId={openDesignId} onBack={closeEditor} />
+          <EventInviteEditor eventKey={view.eventKey} initialDesignId={openDesignId} onBack={closeEditor} onClose={exitToCreate} />
         )}
       </Suspense>
     );

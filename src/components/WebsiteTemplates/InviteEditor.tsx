@@ -57,9 +57,11 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 export default function InviteEditor({
   initialDesignId,
   onBack,
+  onClose,
 }: {
   initialDesignId?: string;
   onBack?: () => void;
+  onClose?: () => void;
 } = {}) {
   const [designId, setDesignId] = useState(initialDesignId ?? DESIGNS[0].id);
   const [themeId, setThemeId] = useState(WEDDING_THEMES[0].id);
@@ -79,14 +81,6 @@ export default function InviteEditor({
       {/* top bar */}
       <div className="flex items-center justify-between gap-4 px-5 py-2.5 border-b border-white/[0.07] bg-[#10161a] flex-wrap">
         <div className="flex items-center gap-3">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-white/12 text-[#9bb3a3] hover:text-[#c19a4b] hover:border-[#c19a4b]/40 transition-all text-[10px] uppercase tracking-[0.18em]">
-              <span className="material-icons text-sm">arrow_back</span>
-              Back
-            </button>
-          )}
           <span className="material-icons text-[#c19a4b] text-lg">favorite</span>
           <div>
             <p className="text-[9px] uppercase tracking-[0.3em] text-[#9bb3a3]">Wedding Invitation</p>
@@ -129,13 +123,12 @@ export default function InviteEditor({
           </div>
 
           <span className="h-6 w-px bg-white/10 hidden sm:block" />
-          <PremiumPublishBar
-            eventKey="marriage"
-            designId={designId}
-            themeId={themeId}
-            content={content}
-            slugSeed={[content.brideName, content.groomName].filter(Boolean).join(' ')}
-          />
+          <button
+            onClick={onClose ?? onBack}
+            aria-label="Close"
+            className="flex items-center justify-center w-8 h-8 border border-white/12 text-[#9bb3a3] hover:text-[#c19a4b] hover:border-[#c19a4b]/40 transition-all">
+            <span className="material-icons text-[18px]">close</span>
+          </button>
         </div>
       </div>
 
@@ -214,6 +207,23 @@ export default function InviteEditor({
             <Text label="Sign-off" value={content.footerNote} onChange={(v) => set('footerNote', v)} />
           </Group>
         </div>
+      </div>
+
+      {/* bottom bar — Back (previous step) + Publish (next/forward action) */}
+      <div className="flex items-center justify-between gap-3 px-5 py-2.5 border-t border-white/[0.07] bg-[#10161a] flex-shrink-0 flex-wrap">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 px-4 py-2 border border-white/12 text-[#9bb3a3] hover:text-[#c19a4b] hover:border-[#c19a4b]/40 transition-all text-[10px] uppercase tracking-[0.18em]">
+          <span className="material-icons text-sm">arrow_back</span>
+          Back
+        </button>
+        <PremiumPublishBar
+          eventKey="marriage"
+          designId={designId}
+          themeId={themeId}
+          content={content}
+          slugSeed={[content.brideName, content.groomName].filter(Boolean).join(' ')}
+        />
       </div>
     </div>
   );
