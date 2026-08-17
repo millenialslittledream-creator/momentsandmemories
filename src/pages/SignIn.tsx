@@ -30,7 +30,10 @@ const SignIn = () => {
       if (authError) {
         if (authError.message.includes("Email not confirmed")) {
           toast.info("Please verify your email first.");
-          navigate("/verify-email", { state: { email } });
+          navigate(
+            redirectTo !== '/' ? `/verify-email?redirect=${encodeURIComponent(redirectTo)}` : '/verify-email',
+            { state: { email } }
+          );
           return;
         }
         setError(authError.message);

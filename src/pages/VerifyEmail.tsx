@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import PageTransition from "@/components/PageTransition";
@@ -7,6 +7,9 @@ import PageTransition from "@/components/PageTransition";
 const VerifyEmail = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  // Where to continue after verifying (e.g. /create to resume the evite flow).
+  const redirectTo = searchParams.get('redirect') || '/';
   const email = (location.state as { email?: string })?.email || "";
 
   const [otp, setOtp] = useState(["", "", "", "", "", "", "", ""]);
@@ -78,7 +81,13 @@ const VerifyEmail = () => {
 
       setSuccess(true);
       toast.success("Email verified successfully!");
-      setTimeout(() => navigate("/sign-in"), 2000);
+      // verifyOtp establishes a session, so the user is now signed in — send
+      // them straight to where they left off (e.g. /create) when we have a
+      // resume target; otherwise fall back to sign-in.
+      setTimeout(
+        () => navigate(redirectTo !== '/' ? redirectTo : '/sign-in', { replace: true }),
+        2000
+      );
     } catch {
       toast.error("Verification failed. Please try again.");
     } finally {
@@ -131,7 +140,9 @@ const VerifyEmail = () => {
                   </svg>
                 </div>
                 <h2 className="font-agatho text-3xl text-[#1a2418] mb-3">Verified!</h2>
-                <p className="text-[#1a2418]/60 text-sm">Redirecting to sign in...</p>
+                <p className="text-[#1a2418]/60 text-sm">
+                  {redirectTo !== '/' ? 'Taking you back to continue...' : 'Redirecting to sign in...'}
+                </p>
               </div>
             ) : (
               <>

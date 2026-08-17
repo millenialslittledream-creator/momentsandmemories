@@ -36,6 +36,9 @@ const SignUp = () => {
         email: form.email.trim(),
         password: form.password,
         options: {
+          // Land the email-confirmation link back where the user left off
+          // (e.g. /create to resume the evite flow) instead of the site root.
+          emailRedirectTo: `${window.location.origin}${redirectTo}`,
           data: {
             first_name: form.firstName.trim(),
             last_name: form.lastName.trim(),
@@ -52,7 +55,12 @@ const SignUp = () => {
 
       if (data.user && !data.session) {
         toast.success("Account created! Please verify your email.");
-        navigate("/verify-email", { state: { email: form.email } });
+        // Carry the resume target through verification so the user lands back
+        // in the flow (e.g. /create) after confirming, not on the homepage.
+        navigate(
+          redirectTo !== '/' ? `/verify-email?redirect=${encodeURIComponent(redirectTo)}` : '/verify-email',
+          { state: { email: form.email } }
+        );
       } else if (data.session) {
         toast.success("Account created successfully!");
         navigate(redirectTo, { replace: true });
