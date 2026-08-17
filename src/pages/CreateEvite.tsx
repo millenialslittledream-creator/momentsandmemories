@@ -2636,6 +2636,7 @@ export default function CreateEvite() {
       {modalPhase === 'share' && (selectedTemplate || uploadedTemplate) && (() => {
         const shareUrl = publishedEventId ? `${window.location.origin}/event/${publishedEventId}` : '';
         const shareTitle =
+          eventTitle ||
           formData.eventName ||
           formData.celebrantName ||
           formData.brideName ||
@@ -2643,19 +2644,46 @@ export default function CreateEvite() {
           formData.parentNames ||
           formData.hostName ||
           'our celebration';
-        const shareMsg = `You're invited to ${shareTitle}! View the invitation:`;
-        const waHref = `https://wa.me/?text=${encodeURIComponent(`${shareMsg} ${shareUrl}`)}`;
-        const mailHref = `mailto:?subject=${encodeURIComponent(`You're invited: ${shareTitle}`)}&body=${encodeURIComponent(`${shareMsg}\n\n${shareUrl}`)}`;
+        // Nicely formatted time, e.g. "10:00 AM".
+        const shareTime = formData.eventTime
+          ? new Date(`2000-01-01T${formData.eventTime}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+          : '';
+        // "Sunday, September 6, 2026 at 10:00 AM"
+        const shareWhen = [displayDate, shareTime].filter(Boolean).join(' at ');
+        // Event-type-specific celebratory line so the message reads right for
+        // each occasion (wedding, baby shower, birthday, …).
+        const SHARE_FLAVORS: Record<EventType, { phrase: string; emoji: string }> = {
+          birthday:     { phrase: 'with cake, laughter, and lots of love',                     emoji: '🎂🎉' },
+          marriage:     { phrase: 'as two hearts become one, with love and blessings',         emoji: '💍❤️' },
+          babyshower:   { phrase: 'with traditional rituals, love, and joyful blessings',      emoji: '🌸👶' },
+          bridetobe:    { phrase: 'with love, laughter, and a little sparkle before the big day', emoji: '🥂💐' },
+          genderreveal: { phrase: 'as we reveal our little secret',                            emoji: '🎉💙💗' },
+          housewarming: { phrase: 'as we open the doors to our new home',                      emoji: '🏡✨' },
+          custom:       { phrase: 'with joy and togetherness',                                 emoji: '🎉' },
+        };
+        const flavor = (currentEventType && SHARE_FLAVORS[currentEventType]) || SHARE_FLAVORS.custom;
+        // Ready-to-send invite message hosts paste into WhatsApp / SMS / email.
+        // shareBody is the message without the raw URL; shareMsg appends the link.
+        const shareLines = [`Please join us as we celebrate ${shareTitle} ${flavor.phrase}! ${flavor.emoji}`];
+        if (formData.customMessage?.trim()) shareLines.push(formData.customMessage.trim());
+        if (formData.venue) shareLines.push(`📍 Where: ${formData.venue}`);
+        if (shareWhen) shareLines.push(`📅 When: ${shareWhen}`);
+        shareLines.push('', '🔗 RSVP & Evite Details:');
+        const shareBody = shareLines.join('\n');
+        const shareMsg = `${shareBody}\n${shareUrl}`;
+        const waHref = `https://wa.me/?text=${encodeURIComponent(shareMsg)}`;
+        const mailHref = `mailto:?subject=${encodeURIComponent(`You're invited: ${shareTitle}`)}&body=${encodeURIComponent(shareMsg)}`;
+        // Copy the full invite message (with the link) so guests get all the details.
         const copyLink = () => {
           if (!shareUrl) return;
-          navigator.clipboard.writeText(shareUrl);
+          navigator.clipboard.writeText(shareMsg);
           setLinkCopied(true);
           setTimeout(() => setLinkCopied(false), 2000);
         };
         const nativeShare = async () => {
           if (!shareUrl) return;
           if (navigator.share) {
-            try { await navigator.share({ title: shareTitle, text: shareMsg, url: shareUrl }); } catch { /* cancelled */ }
+            try { await navigator.share({ title: shareTitle, text: shareBody, url: shareUrl }); } catch { /* cancelled */ }
           } else {
             copyLink();
           }
@@ -2712,13 +2740,21 @@ export default function CreateEvite() {
                     </div>
                   ) : (
                     <>
-                      {/* Link + copy */}
+                      {/* Ready-to-send invite message — this is what Copy / Share sends */}
                       <p className="font-display text-[9px] tracking-[0.22em] uppercase text-[#9cb092]/80 mb-2 flex items-center gap-1.5">
-                        <span className="material-icons text-sm">link</span>
-                        Your shareable link
+                        <span className="material-icons text-sm">chat_bubble_outline</span>
+                        Message guests will receive
                       </p>
-                      <div className="flex items-stretch gap-2 mb-6">
-                        <div className="flex-1 flex items-center px-3 h-12 bg-white/[0.05] border border-white/15 overflow-hidden">
+                      <div className="mb-4 px-4 py-3.5 bg-white/[0.05] border border-white/12 max-h-44 overflow-y-auto scrollbar-subtle">
+                        <p className="font-display text-[12px] leading-relaxed text-[#e4eee1]/85 whitespace-pre-line break-words">
+                          {shareMsg}
+                        </p>
+                      </div>
+
+                      {/* Link + copy — Copy grabs the full message above (link included) */}
+                      <div className="flex items-stretch gap-2 mb-2">
+                        <div className="flex-1 flex items-center gap-2 px-3 h-12 bg-white/[0.05] border border-white/15 overflow-hidden">
+                          <span className="material-icons text-[#9cb092]/70 text-base flex-shrink-0">link</span>
                           <span className="font-display text-[12px] text-[#e4eee1]/85 truncate">{shareUrl}</span>
                         </div>
                         <button
@@ -2733,6 +2769,9 @@ export default function CreateEvite() {
                           {linkCopied ? 'Copied' : 'Copy'}
                         </button>
                       </div>
+                      <p className="font-display text-[9px] text-[#b2c3b1]/45 mb-6">
+                        Copy grabs the full message above, with your link included.
+                      </p>
 
                       {/* Share options */}
                       <p className="font-display text-[9px] tracking-[0.22em] uppercase text-[#9cb092]/80 mb-2">
