@@ -59,18 +59,8 @@ export default function AboutSection() {
   const navigate = useNavigate();
 
   return (
-    <section className="relative w-full overflow-hidden bg-background-light">
-      {/* Single soft hero glow at the very top — light sage/gold only, so the
-          page reads as one calm surface rather than switching themes. */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[560px] opacity-90"
-        style={{
-          background:
-            'radial-gradient(ellipse 60% 80% at 50% -8%, rgba(156,176,146,0.30), transparent 70%), radial-gradient(ellipse 46% 60% at 86% 6%, rgba(215,195,150,0.22), transparent 72%)',
-        }}
-      />
-
-      <div className="relative mx-auto max-w-5xl px-6">
+    <section className="page-bokeh-bg relative w-full">
+      <div className="relative z-10 mx-auto max-w-5xl px-6">
         {/* ── Hero ── */}
         <div className="mx-auto max-w-3xl pb-16 pt-36 text-center md:pb-20 md:pt-44">
           <p className="font-display text-[11px] uppercase tracking-[0.32em] text-[#5a6c50]">
