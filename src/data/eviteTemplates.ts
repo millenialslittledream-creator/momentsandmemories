@@ -302,10 +302,11 @@ export const eviteTemplates: EviteTemplate[] = [
     // index.html. "Brittany Signature" is a paid font — until you drop the
     // .otf into public/fonts and add an @font-face for it, that line falls back
     // to a serif.
-    // Dynamic (from the event form): weekday / day / month-year (eventDate),
-    // time (eventTime), venue, and the first name (celebrantName). Static text
-    // (AT, address lines, second name) — the pre-wedding form has no address or
-    // second-name field yet, so change those to formKeys once it does.
+    // Dynamic (from the event form): both names (brideName / groomName — this
+    // template overrides the pre-wedding form to collect both, via
+    // TEMPLATE_FIELD_OVERRIDES in eventFields.ts), weekday / day / month-year
+    // (eventDate), time (eventTime), and venue. Static text: AT and the two
+    // address lines (the form has no address field yet).
     // ═══════════════════════════════════════════════════════════════════════
     id: 'pw-h1',
     eventType: 'bridetobe',
@@ -318,10 +319,10 @@ export const eviteTemplates: EviteTemplate[] = [
       naturalWidth: 900,
       naturalHeight: 1600,
       fields: [
-        // AISHWARYA — Cormorant Garamond Medium · CAPS · wide tracking  (→ first name)
-        { formKey: 'celebrantName', x: 450, y: 853, fontFamily: 'Cormorant Garamond', fontWeight: '500', fontSize: 76, letterSpacing: 12, color: '#3a352d', align: 'center', maxWidth: 780, textTransform: 'uppercase' },
-        // NIKHIL — same style  (static: no 2nd-name field in the pre-wedding form yet)
-        { text: 'NIKHIL', x: 450, y: 979, fontFamily: 'Cormorant Garamond', fontWeight: '500', fontSize: 76, letterSpacing: 12, color: '#3a352d', align: 'center', maxWidth: 780 },
+        // AISHWARYA — Cormorant Garamond Medium · CAPS · wide tracking  (→ bride's name)
+        { formKey: 'brideName', x: 450, y: 853, fontFamily: 'Cormorant Garamond', fontWeight: '500', fontSize: 76, letterSpacing: 12, color: '#3a352d', align: 'center', maxWidth: 780, textTransform: 'uppercase' },
+        // NIKHIL — Cormorant Garamond Medium · CAPS · wide tracking  (→ groom's name)
+        { formKey: 'groomName', x: 450, y: 979, fontFamily: 'Cormorant Garamond', fontWeight: '500', fontSize: 76, letterSpacing: 12, color: '#3a352d', align: 'center', maxWidth: 780, textTransform: 'uppercase' },
         // SATURDAY — Montserrat Medium · CAPS · +tracking  (→ eventDate weekday)
         { formKey: 'eventDate', format: 'weekdayUpper', x: 258, y: 1105, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 32, letterSpacing: 6, color: '#3a352d', align: 'center' },
         // 22 — Bodoni Moda Regular (the big day number)  (→ eventDate day)

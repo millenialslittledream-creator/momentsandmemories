@@ -268,8 +268,10 @@ export default function CreateEvite() {
 
   const editorFields: EventField[] = useMemo(() => {
     if (!currentEventType) return [];
-    return getEditorFields(currentEventType);
-  }, [currentEventType]);
+    // Some templates override the default fields (e.g. the pre-wedding
+    // "Champagne Toast" collects bride + groom names instead of one celebrant).
+    return getEditorFields(currentEventType, selectedTemplate?.id);
+  }, [currentEventType, selectedTemplate]);
 
   const supportsMultipleEvents = !!currentEventType && SUPPORTS_MULTI_EVENTS.includes(currentEventType);
 

@@ -112,6 +112,17 @@ export const eventSpecificFields: Record<EventType, EventField[]> = {
   ],
 };
 
+// Per-template field overrides: a specific template can replace the event
+// type's default "specific" fields. e.g. the pre-wedding "Champagne Toast"
+// template (pw-h1) shows both names, so it collects the bride's + groom's name
+// instead of the single celebrant name the other pre-wedding templates use.
+export const TEMPLATE_FIELD_OVERRIDES: Record<string, EventField[]> = {
+  'pw-h1': [
+    { name: 'brideName', label: "Bride's Name", type: 'text', placeholder: "Bride's full name", required: true },
+    { name: 'groomName', label: "Groom's Name", type: 'text', placeholder: "Groom's full name", required: true },
+  ],
+};
+
 // Event types that do NOT collect a Host Name in the editor.
 const EVENTS_WITHOUT_HOST_NAME: EventType[] = ['marriage', 'bridetobe'];
 
@@ -120,9 +131,9 @@ const EVENTS_WITHOUT_HOST_NAME: EventType[] = ['marriage', 'bridetobe'];
  * Order: event-specific → host(?) → date → time → timezone → guest count → venue → custom message.
  * RSVP is no longer collected for any event type.
  */
-export function getEditorFields(eventType: EventType): EventField[] {
+export function getEditorFields(eventType: EventType, templateId?: string): EventField[] {
   const find = (n: string) => commonFields.find((f) => f.name === n)!;
-  const specific = eventSpecificFields[eventType] ?? [];
+  const specific = (templateId && TEMPLATE_FIELD_OVERRIDES[templateId]) || eventSpecificFields[eventType] || [];
   const fields: EventField[] = [...specific];
   if (!EVENTS_WITHOUT_HOST_NAME.includes(eventType)) {
     fields.push(find('hostName'));
@@ -136,6 +147,6 @@ export function getEditorFields(eventType: EventType): EventField[] {
   return fields;
 }
 
-export function getRequiredFieldNames(eventType: EventType): string[] {
-  return getEditorFields(eventType).filter((f) => f.required).map((f) => f.name);
+export function getRequiredFieldNames(eventType: EventType, templateId?: string): string[] {
+  return getEditorFields(eventType, templateId).filter((f) => f.required).map((f) => f.name);
 }
