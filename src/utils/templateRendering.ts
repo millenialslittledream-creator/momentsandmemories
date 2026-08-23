@@ -38,6 +38,27 @@ function formatLongDateUpper(dateStr: string): string {
   return `${weekday}, ${month} ${day}${ord}, ${d.getFullYear()}`;
 }
 
+// Date parts, for templates that lay the date out in separate blocks
+// (e.g. "SATURDAY" / "22" / "MARCH 2026").
+function formatWeekdayUpper(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+}
+
+function formatDayOfMonth(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return String(d.getDate());
+}
+
+function formatMonthYearUpper(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return dateStr;
+  const month = d.toLocaleDateString('en-US', { month: 'long' }).toUpperCase();
+  return `${month} ${d.getFullYear()}`;
+}
+
 function formatTime12(timeStr: string): string {
   const [hStr, mStr] = timeStr.split(':');
   const hh = Number(hStr);
@@ -82,6 +103,12 @@ export function formatFieldValue(
     formatted = formatLongDateDayFirst(raw);
   } else if (field.format === 'longDateUpper') {
     formatted = formatLongDateUpper(raw);
+  } else if (field.format === 'weekdayUpper') {
+    formatted = formatWeekdayUpper(raw);
+  } else if (field.format === 'dayOfMonth') {
+    formatted = formatDayOfMonth(raw);
+  } else if (field.format === 'monthYearUpper') {
+    formatted = formatMonthYearUpper(raw);
   } else if (field.format === 'time12') {
     formatted = formatTime12(raw);
   }

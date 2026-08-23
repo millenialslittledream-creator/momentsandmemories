@@ -5,7 +5,7 @@ export interface TemplateFieldLayout {
   text?: string;
   prefix?: string;
   suffix?: string;
-  format?: 'longDate' | 'longDateDayFirst' | 'longDateUpper' | 'time' | 'time12' | 'raw';
+  format?: 'longDate' | 'longDateDayFirst' | 'longDateUpper' | 'weekdayUpper' | 'dayOfMonth' | 'monthYearUpper' | 'time' | 'time12' | 'raw';
   iconBefore?: string;
   iconSize?: number;
   iconGap?: number;
@@ -291,6 +291,56 @@ export const eviteTemplates: EviteTemplate[] = [
   // previewImage → carousel thumbnail. realImage → full-res background for the renderer.
   // naturalWidth/Height match each image's actual pixel dimensions (no cropping).
   // timezone sits on the same line as eventTime; maxWidth on time keeps them from overlapping.
+  {
+    // ═══════════════════════════════════════════════════════════════════════
+    // "Champagne Toast" — FIRST in the Pre-Wedding section.
+    // EDIT PLACEMENTS HERE: the coordinate space is the real image's pixels
+    // (900 × 1600). Every x / y / fontSize / letterSpacing below is in THAT
+    // space — nudge them to reposition. Sizes were scaled up (~1.7×) from your
+    // design spec so they fit the 1600px-tall canvas; tune to taste.
+    // Fonts: Montserrat + Cormorant Garamond already load; Bodoni Moda added to
+    // index.html. "Brittany Signature" is a paid font — until you drop the
+    // .otf into public/fonts and add an @font-face for it, that line falls back
+    // to a serif.
+    // Dynamic (from the event form): weekday / day / month-year (eventDate),
+    // time (eventTime), venue, and the first name (celebrantName). Static text
+    // (AT, address lines, second name) — the pre-wedding form has no address or
+    // second-name field yet, so change those to formKeys once it does.
+    // ═══════════════════════════════════════════════════════════════════════
+    id: 'pw-h1',
+    eventType: 'bridetobe',
+    name: 'Champagne Toast',
+    style: 'Modern & Gold',
+    previewImage: '/templates/pre wedding/h1preview.png',
+    realImage: '/templates/pre wedding/h1real.jpeg',
+    accent: '#C6A867',
+    layout: {
+      naturalWidth: 900,
+      naturalHeight: 1600,
+      fields: [
+        // AISHWARYA — Cormorant Garamond Medium · CAPS · wide tracking  (→ first name)
+        { formKey: 'celebrantName', x: 450, y: 853, fontFamily: 'Cormorant Garamond', fontWeight: '500', fontSize: 76, letterSpacing: 12, color: '#3a352d', align: 'center', maxWidth: 780, textTransform: 'uppercase' },
+        // NIKHIL — same style  (static: no 2nd-name field in the pre-wedding form yet)
+        { text: 'NIKHIL', x: 450, y: 979, fontFamily: 'Cormorant Garamond', fontWeight: '500', fontSize: 76, letterSpacing: 12, color: '#3a352d', align: 'center', maxWidth: 780 },
+        // SATURDAY — Montserrat Medium · CAPS · +tracking  (→ eventDate weekday)
+        { formKey: 'eventDate', format: 'weekdayUpper', x: 258, y: 1105, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 32, letterSpacing: 6, color: '#3a352d', align: 'center' },
+        // 22 — Bodoni Moda Regular (the big day number)  (→ eventDate day)
+        { formKey: 'eventDate', format: 'dayOfMonth', x: 448, y: 1130, fontFamily: 'Bodoni Moda', fontWeight: '400', fontSize: 110, color: '#3a352d', align: 'center' },
+        // AT — Montserrat Medium · CAPS  (static connector)
+        { text: 'AT', x: 645, y: 1092, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 29, letterSpacing: 3.4, color: '#3a352d', align: 'center' },
+        // 6:00 PM — Montserrat Medium · CAPS  (→ eventTime)
+        { formKey: 'eventTime', format: 'time12', x: 645, y: 1138, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 31, letterSpacing: 3.4, color: '#3a352d', align: 'center', textTransform: 'uppercase' },
+        // MARCH 2026 — Montserrat Medium · CAPS · +tracking  (→ eventDate month + year)
+        { formKey: 'eventDate', format: 'monthYearUpper', x: 326, y: 1195, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 29, letterSpacing: 6, color: '#3a352d', align: 'center' },
+        // The Willow House — Brittany Signature (script)  (→ venue)
+        { formKey: 'venue', x: 450, y: 1285, fontFamily: 'Brittany Signature', fontWeight: '400', fontSize: 73, color: '#3a352d', align: 'center', maxWidth: 780 },
+        // 123 OAK LANE — Montserrat Regular · +tracking  (static: no address field yet)
+        { text: '123 OAK LANE', x: 450, y: 1342, fontFamily: 'Montserrat', fontWeight: '400', fontSize: 26, letterSpacing: 4.3, color: '#3a352d', align: 'center' },
+        // LONDON, SW1A 1AA — Montserrat Regular · +tracking  (static)
+        { text: 'LONDON, SW1A 1AA', x: 450, y: 1372, fontFamily: 'Montserrat', fontWeight: '400', fontSize: 26, letterSpacing: 4.3, color: '#3a352d', align: 'center' },
+      ],
+    },
+  },
   {
     id: 'pw-one',
     eventType: 'bridetobe',
