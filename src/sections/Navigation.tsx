@@ -23,6 +23,10 @@ export default function Navigation() {
   const lenis = useLenis();
   const { user, signOut } = useAuth();
 
+  // Pages with a light hero at the top: the nav sits on a light surface, so it
+  // needs dark text and the landing logo (same treatment as the home page).
+  const isLightTop = location.pathname === '/' || location.pathname === '/about';
+
   // Smooth-scroll to a section id (Lenis-aware, like ScrollToTop). Empty id or
   // 'hero' scrolls to the top. The offset clears the fixed nav bar.
   const scrollToId = (id: string) => {
@@ -88,7 +92,7 @@ export default function Navigation() {
         ref={navRef}
         className={`fixed top-0 left-0 w-full z-50 px-6 md:px-8 py-2 md:py-2 flex justify-between items-center transition-all duration-500 ${isScrolled
           ? 'bg-[#111914]/84 backdrop-blur-md border-b border-white/10 text-[#e2ebde]'
-          : location.pathname === '/'
+          : isLightTop
             ? 'bg-transparent text-[#2a3328]'
             : 'bg-transparent text-[#f2f6ef]'
           }`}
@@ -96,7 +100,7 @@ export default function Navigation() {
         {/* Logo — landing page uses its own logo; all other pages share one */}
         <button onClick={() => handleNavClick('hero', '/')} className="transition-all duration-500 cursor-pointer select-none">
           <img
-            src={location.pathname === '/' ? '/logo-landing.png' : '/logo-pages.png'}
+            src={isLightTop ? '/logo-landing.png' : '/logo-pages.png'}
             alt="Moments & Memories"
             className="h-20 md:h-24 w-auto object-contain"
           />
