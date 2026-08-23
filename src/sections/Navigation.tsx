@@ -91,7 +91,11 @@ export default function Navigation() {
       <nav
         ref={navRef}
         className={`fixed top-0 left-0 w-full z-50 px-6 md:px-8 py-2 md:py-2 flex justify-between items-center transition-all duration-500 ${isScrolled
-          ? 'bg-[#111914]/84 backdrop-blur-md border-b border-white/10 text-[#e2ebde]'
+          ? isLightTop
+            // Light pages keep the dark forest text on scroll — just add a light
+            // glass background (dark text on a dark bg would be invisible).
+            ? 'bg-background-light/85 backdrop-blur-md border-b border-[#3d4a35]/10 text-[#2a3328]'
+            : 'bg-[#111914]/84 backdrop-blur-md border-b border-white/10 text-[#e2ebde]'
           : isLightTop
             ? 'bg-transparent text-[#2a3328]'
             : 'bg-transparent text-[#f2f6ef]'
