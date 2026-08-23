@@ -2040,43 +2040,36 @@ export default function CreateEvite() {
                   </div>
                 )}
 
-                {/* Customize entry — the design's "Edit" affordance lives on the
-                    preview itself (filling the black space around the artwork)
-                    instead of a separate tab. Only stock templates with a
-                    positioned layout can be customized. */}
-                {!uploadedTemplate && selectedTemplate?.layout && rightPanelTab === 'details' && (
-                  <button
-                    onClick={() => { if (isEditorValid) setRightPanelTab('customize'); }}
-                    disabled={!isEditorValid}
-                    title={isEditorValid ? 'Customize fonts, colors, size & position' : 'Fill in all required details to customize'}
-                    className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-5 py-2.5 backdrop-blur-sm border font-display text-[10px] tracking-[0.2em] uppercase transition-all ${
-                      isEditorValid
-                        ? 'bg-[#9cb092]/90 text-[#111914] border-[#9cb092] hover:bg-[#9cb092] shadow-lg'
-                        : 'bg-black/55 text-[#b2c3b1]/45 border-white/10 cursor-not-allowed'
-                    }`}
-                  >
-                    <span className="material-icons text-[15px]">{isEditorValid ? 'edit' : 'lock'}</span>
-                    {isEditorValid ? 'Customize Design' : 'Fill details to customize'}
-                  </button>
-                )}
-                {!uploadedTemplate && selectedTemplate?.layout && rightPanelTab === 'customize' && (
-                  <button
-                    onClick={() => setRightPanelTab('details')}
-                    className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-[#111914]/85 backdrop-blur-sm border border-[#9cb092]/50 text-[#9cb092] font-display text-[9px] tracking-[0.18em] uppercase transition-all hover:bg-[#111914] shadow-lg"
-                  >
-                    <span className="material-icons text-[13px]">check</span>
-                    Done
-                  </button>
-                )}
+                {/* The "Customize Design" entry and the "Done" / "Back to
+                    details" control now live in the right-side panel headers
+                    (below) rather than overlaid on the preview artwork. */}
               </div>
             </div>
 
             {/* ── RIGHT: form (scrollable) ────────────────────────── */}
             <div className="flex-1 md:flex-1 min-h-0 flex flex-col overflow-hidden">
-              {/* The design's customization controls open from the "Customize
-                  Design" button on the preview (left), not a tab. This slim
-                  header only appears while customizing, to step back to the
-                  details form. */}
+              {/* Slim panel headers (side). Details mode carries the "Customize
+                  Design" entry — moved off the preview so it no longer covers
+                  the artwork; customize mode carries "Back to details". */}
+              {selectedTemplate?.layout && rightPanelTab === 'details' && (
+                <div className="flex-shrink-0 flex items-center justify-between gap-2 px-6 md:px-8 py-3 border-b border-white/[0.06] bg-[#0e1712]">
+                  <p className="font-display text-[10px] tracking-[0.18em] uppercase text-[#9cb092] flex items-center gap-1.5">
+                    <span className="material-icons text-[14px]">event</span>
+                    Event Details
+                  </p>
+                  <button
+                    onClick={() => { if (isEditorValid) setRightPanelTab('customize'); }}
+                    disabled={!isEditorValid}
+                    title={isEditorValid ? 'Customize fonts, colors, size & position' : 'Fill in all required details to customize'}
+                    className={`font-display text-[9px] tracking-[0.18em] uppercase transition-colors flex items-center gap-1.5 ${
+                      isEditorValid ? 'text-[#9cb092] hover:text-[#adc4a3]' : 'text-[#b2c3b1]/35 cursor-not-allowed'
+                    }`}
+                  >
+                    <span className="material-icons text-[13px]">{isEditorValid ? 'edit' : 'lock'}</span>
+                    {isEditorValid ? 'Customize Design' : 'Fill details to customize'}
+                  </button>
+                </div>
+              )}
               {selectedTemplate?.layout && rightPanelTab === 'customize' && (
                 <div className="flex-shrink-0 flex items-center justify-between gap-2 px-6 md:px-8 py-3 border-b border-white/[0.06] bg-[#0e1712]">
                   <p className="font-display text-[10px] tracking-[0.18em] uppercase text-[#9cb092] flex items-center gap-1.5">
