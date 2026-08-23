@@ -320,25 +320,24 @@ export const eviteTemplates: EviteTemplate[] = [
       naturalHeight: 1600,
       fields: [
         // AISHWARYA — Cormorant Garamond Medium · CAPS · wide tracking  (→ bride's name)
-        { formKey: 'brideName', x: 450, y: 853, fontFamily: 'Cormorant Garamond', fontWeight: '500', fontSize: 76, letterSpacing: 12, color: '#3a352d', align: 'center', maxWidth: 780, textTransform: 'uppercase' },
+        { formKey: 'brideName', x: 450, y: 840, fontFamily: 'Cormorant Garamond', fontWeight: '500', fontSize: 45, letterSpacing: 12, color: '#3a352d', align: 'center', maxWidth: 780, textTransform: 'uppercase' },
         // NIKHIL — Cormorant Garamond Medium · CAPS · wide tracking  (→ groom's name)
-        { formKey: 'groomName', x: 450, y: 979, fontFamily: 'Cormorant Garamond', fontWeight: '500', fontSize: 76, letterSpacing: 12, color: '#3a352d', align: 'center', maxWidth: 780, textTransform: 'uppercase' },
+        { formKey: 'groomName', x: 450, y: 930, fontFamily: 'Cormorant Garamond', fontWeight: '500', fontSize: 45, letterSpacing: 12, color: '#3a352d', align: 'center', maxWidth: 780, textTransform: 'uppercase' },
         // SATURDAY — Montserrat Medium · CAPS · +tracking  (→ eventDate weekday)
-        { formKey: 'eventDate', format: 'weekdayUpper', x: 258, y: 1105, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 32, letterSpacing: 6, color: '#3a352d', align: 'center' },
+        { formKey: 'eventDate', format: 'weekdayUpper', x: 280, y: 1150, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 25, letterSpacing: 6, color: '#3a352d', align: 'center' },
         // 22 — Bodoni Moda Regular (the big day number)  (→ eventDate day)
-        { formKey: 'eventDate', format: 'dayOfMonth', x: 448, y: 1130, fontFamily: 'Bodoni Moda', fontWeight: '400', fontSize: 110, color: '#3a352d', align: 'center' },
+        { formKey: 'eventDate', format: 'dayOfMonth', x: 455, y: 1060, fontFamily: 'Bodoni Moda', fontWeight: '400', fontSize: 80, color: '#3a352d', align: 'center' },
         // AT — Montserrat Medium · CAPS  (static connector)
-        { text: 'AT', x: 645, y: 1092, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 29, letterSpacing: 3.4, color: '#3a352d', align: 'center' },
+        { text: 'AT', x: 610, y: 1150, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 25, letterSpacing: 3.4, color: '#3a352d', align: 'center' },
         // 6:00 PM — Montserrat Medium · CAPS  (→ eventTime)
-        { formKey: 'eventTime', format: 'time12', x: 645, y: 1138, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 31, letterSpacing: 3.4, color: '#3a352d', align: 'center', textTransform: 'uppercase' },
+        { formKey: 'eventTime', format: 'time12', x: 610, y: 1195, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 25, letterSpacing: 3.4, color: '#3a352d', align: 'center', textTransform: 'uppercase' },
         // MARCH 2026 — Montserrat Medium · CAPS · +tracking  (→ eventDate month + year)
-        { formKey: 'eventDate', format: 'monthYearUpper', x: 326, y: 1195, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 29, letterSpacing: 6, color: '#3a352d', align: 'center' },
-        // The Willow House — Brittany Signature (script)  (→ venue)
-        { formKey: 'venue', x: 450, y: 1285, fontFamily: 'Brittany Signature', fontWeight: '400', fontSize: 73, color: '#3a352d', align: 'center', maxWidth: 780 },
-        // 123 OAK LANE — Montserrat Regular · +tracking  (static: no address field yet)
-        { text: '123 OAK LANE', x: 450, y: 1342, fontFamily: 'Montserrat', fontWeight: '400', fontSize: 26, letterSpacing: 4.3, color: '#3a352d', align: 'center' },
-        // LONDON, SW1A 1AA — Montserrat Regular · +tracking  (static)
-        { text: 'LONDON, SW1A 1AA', x: 450, y: 1372, fontFamily: 'Montserrat', fontWeight: '400', fontSize: 26, letterSpacing: 4.3, color: '#3a352d', align: 'center' },
+        { formKey: 'eventDate', format: 'monthYearUpper', x: 430, y: 1220, fontFamily: 'Montserrat', fontWeight: '500', fontSize: 25, letterSpacing: 6, color: '#3a352d', align: 'center' },
+        // Venue / address — the WHOLE venue the host types, wrapped onto as
+        // many lines as needed (each ≤ wrapAfterChars characters). The lines
+        // flow down from this y using lineHeight. Tune wrapAfterChars for how
+        // many characters per line, and lineHeight for the gap between lines.
+        { formKey: 'venue', x: 450, y: 1285, fontFamily: 'Montserrat', fontWeight: '400', fontSize: 26, letterSpacing: 4.3, color: '#3a352d', align: 'center', maxWidth: 780, lineHeight: 42, wrapAfterChars: 18 },
       ],
     },
   },

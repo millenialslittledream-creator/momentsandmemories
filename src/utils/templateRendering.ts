@@ -70,16 +70,29 @@ function formatTime12(timeStr: string): string {
 }
 
 /**
- * Breaks `text` into 2 lines at the nearest word boundary once length exceeds `limit`.
- * Prefers a space at/before the limit; falls back to the first space after the limit.
- * If no spaces exist at all, returns the text unchanged.
+ * Word-wraps `text` into as many lines as needed, each at most `limit`
+ * characters, breaking at the nearest space. Long venues/addresses cascade
+ * onto line 2, 3, 4… instead of overflowing. A single word longer than the
+ * limit is kept on its own line.
  */
 function wrapAfter(text: string, limit: number): string {
   if (text.length <= limit) return text;
-  const beforeIdx = text.lastIndexOf(' ', limit);
-  const breakIdx = beforeIdx > 0 ? beforeIdx : text.indexOf(' ', limit);
-  if (breakIdx <= 0) return text;
-  return text.slice(0, breakIdx) + '\n' + text.slice(breakIdx + 1);
+  const lines: string[] = [];
+  let rest = text.trim();
+  while (rest.length > limit) {
+    let breakIdx = rest.lastIndexOf(' ', limit);
+    if (breakIdx <= 0) {
+      breakIdx = rest.indexOf(' ', limit);
+      if (breakIdx <= 0) {
+        lines.push(rest);
+        return lines.join('\n');
+      }
+    }
+    lines.push(rest.slice(0, breakIdx));
+    rest = rest.slice(breakIdx + 1).trimStart();
+  }
+  if (rest) lines.push(rest);
+  return lines.join('\n');
 }
 
 export function formatFieldValue(
