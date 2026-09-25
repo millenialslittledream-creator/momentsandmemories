@@ -478,10 +478,16 @@ export default function GuestPopup({
         <div className="flex-shrink-0 px-6 md:px-10 pt-2.5 pb-3 border-b border-white/[0.06]">
           <FlowStepper current={5} className="max-w-2xl mx-auto mb-2" />
           <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight">
-            Who's on the <span className="text-[#9cb092] font-agatho italic">guest list?</span>
+            {showAddGuests ? (
+              <>Who's on the <span className="text-[#9cb092] font-agatho italic">guest list?</span></>
+            ) : (
+              <>Share your <span className="text-[#9cb092] font-agatho italic">invitation</span></>
+            )}
           </h2>
           <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/55 mt-1.5">
-            Pick how you'd like to deliver — and how to add your guests.
+            {showAddGuests
+              ? "Pick how you'd like to deliver — and how to add your guests."
+              : 'Copy your link on the next step — or switch to Email / SMS to invite guests directly.'}
           </p>
         </div>
 

@@ -30,6 +30,7 @@ const GuestGalleryUpload = lazy(() => import('./pages/GuestGalleryUpload'));
 // (each with 3 colour themes) to open the full website editor. Reached from the
 // "Build an Event Website" tile on the Create Evite page.
 const DevEviteHub = lazy(() => import('./components/DevEviteHub'));
+const BabyPreview = lazy(() => import('./pages/__BabyPreview')); // DEV-ONLY tuning preview
 
 // Register GSAP plugins globally
 gsap.registerPlugin(ScrollTrigger);
@@ -83,6 +84,7 @@ function App() {
               <Route path="/site/:slug" element={<PublicPremiumSite />} />
               <Route path="/gallery/:eventId" element={<GuestGalleryUpload />} />
               <Route path="/website-builder" element={<DevEviteHub />} />
+              <Route path="/__baby-preview" element={<BabyPreview />} />
             </Routes>
           </Suspense>
           <Toaster position="top-center" richColors />

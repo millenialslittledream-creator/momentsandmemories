@@ -199,7 +199,10 @@ export default function CreateEvite() {
   const [modalPhase, setModalPhase] = useState<ModalPhase>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [guests, setGuests] = useState<Guest[]>([createGuest()]);
-  const [deliveryPreference, setDeliveryPreference] = useState<'email' | 'phone' | 'both' | 'link'>('email');
+  // Default to the shareable link: the previous step already hands the host a
+  // live link, so the guest step opens with "no guest list needed" and only
+  // asks for guest names if the host opts into email / SMS delivery.
+  const [deliveryPreference, setDeliveryPreference] = useState<'email' | 'phone' | 'both' | 'link'>('link');
   const [rsvpSettings, setRsvpSettings] = useState<RSVPSettings>(DEFAULT_RSVP_SETTINGS);
   const [hasSubEvents, setHasSubEvents] = useState(false);
   const [multipleInvitations, setMultipleInvitations] = useState(false);

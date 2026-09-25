@@ -98,10 +98,25 @@ function wrapAfter(text: string, limit: number): string {
   return lines.join('\n');
 }
 
+/**
+ * Shrink-to-fit for single-line values whose length varies with the data.
+ * A concept card's date column is drawn around the designer's own sample
+ * ("22 JUNE 2026"); a longer month ("27 SEPTEMBER 2026") would otherwise run
+ * straight through the divider beside it. `fitChars` is the widest the slot
+ * can take, so anything longer is scaled down to fit instead of overflowing.
+ */
+function fittedFontSize(field: TemplateFieldLayout, text: string): number {
+  if (!field.fitChars || !text) return field.fontSize;
+  const longest = Math.max(...text.split('\n').map((l) => l.length));
+  if (longest <= field.fitChars) return field.fontSize;
+  return Math.max(6, (field.fontSize * field.fitChars) / longest);
+}
+
 function fieldStyle(
   field: TemplateFieldLayout,
   naturalWidth: number,
-  naturalHeight: number
+  naturalHeight: number,
+  text = ''
 ): CSSProperties {
   const leftPct = (field.x / naturalWidth) * 100;
   const topPct = (field.y / naturalHeight) * 100;
@@ -126,13 +141,14 @@ function fieldStyle(
     fontWeight: field.fontWeight || 400,
     fontStyle: field.fontStyle || 'normal',
     color: field.color,
-    fontSize: `calc(${field.fontSize} / ${naturalWidth} * 100cqi)`,
+    fontSize: `calc(${fittedFontSize(field, text)} / ${naturalWidth} * 100cqi)`,
     lineHeight: lineHeightRatio,
     letterSpacing: field.letterSpacing
       ? `calc(${field.letterSpacing} / ${naturalWidth} * 100cqi)`
       : undefined,
     textAlign: field.align,
     textTransform: field.textTransform,
+    fontVariantNumeric: field.liningNums ? 'lining-nums' : undefined,
     whiteSpace: 'pre',
     pointerEvents: 'none',
     maxWidth: field.maxWidth
@@ -327,7 +343,7 @@ export default function TemplateRenderer({
       const text = formatFieldValue(effectiveField, formData);
       if (!text && !effectiveField.iconBefore) return null;
       const key = field.formKey || field.text || `field-${idx}`;
-      const baseStyle = fieldStyle(effectiveField, layout.naturalWidth, layout.naturalHeight);
+      const baseStyle = fieldStyle(effectiveField, layout.naturalWidth, layout.naturalHeight, text);
       const isSelected = interactive && selectedKey === overrideKey;
       const style: CSSProperties = interactive
         ? {
