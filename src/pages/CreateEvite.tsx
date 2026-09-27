@@ -227,6 +227,13 @@ export default function CreateEvite() {
   const [publishError, setPublishError] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
 
+  // ── Resume-in-progress prompt (H10) ──────────────────────────────────
+  // If the host left a half-finished evite behind (saved in localStorage),
+  // greet them on return with a "pick up where you left off?" popup instead
+  // of silently dropping them on the event picker.
+  const [showResume, setShowResume] = useState(false);
+  const [resumeLabel, setResumeLabel] = useState('');
+
   // ── Derived state ────────────────────────────────────────────────
   const selectedTemplate = useMemo(
     () => eviteTemplates.find((t) => t.id === selectedTemplateId) || null,
@@ -427,6 +434,79 @@ export default function CreateEvite() {
         );
       }
     });
+  }, []);
+
+  // On arrival, offer to resume a saved-but-unfinished evite (H10). Skipped
+  // when we're mid sign-in-return (pendingPhase handles that separately).
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('mm_evite_draft');
+      if (!saved) return;
+      const p = JSON.parse(saved);
+      if (p.pendingPhase) return;
+      const hasContent =
+        !!p.selectedTemplateId ||
+        !!p.uploadedTemplate ||
+        (p.formData && Object.keys(p.formData).length > 0);
+      if (!hasContent) return;
+      const et = p.selectedTemplateId
+        ? eviteTemplates.find((t) => t.id === p.selectedTemplateId)?.eventType
+        : null;
+      setResumeLabel(et ? eventTypes.find((e) => e.id === et)?.label ?? '' : '');
+      setShowResume(true);
+    } catch {
+      /* ignore */
+    }
+    // Runs once on mount.
+  }, []);
+
+  // "Continue editing" — re-apply the saved draft and drop the host straight
+  // back into the editor for their in-progress design.
+  const resumeDraft = useCallback(() => {
+    setShowResume(false);
+    try {
+      const saved = localStorage.getItem('mm_evite_draft');
+      const p = saved ? JSON.parse(saved) : {};
+      if (p.formData) setFormData(p.formData);
+      if (p.guests?.length) setGuests(p.guests);
+      if (p.deliveryPreference) setDeliveryPreference(p.deliveryPreference);
+      if (p.hasSubEvents) setHasSubEvents(!!p.hasSubEvents);
+      if (p.selectedTemplateId) {
+        const t = eviteTemplates.find((x) => x.id === p.selectedTemplateId);
+        if (t) setActiveFilter(t.eventType);
+        setSelectedTemplateId(p.selectedTemplateId);
+        setUploadedTemplate(null);
+        setFlowStage('gallery');
+        setModalPhase('editor');
+        animateModalIn();
+      } else if (p.uploadedTemplate) {
+        setUploadedTemplate(p.uploadedTemplate);
+        setFlowStage('gallery');
+        setModalPhase('editor');
+        animateModalIn();
+      } else {
+        // Only form details were saved — take them to the gallery to re-pick a design.
+        setFlowStage('gallery');
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [animateModalIn]);
+
+  // "Start fresh" — throw the old draft away and begin from the event picker.
+  const discardDraft = useCallback(() => {
+    setShowResume(false);
+    try {
+      localStorage.removeItem('mm_evite_draft');
+    } catch {
+      /* ignore */
+    }
+    setFormData({});
+    setSelectedTemplateId(null);
+    setUploadedTemplate(null);
+    setHasSubEvents(false);
+    setGuests([createGuest()]);
+    setFlowStage('picker');
   }, []);
 
   const openTemplate = useCallback(
@@ -1052,6 +1132,43 @@ export default function CreateEvite() {
         }}
       />
       <div className="fixed inset-0 z-[1] bg-[#111914]/70 pointer-events-none" />
+
+      {/* ════════════════════════════════════════════════════════════
+          RESUME PROMPT (H10) — greet a returning host with their
+          in-progress evite instead of silently dropping the draft.
+          ════════════════════════════════════════════════════════════ */}
+      {showResume && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(13, 21, 18, 0.94)', backdropFilter: 'blur(6px)' }}
+        >
+          <div className="relative w-full max-w-md bg-[#111914] border border-white/[0.09] shadow-2xl p-8 md:p-10 text-center">
+            <div className="w-14 h-14 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center mx-auto mb-5">
+              <span className="material-icons text-[#9cb092] text-3xl">history</span>
+            </div>
+            <h2 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight mb-3">
+              Welcome <span className="text-[#9cb092] font-agatho italic">back</span>
+            </h2>
+            <p className="font-display text-sm text-[#b2c3b1]/80 leading-relaxed mb-8">
+              You have {resumeLabel ? `a ${resumeLabel.toLowerCase()} ` : 'an '}invitation still in
+              progress. Want to pick up where you left off?
+            </p>
+            <button
+              onClick={resumeDraft}
+              className="w-full py-3.5 bg-[#9cb092] text-[#111914] font-display text-[11px] tracking-[0.22em] uppercase font-bold hover:bg-[#adc4a3] transition-colors flex items-center justify-center gap-2"
+            >
+              Continue editing
+              <span className="material-icons text-sm">arrow_forward</span>
+            </button>
+            <button
+              onClick={discardDraft}
+              className="mt-4 font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/55 hover:text-[#9cb092] transition-colors"
+            >
+              Start fresh
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ════════════════════════════════════════════════════════════
           GALLERY — base page. Uses the same flow chrome as every other

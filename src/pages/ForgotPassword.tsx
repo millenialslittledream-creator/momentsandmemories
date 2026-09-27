@@ -36,11 +36,7 @@ const ForgotPassword = () => {
 
   return (
     <PageTransition>
-      <div className="bg-stone-matte text-[#1a2418] font-display min-h-screen flex flex-col overflow-hidden relative">
-        <div className="absolute inset-0 pointer-events-none" style={{
-          backgroundImage: "linear-gradient(rgba(61,74,53,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(61,74,53,0.04) 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-        }} />
+      <div className="page-bokeh-bg text-[#1a2418] font-display min-h-screen flex flex-col overflow-hidden relative">
 
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
           <div className="absolute -top-20 -left-20 w-96 h-96 bg-primary/5 rounded-full blur-[80px]" />

@@ -101,8 +101,7 @@ const SignUp = () => {
 
   return (
     <PageTransition>
-      <div className="bg-stone-matte text-[#1a2418] font-display min-h-screen w-full overflow-hidden flex items-center justify-center relative py-10">
-        <div className="absolute inset-0 auth-grid-bg pointer-events-none" />
+      <div className="page-bokeh-bg text-[#1a2418] font-display min-h-screen w-full overflow-hidden flex items-center justify-center relative py-10">
         <div className="absolute top-0 left-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2" />
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[100px] translate-x-1/3 translate-y-1/3" />
         <div className="absolute top-1/2 left-1/4 w-80 h-80 bg-[#B0BBA8]/20 rounded-full blur-[100px] pointer-events-none" />

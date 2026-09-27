@@ -48,7 +48,7 @@ const ResetPassword = () => {
 
   return (
     <PageTransition>
-      <div className="auth-stone-grid-bg text-[#1a2418] font-display min-h-screen flex flex-col overflow-hidden relative selection:bg-primary/20">
+      <div className="page-bokeh-bg text-[#1a2418] font-display min-h-screen flex flex-col overflow-hidden relative selection:bg-primary/20">
         <nav className="fixed top-0 left-0 w-full z-50 p-8 flex justify-between items-start pointer-events-none">
           <Link to="/sign-in" className="pointer-events-auto cursor-pointer group flex items-center gap-3">
             <svg className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

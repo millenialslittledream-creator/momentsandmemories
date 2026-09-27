@@ -117,8 +117,7 @@ const VerifyEmail = () => {
 
   return (
     <PageTransition>
-      <div className="bg-stone-matte text-[#1a2418] font-display h-screen w-screen overflow-hidden flex flex-col items-center justify-center relative">
-        <div className="absolute inset-0 auth-grid-bg pointer-events-none" style={{ backgroundSize: "40px 40px" }} />
+      <div className="page-bokeh-bg text-[#1a2418] font-display h-screen w-screen overflow-hidden flex flex-col items-center justify-center relative">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-[#B0BBA8]/20 rounded-full blur-[100px] pointer-events-none" />
 
