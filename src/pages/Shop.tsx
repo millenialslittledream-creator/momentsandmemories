@@ -234,18 +234,8 @@ export default function Shop() {
   return (
     <div
       ref={pageRef}
-      className="h-screen flex flex-col bg-[#EADDD7] overflow-hidden relative"
+      className="page-bokeh-bg h-screen flex flex-col overflow-hidden relative"
     >
-      {/* Shared bg texture */}
-      <div
-        className="fixed inset-0 z-0 opacity-30 mix-blend-multiply pointer-events-none"
-        style={{
-          backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuD0yNSOWSBJLsv1-47TiuxQ15AFQ4nsrk2tyl20R-zvNNsiDXBNDhZVYz1yHqSCTtqtGcVjl35j2rrDIrA-d5xW6tM2FPDinMxC7wGNXKzBCT0JhfwdSkLFQPVqU1yfc1GtqRHSfxSmlitg3lWmrbcCqzLdzR4XsiD9nN9-_O7fp4ViDdX7MFMvLLa9exuWvETBq8HCVRb7NcpP7tWvqDoEWCeegHipJmlKBCM4gpRO9AROi6bPaa2gmQvHKabiYnelhLueCkgQ9QIe')`,
-        }}
-      />
-      {/* Dark overlay */}
-      <div className="fixed inset-0 z-[1] bg-[#111914]/70 pointer-events-none" />
-
       <Navigation />
 
       {/* ════════════════════════════════════════════════════════════════════
@@ -255,30 +245,30 @@ export default function Shop() {
         <div className="flex-1 flex flex-col overflow-hidden px-6 md:px-10">
 
           {/* Header row */}
-          <div className="flex items-end justify-between py-4 md:py-5 flex-shrink-0 border-b border-white/[0.07]">
+          <div className="flex items-end justify-between py-4 md:py-5 flex-shrink-0 border-b border-[#3d4a35]/15">
             <div>
-              <h1 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
+              <h1 className="font-serif-exp text-2xl md:text-3xl text-[#2a3328] leading-tight">
                 Gifts
               </h1>
-              <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#b2c3b1]/40 mt-1">
+              <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#5a6c50]/70 mt-1">
                 Discover gifts that create memories
               </p>
             </div>
-            <p className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/45">
+            <p className="font-display text-[10px] tracking-[0.2em] uppercase text-[#5a6c50]/70">
               {products.length} {products.length === 1 ? 'item' : 'items'}
             </p>
           </div>
 
           {/* Category chips — mobile only (sidebar is hidden on small screens) */}
-          <div className="md:hidden flex items-center gap-1.5 flex-wrap py-3 flex-shrink-0 border-b border-white/[0.05]">
+          <div className="md:hidden flex items-center gap-1.5 flex-wrap py-3 flex-shrink-0 border-b border-[#3d4a35]/12">
             {FILTERS.map(f => (
               <button
                 key={f.id}
                 onClick={() => setActiveFilter(f.id)}
                 className={`font-display text-[9px] tracking-[0.16em] uppercase px-3 py-1.5 transition-all duration-200 ${
                   activeFilter === f.id
-                    ? 'bg-[#9cb092] text-[#111914] font-semibold'
-                    : 'border border-white/15 text-[#b2c3b1]/55'
+                    ? 'bg-[#5f7256] text-white font-semibold'
+                    : 'border border-[#3d4a35]/25 text-[#4a5942]'
                 }`}
               >{f.label}</button>
             ))}
@@ -290,7 +280,7 @@ export default function Shop() {
             <aside className="hidden md:block w-52 flex-shrink-0 overflow-y-auto scrollbar-subtle pr-1">
               {/* Category */}
               <div className="mb-6">
-                <p className="font-display text-[9px] tracking-[0.24em] uppercase text-[#9cb092]/80 mb-2.5">Category</p>
+                <p className="font-display text-[9px] tracking-[0.24em] uppercase text-[#5f7256] mb-2.5">Category</p>
                 <div className="space-y-0.5">
                   {FILTERS.map(f => (
                     <button
@@ -298,8 +288,8 @@ export default function Shop() {
                       onClick={() => setActiveFilter(f.id)}
                       className={`w-full text-left px-3 py-1.5 font-display text-[11px] tracking-wide transition-colors border-l-2 ${
                         activeFilter === f.id
-                          ? 'border-[#9cb092] text-[#9cb092] bg-[#9cb092]/[0.08]'
-                          : 'border-transparent text-[#b2c3b1]/60 hover:text-[#9cb092] hover:border-[#9cb092]/40'
+                          ? 'border-[#5f7256] text-[#5f7256] bg-[#5f7256]/[0.1]'
+                          : 'border-transparent text-[#4a5942]/80 hover:text-[#5f7256] hover:border-[#5f7256]/40'
                       }`}
                     >{f.label}</button>
                   ))}
@@ -307,8 +297,8 @@ export default function Shop() {
               </div>
 
               {/* Price range */}
-              <div className="mb-6 border-t border-white/[0.06] pt-5">
-                <p className="font-display text-[9px] tracking-[0.24em] uppercase text-[#9cb092]/80 mb-3">Price Range</p>
+              <div className="mb-6 border-t border-[#3d4a35]/12 pt-5">
+                <p className="font-display text-[9px] tracking-[0.24em] uppercase text-[#5f7256] mb-3">Price Range</p>
                 <input
                   type="range"
                   min={0}
@@ -316,17 +306,17 @@ export default function Shop() {
                   step={50}
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(Number(e.target.value))}
-                  className="w-full accent-[#9cb092] cursor-pointer"
+                  className="w-full accent-[#5f7256] cursor-pointer"
                 />
-                <div className="flex items-center justify-between mt-1.5 font-display text-[10px] text-[#b2c3b1]/55">
+                <div className="flex items-center justify-between mt-1.5 font-display text-[10px] text-[#5a6c50]/80">
                   <span>$0</span>
-                  <span className="text-[#9cb092]">up to ${maxPrice}</span>
+                  <span className="text-[#5f7256]">up to ${maxPrice}</span>
                 </div>
               </div>
 
               {/* Sort by */}
-              <div className="border-t border-white/[0.06] pt-5">
-                <p className="font-display text-[9px] tracking-[0.24em] uppercase text-[#9cb092]/80 mb-2.5">Sort By</p>
+              <div className="border-t border-[#3d4a35]/12 pt-5">
+                <p className="font-display text-[9px] tracking-[0.24em] uppercase text-[#5f7256] mb-2.5">Sort By</p>
                 <div className="space-y-0.5">
                   {SORTS.map(s => (
                     <button
@@ -334,8 +324,8 @@ export default function Shop() {
                       onClick={() => setSortBy(s.id)}
                       className={`w-full text-left px-3 py-1.5 font-display text-[11px] tracking-wide transition-colors border-l-2 ${
                         sortBy === s.id
-                          ? 'border-[#9cb092] text-[#9cb092] bg-[#9cb092]/[0.08]'
-                          : 'border-transparent text-[#b2c3b1]/60 hover:text-[#9cb092] hover:border-[#9cb092]/40'
+                          ? 'border-[#5f7256] text-[#5f7256] bg-[#5f7256]/[0.1]'
+                          : 'border-transparent text-[#4a5942]/80 hover:text-[#5f7256] hover:border-[#5f7256]/40'
                       }`}
                     >{s.label}</button>
                   ))}
@@ -345,7 +335,7 @@ export default function Shop() {
               {(activeFilter !== 'all' || maxPrice !== PRICE_MAX || sortBy !== 'featured') && (
                 <button
                   onClick={() => { setActiveFilter('all'); setMaxPrice(PRICE_MAX); setSortBy('featured'); }}
-                  className="mt-6 font-display text-[9px] tracking-[0.2em] uppercase text-[#b2c3b1]/45 hover:text-[#9cb092] transition-colors flex items-center gap-1.5"
+                  className="mt-6 font-display text-[9px] tracking-[0.2em] uppercase text-[#5a6c50]/60 hover:text-[#5f7256] transition-colors flex items-center gap-1.5"
                 >
                   <span className="material-icons text-[13px]">restart_alt</span>
                   Reset filters
@@ -363,10 +353,10 @@ export default function Shop() {
               <button
                 key={p.id}
                 onClick={() => openModal(p)}
-                className="product-card group text-left overflow-hidden bg-white/[0.03] border border-white/[0.07] hover:border-[#9cb092]/35 transition-all duration-300 flex flex-col"
+                className="product-card group text-left overflow-hidden bg-white/60 border border-[#3d4a35]/12 hover:border-[#5f7256]/40 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col"
               >
                 {/* Square image */}
-                <div className="relative aspect-square overflow-hidden bg-[#192116]">
+                <div className="relative aspect-square overflow-hidden bg-[#e8e0d0]">
                   <img
                     src={p.images[0]}
                     alt={p.name}
@@ -389,10 +379,10 @@ export default function Shop() {
 
                 {/* Name + price */}
                 <div className="px-2.5 py-2">
-                  <h3 className="font-serif-exp text-[11px] text-[#e4eee1] leading-tight truncate">
+                  <h3 className="font-serif-exp text-[11px] text-[#2a3328] leading-tight truncate">
                     {p.name}
                   </h3>
-                  <p className="font-display text-[10px] font-semibold text-[#9cb092] mt-0.5">
+                  <p className="font-display text-[10px] font-semibold text-[#5f7256] mt-0.5">
                     $ {p.price}
                   </p>
                 </div>
@@ -401,7 +391,7 @@ export default function Shop() {
 
             {products.length === 0 && (
               <div className="col-span-full flex items-center justify-center py-16">
-                <p className="font-display text-[11px] tracking-[0.25em] uppercase text-[#b2c3b1]/30">
+                <p className="font-display text-[11px] tracking-[0.25em] uppercase text-[#5a6c50]/50">
                   No products match these filters
                 </p>
               </div>
