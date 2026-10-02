@@ -218,13 +218,17 @@
     animation: bokeh-twinkle 9s ease-in-out infinite alternate;
   }
 
-  /* Same warm sage/cream bokeh as the landing hero, but WITHOUT the bottom
-     dark fade — for full marketing pages (e.g. /about) whose content runs the
-     whole page height, so the lower sections stay light and readable. */
+  /* Exact landing-hero bokeh reused by full-page product screens. */
   .page-bokeh-bg {
     position: relative;
     overflow: hidden;
     background:
+      linear-gradient(180deg,
+        transparent 0%,
+        transparent 62%,
+        rgba(42, 51, 40, 0.15) 82%,
+        rgba(30, 40, 32, 0.45) 100%
+      ),
       radial-gradient(ellipse 65% 80% at 92% 48%, rgba(215, 195, 150, 0.45), transparent 72%),
       radial-gradient(ellipse 50% 65% at 68% 42%, rgba(234, 221, 215, 0.55), transparent 75%),
       radial-gradient(ellipse 55% 75% at 8% 48%, rgba(156, 176, 146, 0.38), transparent 75%),
@@ -247,7 +251,11 @@
     background:
       radial-gradient(circle 90px at 18% 28%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.14) 45%, transparent 70%),
       radial-gradient(circle 120px at 78% 68%, rgba(234,221,215,0.38) 0%, rgba(234,221,215,0.18) 45%, transparent 70%),
+      radial-gradient(circle 70px at 42% 18%, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.12) 45%, transparent 70%),
       radial-gradient(circle 140px at 88% 22%, rgba(220,212,190,0.32) 0%, rgba(220,212,190,0.16) 45%, transparent 70%),
+      radial-gradient(circle 85px at 28% 78%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.11) 45%, transparent 70%),
+      radial-gradient(circle 65px at 58% 85%, rgba(234,221,215,0.3) 0%, rgba(234,221,215,0.15) 45%, transparent 70%),
+      radial-gradient(circle 55px at 50% 50%, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 45%, transparent 70%),
       radial-gradient(circle 100px at 15% 65%, rgba(255,252,245,0.24) 0%, rgba(255,252,245,0.12) 45%, transparent 70%);
     animation: bokeh-drift 22s ease-in-out infinite alternate;
   }
@@ -259,9 +267,17 @@
     z-index: 0;
     background:
       radial-gradient(circle 3px at 12% 22%, rgba(255,255,255,0.9), transparent 70%),
+      radial-gradient(circle 2px at 24% 45%, rgba(234,221,215,0.9), transparent 70%),
+      radial-gradient(circle 2px at 38% 62%, rgba(255,255,255,0.8), transparent 70%),
+      radial-gradient(circle 2px at 52% 28%, rgba(255,255,255,0.85), transparent 70%),
       radial-gradient(circle 2px at 82% 48%, rgba(255,255,255,0.9), transparent 70%),
       radial-gradient(circle 3px at 66% 72%, rgba(234,221,215,0.85), transparent 70%),
-      radial-gradient(circle 2px at 44% 88%, rgba(255,255,255,0.85), transparent 70%);
+      radial-gradient(circle 3px at 94% 35%, rgba(220,212,190,0.8), transparent 70%),
+      radial-gradient(circle 2px at 8% 78%, rgba(255,255,255,0.85), transparent 70%),
+      radial-gradient(circle 3px at 72% 12%, rgba(234,221,215,0.8), transparent 70%),
+      radial-gradient(circle 2px at 44% 88%, rgba(255,255,255,0.85), transparent 70%),
+      radial-gradient(circle 2px at 30% 8%, rgba(255,255,255,0.8), transparent 70%),
+      radial-gradient(circle 3px at 88% 82%, rgba(220,212,190,0.8), transparent 70%);
     animation: bokeh-twinkle 9s ease-in-out infinite alternate;
   }
 

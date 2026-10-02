@@ -155,26 +155,6 @@ function renderEditorField(
   }
 }
 
-// Shared textured background used across the site (shop page, gallery). The
-// entry flow (event picker + loading transition) reuses it so the whole
-// experience feels consistent.
-const ENTRY_BG_TEXTURE =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuD0yNSOWSBJLsv1-47TiuxQ15AFQ4nsrk2tyl20R-zvNNsiDXBNDhZVYz1yHqSCTtqtGcVjl35j2rrDIrA-d5xW6tM2FPDinMxC7wGNXKzBCT0JhfwdSkLFQPVqU1yfc1GtqRHSfxSmlitg3lWmrbcCqzLdzR4XsiD9nN9-_O7fp4ViDdX7MFMvLLa9exuWvETBq8HCVRb7NcpP7tWvqDoEWCeegHipJmlKBCM4gpRO9AROi6bPaa2gmQvHKabiYnelhLueCkgQ9QIe';
-
-// The two stacked layers (textured image + dark wash) that produce that look.
-// Rendered inside the fixed entry-flow overlays so they fully cover the screen.
-function EntryBackground() {
-  return (
-    <>
-      <div
-        className="absolute inset-0 z-0 opacity-30 mix-blend-multiply pointer-events-none"
-        style={{ backgroundImage: `url('${ENTRY_BG_TEXTURE}')` }}
-      />
-      <div className="absolute inset-0 z-[1] bg-[#111914]/70 pointer-events-none" />
-    </>
-  );
-}
-
 // ── Main component ──────────────────────────────────────────────────────
 export default function CreateEvite() {
   const navigate = useNavigate();
@@ -1123,16 +1103,8 @@ export default function CreateEvite() {
   return (
     <div
       ref={pageRef}
-      className="page-bokeh-bg h-screen flex flex-col overflow-hidden relative"
+      className="hero-bokeh-bg h-screen flex flex-col overflow-hidden relative"
     >
-      <div
-        className="fixed inset-0 z-0 opacity-30 mix-blend-multiply pointer-events-none"
-        style={{
-          backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuD0yNSOWSBJLsv1-47TiuxQ15AFQ4nsrk2tyl20R-zvNNsiDXBNDhZVYz1yHqSCTtqtGcVjl35j2rrDIrA-d5xW6tM2FPDinMxC7wGNXKzBCT0JhfwdSkLFQPVqU1yfc1GtqRHSfxSmlitg3lWmrbcCqzLdzR4XsiD9nN9-_O7fp4ViDdX7MFMvLLa9exuWvETBq8HCVRb7NcpP7tWvqDoEWCeegHipJmlKBCM4gpRO9AROi6bPaa2gmQvHKabiYnelhLueCkgQ9QIe')`,
-        }}
-      />
-      <div className="fixed inset-0 z-[1] bg-[#111914]/70 pointer-events-none" />
-
       {/* ════════════════════════════════════════════════════════════
           RESUME PROMPT (H10) — greet a returning host with their
           in-progress evite instead of silently dropping the draft.
@@ -1178,30 +1150,30 @@ export default function CreateEvite() {
       <div className="flex-1 overflow-hidden relative z-10 flex flex-col">
         {flowStage === 'gallery' && (
           <>
-            <FlowLogo onClick={closeToHome} size="lg" />
+            <FlowLogo onClick={closeToHome} size="lg" tone="light" />
             <button
               onClick={closeToHome}
               aria-label="Close"
-              className="absolute top-3 right-4 z-40 w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200"
+              className="absolute top-3 right-4 z-40 w-9 h-9 flex items-center justify-center bg-[#2a3328]/[0.06] hover:bg-[#2a3328]/[0.12] border border-[#2a3328]/15 hover:border-[#5f7256]/50 transition-all duration-200"
             >
-              <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
+              <span className="material-icons text-[#3d4a35] text-[18px]">close</span>
             </button>
           </>
         )}
-        <div className="flex-shrink-0 px-6 md:px-10 pt-3 pb-3">
-          <FlowStepper current={2} className="max-w-2xl mx-auto" />
+        <div className="flex-shrink-0 px-6 md:px-10 pt-16 md:pt-3 pb-3">
+          <FlowStepper current={2} tone="light" className="max-w-2xl mx-auto" />
         </div>
         <div className="flex-1 flex flex-col overflow-hidden px-6 md:px-10">
           {/* Header — the Back control lives in the bottom bar (bottom-left),
               consistent with every other screen in the flow. */}
-          <div className="py-3 md:py-4 flex-shrink-0 border-b border-white/[0.07]">
-            <p className="font-display text-[9px] tracking-[0.32em] uppercase text-[#9cb092]/70 mb-1">
+          <div className="py-3 md:py-4 flex-shrink-0 border-b border-[#2a3328]/10">
+            <p className="font-display text-[9px] tracking-[0.32em] uppercase text-[#5f7256]/80 mb-1">
               {eventTypes.find((e) => e.id === activeFilter)?.label ?? 'Event'} designs
             </p>
-            <h1 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
-              Choose your <span className="text-[#9cb092] font-agatho italic">design</span>
+            <h1 className="font-serif-exp text-2xl md:text-3xl text-[#2a3328] leading-tight">
+              Choose your <span className="text-[#3d4a35] font-agatho italic">design</span>
             </h1>
-            <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#b2c3b1]/40 mt-1">
+            <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#3d4a35]/55 mt-1">
               Pick one of our ready-made designs below
             </p>
           </div>
@@ -1222,7 +1194,7 @@ export default function CreateEvite() {
                 <button
                   key={t.id}
                   onClick={() => openTemplate(t.id)}
-                  className="template-card group text-left overflow-hidden bg-white/[0.03] border border-white/[0.07] hover:border-[#9cb092]/35 transition-all duration-300 flex flex-col"
+                  className="template-card group text-left overflow-hidden bg-[#f7f2e8]/75 border border-[#2a3328]/10 hover:border-[#5f7256]/45 transition-all duration-300 flex flex-col shadow-sm"
                 >
                   <div className="relative aspect-[9/16] overflow-hidden bg-[#192116]">
                     <img
@@ -1239,7 +1211,7 @@ export default function CreateEvite() {
                   </div>
 
                   <div className="px-2.5 py-2">
-                    <h3 className="font-serif-exp text-[11px] text-[#e4eee1] leading-tight truncate">
+                    <h3 className="font-serif-exp text-[11px] text-[#2a3328] leading-tight truncate">
                       {t.name}
                     </h3>
                   </div>
@@ -1248,7 +1220,7 @@ export default function CreateEvite() {
 
               {visibleTemplates.length === 0 && (
                 <div className="col-span-full flex items-center justify-center py-10">
-                  <p className="font-display text-[11px] tracking-[0.25em] uppercase text-[#b2c3b1]/30">
+                  <p className="font-display text-[11px] tracking-[0.25em] uppercase text-[#3d4a35]/45">
                     No designs in this category yet — go back to try another way to design
                   </p>
                 </div>
@@ -1257,10 +1229,10 @@ export default function CreateEvite() {
           </div>
 
           {/* Bottom bar — Back on the left (consistent placement site-wide) */}
-          <div className="flex-shrink-0 flex items-center py-4 border-t border-white/[0.07]">
+          <div className="flex-shrink-0 flex items-center py-4 border-t border-[#2a3328]/10">
             <button
               onClick={() => setFlowStage('choose-design')}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200 font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/70 hover:text-[#9cb092]"
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#2a3328]/[0.05] hover:bg-[#2a3328]/[0.1] border border-[#2a3328]/15 hover:border-[#5f7256]/50 transition-all duration-200 font-display text-[10px] tracking-[0.2em] uppercase text-[#3d4a35]/80 hover:text-[#2a3328]"
             >
               <span className="material-icons text-[16px]">arrow_back</span>
               Back
@@ -1275,30 +1247,29 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {flowStage === 'picker' && (
         <div
-          className="page-bokeh-bg fixed inset-0 z-40 flex flex-col overflow-hidden"
+          className="hero-bokeh-bg fixed inset-0 z-40 flex flex-col overflow-hidden"
           data-lenis-prevent
         >
-          <EntryBackground />
-          <FlowLogo size="lg" />
+          <FlowLogo size="lg" tone="light" />
           <button
             onClick={closeToHome}
             aria-label="Close"
-            className="absolute top-3 right-4 z-40 w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200"
+            className="absolute top-3 right-4 z-40 w-9 h-9 flex items-center justify-center bg-[#2a3328]/[0.06] hover:bg-[#2a3328]/[0.12] border border-[#2a3328]/15 hover:border-[#5f7256]/50 transition-all duration-200"
           >
-            <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
+            <span className="material-icons text-[#3d4a35] text-[18px]">close</span>
           </button>
 
           <div className="relative z-10 flex-1 min-h-0 overflow-y-auto scrollbar-subtle">
            <div className="min-h-full flex flex-col items-center justify-center px-6 py-3 pt-16">
-            <FlowStepper current={1} className="max-w-2xl mx-auto mb-4" />
+            <FlowStepper current={1} tone="light" className="max-w-2xl mx-auto mb-4" />
             <div className="text-center mb-4">
-              <p className="font-display text-[9px] tracking-[0.32em] uppercase text-[#9cb092]/70 mb-1">
+              <p className="font-display text-[9px] tracking-[0.32em] uppercase text-[#5f7256]/80 mb-1">
                 Let&apos;s begin
               </p>
-              <h1 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight">
-                What are we <span className="text-[#9cb092] font-agatho italic">celebrating today?</span>
+              <h1 className="font-serif-exp text-xl md:text-2xl text-[#2a3328] leading-tight">
+                What are we <span className="text-[#3d4a35] font-agatho italic">celebrating today?</span>
               </h1>
-              <p className="font-display text-[10px] tracking-wide text-[#b2c3b1]/55 mt-1.5 max-w-md mx-auto leading-relaxed">
+              <p className="font-display text-[10px] tracking-wide text-[#3d4a35]/65 mt-1.5 max-w-md mx-auto leading-relaxed">
                 Pick an event and we&apos;ll show you the designs made for it.
               </p>
             </div>
@@ -1337,10 +1308,10 @@ export default function CreateEvite() {
           </div>
 
           {/* Bottom bar — Back on the left (consistent placement site-wide) */}
-          <div className="relative z-20 flex-shrink-0 flex items-center justify-between px-5 py-3 border-t border-white/[0.07]">
+          <div className="relative z-20 flex-shrink-0 flex items-center justify-between px-5 py-3 border-t border-[#2a3328]/10">
             <button
               onClick={closeToHome}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200 font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/70 hover:text-[#9cb092]"
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#2a3328]/[0.05] hover:bg-[#2a3328]/[0.1] border border-[#2a3328]/15 hover:border-[#5f7256]/50 transition-all duration-200 font-display text-[10px] tracking-[0.2em] uppercase text-[#3d4a35]/80 hover:text-[#2a3328]"
             >
               <span className="material-icons text-[16px]">arrow_back</span>
               Back to Home
@@ -1355,30 +1326,29 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {flowStage === 'choose-design' && (
         <div
-          className="page-bokeh-bg fixed inset-0 z-40 flex flex-col overflow-hidden"
+          className="hero-bokeh-bg fixed inset-0 z-40 flex flex-col overflow-hidden"
           data-lenis-prevent
         >
-          <EntryBackground />
-          <FlowLogo size="lg" />
+          <FlowLogo size="lg" tone="light" />
           <button
             onClick={closeToHome}
             aria-label="Close"
-            className="absolute top-3 right-4 z-40 w-9 h-9 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200"
+            className="absolute top-3 right-4 z-40 w-9 h-9 flex items-center justify-center bg-[#2a3328]/[0.06] hover:bg-[#2a3328]/[0.12] border border-[#2a3328]/15 hover:border-[#5f7256]/50 transition-all duration-200"
           >
-            <span className="material-icons text-[#b2c3b1] text-[18px]">close</span>
+            <span className="material-icons text-[#3d4a35] text-[18px]">close</span>
           </button>
 
-          <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-3 pt-16 overflow-y-auto scrollbar-subtle">
-            <FlowStepper current={2} className="max-w-2xl mx-auto mb-4" />
+          <div className="relative z-10 flex-1 flex flex-col items-center justify-start md:justify-center px-6 py-3 pt-20 md:pt-16 overflow-y-auto scrollbar-subtle">
+            <FlowStepper current={2} tone="light" className="max-w-2xl mx-auto mb-4" />
             <div className="text-center mb-4">
-              <h1 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight">
+              <h1 className="font-serif-exp text-xl md:text-2xl text-[#2a3328] leading-tight">
                 How would you like to design your{' '}
-                <span className="text-[#9cb092] font-agatho italic">
+                <span className="text-[#3d4a35] font-agatho italic">
                   {eventTypes.find((e) => e.id === activeFilter)?.label ?? 'event'}
                 </span>{' '}
                 invitation?
               </h1>
-              <p className="font-display text-[10px] tracking-wide text-[#b2c3b1]/55 mt-1.5">
+              <p className="font-display text-[10px] tracking-wide text-[#3d4a35]/65 mt-1.5">
                 Choose the way that works best for you.
               </p>
             </div>
@@ -1478,12 +1448,12 @@ export default function CreateEvite() {
                 { icon: 'lock', label: 'Your Data is Safe', sub: 'We respect your privacy' },
               ].map((f) => (
                 <div key={f.label} className="flex items-center gap-2.5">
-                  <span className="material-icons text-[#9cb092]/70 text-lg">{f.icon}</span>
+                  <span className="material-icons text-[#5f7256]/80 text-lg">{f.icon}</span>
                   <div className="text-left">
-                    <p className="font-display text-[10px] tracking-[0.1em] uppercase text-[#e4eee1]/85 leading-tight">
+                    <p className="font-display text-[10px] tracking-[0.1em] uppercase text-[#2a3328]/90 leading-tight">
                       {f.label}
                     </p>
-                    <p className="font-display text-[8px] text-[#b2c3b1]/45 leading-tight">{f.sub}</p>
+                    <p className="font-display text-[8px] text-[#3d4a35]/55 leading-tight">{f.sub}</p>
                   </div>
                 </div>
               ))}
@@ -1491,10 +1461,10 @@ export default function CreateEvite() {
           </div>
 
           {/* Bottom bar — Back on the left (consistent placement site-wide) */}
-          <div className="relative z-20 flex-shrink-0 flex items-center justify-between px-5 py-3 border-t border-white/[0.07]">
+          <div className="relative z-20 flex-shrink-0 flex items-center justify-between px-5 py-3 border-t border-[#2a3328]/10">
             <button
               onClick={() => setFlowStage('picker')}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-[#9cb092]/40 transition-all duration-200 font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/70 hover:text-[#9cb092]"
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#2a3328]/[0.05] hover:bg-[#2a3328]/[0.1] border border-[#2a3328]/15 hover:border-[#5f7256]/50 transition-all duration-200 font-display text-[10px] tracking-[0.2em] uppercase text-[#3d4a35]/80 hover:text-[#2a3328]"
             >
               <span className="material-icons text-[16px]">arrow_back</span>
               Change Event
@@ -1511,9 +1481,8 @@ export default function CreateEvite() {
         if (!ev) return null;
         return (
           <div
-            className="page-bokeh-bg fixed inset-0 z-40 flex flex-col items-center justify-center px-6"
+            className="hero-bokeh-bg fixed inset-0 z-40 flex flex-col items-center justify-center px-6"
           >
-            <EntryBackground />
             <div className="relative z-10 flex flex-col items-center text-center">
               <div
                 className="w-24 h-24 rounded-2xl flex items-center justify-center mb-6 shadow-2xl"
@@ -1523,22 +1492,22 @@ export default function CreateEvite() {
                   {ev.icon}
                 </span>
               </div>
-              <h2 className="font-serif-exp text-2xl md:text-3xl text-[#e4eee1] leading-tight">
+              <h2 className="font-serif-exp text-2xl md:text-3xl text-[#2a3328] leading-tight">
                 {ev.label}
               </h2>
-              <p className="font-display text-[11px] tracking-wide text-[#b2c3b1]/60 mt-3 max-w-xs leading-relaxed">
+              <p className="font-display text-[11px] tracking-wide text-[#3d4a35]/70 mt-3 max-w-xs leading-relaxed">
                 {ev.description}
               </p>
 
               {/* Progress bar */}
-              <div className="w-56 h-1 bg-white/10 rounded-full overflow-hidden mt-8">
+              <div className="w-56 h-1 bg-[#2a3328]/15 rounded-full overflow-hidden mt-8">
                 <div
                   ref={loadingBarRef}
                   className="h-full rounded-full"
                   style={{ width: '0%', backgroundColor: '#9cb092' }}
                 />
               </div>
-              <p className="font-display text-[9px] tracking-[0.3em] uppercase text-[#b2c3b1]/45 mt-4">
+              <p className="font-display text-[9px] tracking-[0.3em] uppercase text-[#3d4a35]/55 mt-4">
                 Creating your perfect experience…
               </p>
             </div>

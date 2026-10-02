@@ -17,15 +17,19 @@ const NAV_ITEMS = [
 export default function Navigation() {
   const navRef = useRef<HTMLElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpenPath, setMenuOpenPath] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const lenis = useLenis();
   const { user, signOut } = useAuth();
+  const menuOpen = menuOpenPath === location.pathname;
 
   // Pages with a light hero at the top: the nav sits on a light surface, so it
   // needs dark text and the landing logo (same treatment as the home page).
-  const isLightTop = location.pathname === '/' || location.pathname === '/about';
+  const isLightTop =
+    location.pathname === '/' ||
+    location.pathname === '/about' ||
+    location.pathname === '/shop';
 
   // Smooth-scroll to a section id (Lenis-aware, like ScrollToTop). Empty id or
   // 'hero' scrolls to the top. The offset clears the fixed nav bar.
@@ -67,13 +71,8 @@ export default function Navigation() {
     return () => ctx.revert();
   }, []);
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [location.pathname]);
-
   const handleNavClick = (id: string, path: string) => {
-    setMenuOpen(false);
+    setMenuOpenPath(null);
     if (location.pathname !== path) {
       navigate(path);
       // Wait for the destination page (and its sections) to mount, then scroll.
@@ -149,7 +148,7 @@ export default function Navigation() {
         {/* Mobile hamburger */}
         <button
           className="md:hidden flex items-center justify-center w-9 h-9 -mr-1"
-          onClick={() => setMenuOpen((v) => !v)}
+          onClick={() => setMenuOpenPath(menuOpen ? null : location.pathname)}
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
         >
           <span className="material-icons text-[22px]">{menuOpen ? 'close' : 'menu'}</span>
@@ -178,7 +177,7 @@ export default function Navigation() {
           )}
           {user ? (
             <button
-              onClick={async () => { setMenuOpen(false); await signOut(); navigate('/'); }}
+              onClick={async () => { setMenuOpenPath(null); await signOut(); navigate('/'); }}
               className="font-display text-sm tracking-[0.28em] uppercase text-[#b2c3b1]/60 hover:text-[#9cb092] transition-colors mt-4"
             >
               Logout
