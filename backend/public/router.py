@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from uuid import UUID
 from public.schemas import RSVPRequest
 from public import service
 from gallery import service as gallery_service
@@ -6,8 +7,17 @@ from gallery import service as gallery_service
 router = APIRouter(prefix="/public", tags=["public"])
 
 
+def _validated_uuid(value: str, resource: str) -> str:
+    """Reject malformed public IDs before they reach Supabase UUID columns."""
+    try:
+        return str(UUID(value))
+    except (ValueError, TypeError, AttributeError):
+        raise HTTPException(status_code=404, detail=f"{resource} not found")
+
+
 @router.get("/events/{event_id}")
 def get_public_event(event_id: str):
+    event_id = _validated_uuid(event_id, "Event")
     try:
         return service.get_public_event(event_id)
     except ValueError as e:
@@ -32,6 +42,7 @@ def get_public_premium_site(slug: str):
 
 @router.get("/events/{event_id}/book")
 def get_public_book(event_id: str):
+    event_id = _validated_uuid(event_id, "Event")
     try:
         return service.get_public_book(event_id)
     except ValueError as e:
@@ -40,6 +51,7 @@ def get_public_book(event_id: str):
 
 @router.get("/events/{event_id}/gallery")
 def list_gallery_photos(event_id: str):
+    event_id = _validated_uuid(event_id, "Event")
     try:
         return gallery_service.list_approved_photos(event_id)
     except ValueError as e:
@@ -52,6 +64,7 @@ async def upload_gallery_photo(
     file: UploadFile = File(...),
     uploaded_by_name: str = Form(None),
 ):
+    event_id = _validated_uuid(event_id, "Event")
     try:
         content = await file.read()
         return gallery_service.upload_guest_photo(event_id, uploaded_by_name, file.filename, content, file.content_type)
@@ -61,6 +74,8 @@ async def upload_gallery_photo(
 
 @router.get("/events/{event_id}/rsvp/{invitee_id}")
 def get_rsvp_page(event_id: str, invitee_id: str):
+    event_id = _validated_uuid(event_id, "Event")
+    invitee_id = _validated_uuid(invitee_id, "Invitee")
     try:
         event = service.get_public_event(event_id)
         invitee = service.get_invitee_for_rsvp(event_id, invitee_id)
@@ -71,6 +86,8 @@ def get_rsvp_page(event_id: str, invitee_id: str):
 
 @router.post("/events/{event_id}/rsvp/{invitee_id}")
 def submit_rsvp(event_id: str, invitee_id: str, data: RSVPRequest):
+    event_id = _validated_uuid(event_id, "Event")
+    invitee_id = _validated_uuid(invitee_id, "Invitee")
     try:
         return service.submit_rsvp(
             event_id, invitee_id,

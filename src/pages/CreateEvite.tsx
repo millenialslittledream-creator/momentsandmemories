@@ -1123,7 +1123,7 @@ export default function CreateEvite() {
   return (
     <div
       ref={pageRef}
-      className="h-screen flex flex-col bg-[#EADDD7] overflow-hidden relative"
+      className="page-bokeh-bg h-screen flex flex-col overflow-hidden relative"
     >
       <div
         className="fixed inset-0 z-0 opacity-30 mix-blend-multiply pointer-events-none"
@@ -1275,7 +1275,7 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {flowStage === 'picker' && (
         <div
-          className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-[#EADDD7]"
+          className="page-bokeh-bg fixed inset-0 z-40 flex flex-col overflow-hidden"
           data-lenis-prevent
         >
           <EntryBackground />
@@ -1355,7 +1355,7 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {flowStage === 'choose-design' && (
         <div
-          className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-[#EADDD7]"
+          className="page-bokeh-bg fixed inset-0 z-40 flex flex-col overflow-hidden"
           data-lenis-prevent
         >
           <EntryBackground />
@@ -1511,7 +1511,7 @@ export default function CreateEvite() {
         if (!ev) return null;
         return (
           <div
-            className="fixed inset-0 z-40 flex flex-col items-center justify-center px-6 bg-[#EADDD7]"
+            className="page-bokeh-bg fixed inset-0 z-40 flex flex-col items-center justify-center px-6"
           >
             <EntryBackground />
             <div className="relative z-10 flex flex-col items-center text-center">
