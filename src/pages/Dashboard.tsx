@@ -294,23 +294,14 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#EADDD7] text-[#e4eee1] relative">
-      {/* Shared checkered bg — matches /create and /shop */}
-      <div
-        className="fixed inset-0 z-0 opacity-30 mix-blend-multiply pointer-events-none"
-        style={{
-          backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuD0yNSOWSBJLsv1-47TiuxQ15AFQ4nsrk2tyl20R-zvNNsiDXBNDhZVYz1yHqSCTtqtGcVjl35j2rrDIrA-d5xW6tM2FPDinMxC7wGNXKzBCT0JhfwdSkLFQPVqU1yfc1GtqRHSfxSmlitg3lWmrbcCqzLdzR4XsiD9nN9-_O7fp4ViDdX7MFMvLLa9exuWvETBq8HCVRb7NcpP7tWvqDoEWCeegHipJmlKBCM4gpRO9AROi6bPaa2gmQvHKabiYnelhLueCkgQ9QIe')`,
-        }}
-      />
-      <div className="fixed inset-0 z-[1] bg-[#111914]/70 pointer-events-none" />
-
+    <div className="page-bokeh-bg min-h-screen text-[#2a3328] relative">
       <Navigation />
       <div className="relative z-10 pt-24 px-4 md:px-8 pb-16 max-w-7xl mx-auto">
         {/* ── Welcome header — full-width so the gift panel below sits at the
             same Y as the stats bar instead of starting up by the title. ── */}
         <div className="mb-8">
-          <p className="font-display text-[10px] tracking-[0.25em] uppercase text-[#9cb092]/70 mb-2">Welcome back</p>
-          <h1 className="text-3xl md:text-5xl font-serif-exp italic text-[#e4eee1]">
+          <p className="font-display text-[10px] tracking-[0.25em] uppercase text-[#5f7256] mb-2">Welcome back</p>
+          <h1 className="text-3xl md:text-5xl font-serif-exp italic text-[#2a3328]">
             {user?.email?.split('@')[0]}
           </h1>
         </div>
@@ -320,15 +311,15 @@ export default function Dashboard() {
           {/* ── Left column — dashboard content ── */}
           <div>
             {/* Stats bar */}
-            <div className="grid grid-cols-3 gap-px bg-white/5 mb-10 border border-white/5">
+            <div className="grid grid-cols-3 gap-px bg-[#3d4a35]/10 mb-10 border border-[#3d4a35]/12">
               {[
                 { label: 'Total Evites', value: events.length },
                 { label: 'Upcoming', value: upcoming.length },
                 { label: 'Drafts', value: draft ? 1 : 0 },
               ].map((s) => (
-                <div key={s.label} className="bg-[#0d1a10] px-4 md:px-6 py-5 text-center">
-                  <p className="text-2xl font-serif-exp text-[#9cb092] mb-1">{s.value}</p>
-                  <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#b2c3b1]/40">{s.label}</p>
+                <div key={s.label} className="bg-white/60 px-4 md:px-6 py-5 text-center">
+                  <p className="text-2xl font-serif-exp text-[#5f7256] mb-1">{s.value}</p>
+                  <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#5a6c50]/70">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -340,7 +331,7 @@ export default function Dashboard() {
                   <span className="material-icons text-[#9cb092] text-2xl">edit_note</span>
                   <div>
                     <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#9cb092] mb-0.5">Draft in progress</p>
-                    <p className="text-sm text-[#b2c3b1]/60">
+                    <p className="text-sm text-[#5a6c50]/80">
                       {draft.event_type || 'Evite'} — Step {draft.step + 1}{' · '}Last saved {new Date(draft.updated_at).toLocaleDateString()}
                     </p>
                   </div>
@@ -350,7 +341,7 @@ export default function Dashboard() {
                     onClick={handleDeleteDraft}
                     disabled={deletingDraft}
                     title="Delete this draft"
-                    className="px-3 py-2 border border-white/10 hover:border-red-400/50 text-[#b2c3b1]/60 hover:text-red-400 font-display text-[10px] tracking-[0.2em] uppercase transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="px-3 py-2 border border-[#3d4a35]/20 hover:border-red-500/50 text-[#5a6c50]/70 hover:text-red-600 font-display text-[10px] tracking-[0.2em] uppercase transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <span className="material-icons text-sm">delete_outline</span>
                     <span className="hidden sm:inline">{deletingDraft ? 'Deleting…' : 'Delete'}</span>
@@ -367,10 +358,10 @@ export default function Dashboard() {
 
             {/* Events list */}
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-serif-exp text-lg italic text-[#e4eee1]">Your Evites</h2>
+              <h2 className="font-serif-exp text-lg italic text-[#2a3328]">Your Evites</h2>
               <button
                 onClick={() => navigate('/create')}
-                className="font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] hover:text-[#b2c3b1] flex items-center gap-1 transition-colors"
+                className="font-display text-[10px] tracking-[0.2em] uppercase text-[#5f7256] hover:text-[#3d4a35] flex items-center gap-1 transition-colors"
               >
                 <span className="material-icons text-sm">add</span>
                 New Evite
@@ -378,9 +369,9 @@ export default function Dashboard() {
             </div>
 
             {events.length === 0 ? (
-              <div className="border border-white/5 bg-white/[0.02] p-12 text-center">
-                <span className="material-icons text-[#9cb092]/30 text-4xl mb-4 block">celebration</span>
-                <p className="font-display text-[10px] tracking-[0.2em] uppercase text-[#b2c3b1]/30 mb-6">No evites yet</p>
+              <div className="border border-[#3d4a35]/12 bg-white/50 p-12 text-center">
+                <span className="material-icons text-[#5f7256]/40 text-4xl mb-4 block">celebration</span>
+                <p className="font-display text-[10px] tracking-[0.2em] uppercase text-[#5a6c50]/60 mb-6">No evites yet</p>
                 <button
                   onClick={() => navigate('/create')}
                   className="px-8 py-3 bg-[#3d4a35] text-white font-display text-[10px] tracking-[0.2em] uppercase hover:bg-[#4d5a44] transition-colors"
@@ -393,16 +384,16 @@ export default function Dashboard() {
                 {events.map((event) => (
                   <div key={event.id}>
                     {/* Event row */}
-                    <div className="flex items-center gap-3 md:gap-4 px-4 md:px-5 py-4 bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors">
+                    <div className="flex items-center gap-3 md:gap-4 px-4 md:px-5 py-4 bg-white/55 border border-[#3d4a35]/10 hover:bg-white/75 transition-colors">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[#e4eee1] truncate">{event.title}</p>
-                        <p className="font-display text-[9px] tracking-[0.1em] uppercase text-[#b2c3b1]/40 mt-0.5">
+                        <p className="text-sm text-[#2a3328] truncate">{event.title}</p>
+                        <p className="font-display text-[9px] tracking-[0.1em] uppercase text-[#5a6c50]/70 mt-0.5">
                           {new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           {event.location ? ` · ${event.location}` : ''}
                         </p>
                       </div>
                       <span className={`font-display text-[9px] tracking-[0.15em] uppercase px-2 py-1 border flex-shrink-0 ${
-                        event.status === 'published' ? 'border-[#9cb092]/30 text-[#9cb092]' : 'border-white/10 text-[#b2c3b1]/40'
+                        event.status === 'published' ? 'border-[#5f7256]/40 text-[#5f7256]' : 'border-[#3d4a35]/20 text-[#5a6c50]/60'
                       }`}>
                         {event.status}
                       </span>
@@ -411,7 +402,7 @@ export default function Dashboard() {
                         <button
                           onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/event/${event.id}`); toast.success('Event link copied!'); }}
                           title="Share event"
-                          className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
+                          className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 border border-[#3d4a35]/15 hover:border-[#5f7256]/50 hover:text-[#5f7256] text-[#5a6c50]/70 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
                         >
                           <span className="material-icons text-sm">share</span>
                         </button>
@@ -424,7 +415,7 @@ export default function Dashboard() {
                           target="_blank"
                           rel="noopener noreferrer"
                           title="View live website"
-                          className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
+                          className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 border border-[#3d4a35]/15 hover:border-[#5f7256]/50 hover:text-[#5f7256] text-[#5a6c50]/70 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
                         >
                           <span className="material-icons text-sm">language</span>
                           <span className="hidden sm:inline">View Website</span>
@@ -437,7 +428,7 @@ export default function Dashboard() {
                           target="_blank"
                           rel="noopener noreferrer"
                           title="View live invitation book"
-                          className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
+                          className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 border border-[#3d4a35]/15 hover:border-[#5f7256]/50 hover:text-[#5f7256] text-[#5a6c50]/70 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
                         >
                           <span className="material-icons text-sm">menu_book</span>
                           <span className="hidden sm:inline">View Book</span>
@@ -446,7 +437,7 @@ export default function Dashboard() {
                       <button
                         onClick={(e) => openAddGuests(e, event)}
                         title="Add guests"
-                        className="flex-shrink-0 flex items-center gap-1 px-2 md:px-3 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
+                        className="flex-shrink-0 flex items-center gap-1 px-2 md:px-3 py-1.5 border border-[#3d4a35]/15 hover:border-[#5f7256]/50 hover:text-[#5f7256] text-[#5a6c50]/70 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
                       >
                         <span className="material-icons text-sm">person_add</span>
                         <span className="hidden sm:inline">Add Guests</span>
@@ -454,7 +445,7 @@ export default function Dashboard() {
                       <button
                         onClick={() => setBookBuilderEvent(event)}
                         title="Build an invitation book"
-                        className="flex-shrink-0 flex items-center gap-1 px-2 md:px-3 py-1.5 border border-white/10 hover:border-[#9cb092]/40 hover:text-[#9cb092] text-[#b2c3b1]/40 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
+                        className="flex-shrink-0 flex items-center gap-1 px-2 md:px-3 py-1.5 border border-[#3d4a35]/15 hover:border-[#5f7256]/50 hover:text-[#5f7256] text-[#5a6c50]/70 transition-colors font-display text-[9px] tracking-[0.15em] uppercase"
                       >
                         <span className="material-icons text-sm">menu_book</span>
                         <span className="hidden sm:inline">Book</span>
@@ -468,8 +459,8 @@ export default function Dashboard() {
                           title="See who you invited, their RSVPs & messages"
                           className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 border transition-colors font-display text-[9px] tracking-[0.15em] uppercase ${
                             expandedEventId === event.id
-                              ? 'border-[#9cb092]/50 text-[#9cb092] bg-[#9cb092]/10'
-                              : 'border-[#9cb092]/25 text-[#9cb092]/80 hover:border-[#9cb092]/50 hover:text-[#9cb092]'
+                              ? 'border-[#5f7256]/50 text-[#5f7256] bg-[#5f7256]/10'
+                              : 'border-[#5f7256]/30 text-[#5f7256]/90 hover:border-[#5f7256]/50 hover:text-[#5f7256]'
                           }`}
                         >
                           <span className="material-icons text-sm">how_to_reg</span>
@@ -483,17 +474,17 @@ export default function Dashboard() {
 
                     {/* Expanded panels */}
                     {expandedEventId === event.id && event.status === 'published' && (
-                      <div className="border border-t-0 border-white/5 bg-white/[0.01] px-4 md:px-5 pb-4">
+                      <div className="border border-t-0 border-[#3d4a35]/10 bg-white/40 px-4 md:px-5 pb-4">
                         {/* Tab switcher */}
-                        <div className="flex gap-0 border-b border-[#9cb092]/15 mb-1 pt-3">
+                        <div className="flex gap-0 border-b border-[#5f7256]/20 mb-1 pt-3">
                           {(['analytics', 'messages'] as const).map(t => (
                             <button
                               key={t}
                               onClick={() => setExpandedTab(t)}
                               className={`px-4 py-2 font-display text-[9px] tracking-[0.2em] uppercase border-b-2 -mb-px transition-colors ${
                                 expandedTab === t
-                                  ? 'text-[#9cb092] border-[#9cb092]'
-                                  : 'text-[#b2c3b1]/40 border-transparent hover:text-[#b2c3b1]/60'
+                                  ? 'text-[#5f7256] border-[#5f7256]'
+                                  : 'text-[#5a6c50]/60 border-transparent hover:text-[#5a6c50]'
                               }`}
                             >
                               {t === 'analytics' ? 'RSVP Analytics' : 'Messages'}
@@ -516,19 +507,19 @@ export default function Dashboard() {
 
           {/* ── Right column — Gift advertisement panel ── */}
           <div className="lg:sticky lg:top-28">
-            <div className="border border-white/10 bg-[#111914] overflow-hidden">
+            <div className="border border-[#3d4a35]/12 bg-white/70 overflow-hidden shadow-sm">
               {/* Panel header */}
-              <div className="px-5 py-3.5 border-b border-white/[0.07] bg-white/[0.02] flex items-center justify-between">
-                <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092]/60">Perfect Gifts for</p>
-                <p className="font-display text-[10px] tracking-[0.18em] uppercase text-[#9cb092] font-bold">{giftAd.label}</p>
+              <div className="px-5 py-3.5 border-b border-[#3d4a35]/10 bg-[#5f7256]/[0.06] flex items-center justify-between">
+                <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#5f7256]/80">Perfect Gifts for</p>
+                <p className="font-display text-[10px] tracking-[0.18em] uppercase text-[#5f7256] font-bold">{giftAd.label}</p>
               </div>
 
               {/* Panel content */}
               <div className="px-5 py-5">
-                <h2 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight mb-2">
+                <h2 className="font-serif-exp text-xl md:text-2xl text-[#2a3328] leading-tight mb-2">
                   {giftAd.headline}
                 </h2>
-                <p className="font-display text-xs text-[#b2c3b1]/55 leading-relaxed mb-5">
+                <p className="font-display text-xs text-[#5a6c50]/80 leading-relaxed mb-5">
                   {giftAd.desc}
                 </p>
 
@@ -540,15 +531,15 @@ export default function Dashboard() {
                       onClick={() => navigate('/shop')}
                       className="group text-left"
                     >
-                      <div className="aspect-square overflow-hidden bg-[#192116] border border-white/[0.07] mb-2">
+                      <div className="aspect-square overflow-hidden bg-[#e8e0d0] border border-[#3d4a35]/10 mb-2">
                         <img
                           src={product.image}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       </div>
-                      <p className="font-serif-exp text-[11px] text-[#e4eee1] leading-tight truncate">{product.name}</p>
-                      <p className="font-display text-[10px] font-semibold text-[#9cb092] mt-0.5">$ {product.price}</p>
+                      <p className="font-serif-exp text-[11px] text-[#2a3328] leading-tight truncate">{product.name}</p>
+                      <p className="font-display text-[10px] font-semibold text-[#5f7256] mt-0.5">$ {product.price}</p>
                     </button>
                   ))}
                 </div>
@@ -556,7 +547,7 @@ export default function Dashboard() {
                 {/* CTA */}
                 <button
                   onClick={() => navigate('/shop')}
-                  className="w-full py-3 bg-[#9cb092] text-[#0d1a10] font-display text-[10px] tracking-[0.2em] uppercase font-bold hover:bg-[#b2c3b1] transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-[#5f7256] text-white font-display text-[10px] tracking-[0.2em] uppercase font-bold hover:bg-[#4d5a44] transition-colors flex items-center justify-center gap-2"
                 >
                   {giftAd.cta}
                   <span className="material-icons text-sm">arrow_forward</span>

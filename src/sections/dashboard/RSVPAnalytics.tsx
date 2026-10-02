@@ -82,7 +82,7 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
   if (loading)
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="w-5 h-5 border-2 border-[#9cb092]/30 border-t-[#9cb092] rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-[#5f7256]/30 border-t-[#9cb092] rounded-full animate-spin" />
       </div>
     );
   if (!stats) return null;
@@ -110,10 +110,10 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
     <div className="py-3 space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <p className="font-display text-[9px] tracking-[0.3em] uppercase text-[#9cb092]">RSVP Analytics</p>
-          <p className="font-serif-exp text-sm text-[#e4eee1] italic">{eventTitle}</p>
+          <p className="font-display text-[9px] tracking-[0.3em] uppercase text-[#5f7256]">RSVP Analytics</p>
+          <p className="font-serif-exp text-sm text-[#2a3328] italic">{eventTitle}</p>
         </div>
-        <p className="font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]/35">
+        <p className="font-display text-[9px] tracking-[0.15em] uppercase text-[#5a6c50]/35">
           Responses &amp; guest preferences
         </p>
       </div>
@@ -121,56 +121,56 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         {statCards.map((c) => (
-          <div key={c.key} className="border border-white/[0.07] bg-white/[0.02] p-3">
+          <div key={c.key} className="border border-[#3d4a35]/12 bg-white/60 p-3">
             <div className="flex items-center gap-1.5 mb-2">
               <span className="material-icons text-sm" style={{ color: c.color }}>{c.icon}</span>
-              <span className="font-display text-[8px] tracking-[0.12em] uppercase text-[#b2c3b1]/45">{c.label}</span>
+              <span className="font-display text-[8px] tracking-[0.12em] uppercase text-[#5a6c50]/45">{c.label}</span>
             </div>
             <p className="font-serif-exp text-2xl leading-none" style={{ color: c.color }}>{c.value}</p>
-            <p className="font-display text-[8px] tracking-[0.1em] uppercase text-[#b2c3b1]/35 mt-1">{c.pctText}</p>
+            <p className="font-display text-[8px] tracking-[0.1em] uppercase text-[#5a6c50]/35 mt-1">{c.pctText}</p>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
         {/* Attendance summary */}
-        <div className="border border-white/[0.07] bg-white/[0.02] p-4">
-          <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092] mb-3">Attendance Summary</p>
+        <div className="border border-[#3d4a35]/12 bg-white/60 p-4">
+          <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#5f7256] mb-3">Attendance Summary</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <p className="font-display text-[8px] tracking-[0.12em] uppercase text-[#b2c3b1]/40">Adults</p>
-              <p className="font-serif-exp text-xl text-[#e4eee1]">{adults}</p>
+              <p className="font-display text-[8px] tracking-[0.12em] uppercase text-[#5a6c50]/40">Adults</p>
+              <p className="font-serif-exp text-xl text-[#2a3328]">{adults}</p>
             </div>
             <div>
-              <p className="font-display text-[8px] tracking-[0.12em] uppercase text-[#b2c3b1]/40">Kids (Under 12)</p>
-              <p className="font-serif-exp text-xl text-[#e4eee1]">{kids}</p>
+              <p className="font-display text-[8px] tracking-[0.12em] uppercase text-[#5a6c50]/40">Kids (Under 12)</p>
+              <p className="font-serif-exp text-xl text-[#2a3328]">{kids}</p>
             </div>
             <div>
-              <p className="font-display text-[8px] tracking-[0.12em] uppercase text-[#b2c3b1]/40">Total People</p>
-              <p className="font-serif-exp text-xl text-[#9cb092]">{totalPeople}</p>
+              <p className="font-display text-[8px] tracking-[0.12em] uppercase text-[#5a6c50]/40">Total People</p>
+              <p className="font-serif-exp text-xl text-[#5f7256]">{totalPeople}</p>
             </div>
             <div>
-              <p className="font-display text-[8px] tracking-[0.12em] uppercase text-[#b2c3b1]/40">Avg per RSVP</p>
-              <p className="font-serif-exp text-xl text-[#e4eee1]">{avgPerRsvp}</p>
+              <p className="font-display text-[8px] tracking-[0.12em] uppercase text-[#5a6c50]/40">Avg per RSVP</p>
+              <p className="font-serif-exp text-xl text-[#2a3328]">{avgPerRsvp}</p>
             </div>
           </div>
         </div>
 
         {/* Top food preferences */}
-        <div className="border border-white/[0.07] bg-white/[0.02] p-4">
-          <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092] mb-3">Top Food Preferences</p>
+        <div className="border border-[#3d4a35]/12 bg-white/60 p-4">
+          <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#5f7256] mb-3">Top Food Preferences</p>
           {foodEntries.length === 0 ? (
-            <p className="font-display text-[10px] text-[#b2c3b1]/35 py-4">No food preferences submitted yet.</p>
+            <p className="font-display text-[10px] text-[#5a6c50]/35 py-4">No food preferences submitted yet.</p>
           ) : (
             <div className="space-y-2">
               {foodEntries.map(([label, count]) => (
                 <div key={label}>
-                  <div className="flex justify-between font-display text-[9px] text-[#b2c3b1]/60 mb-0.5">
+                  <div className="flex justify-between font-display text-[9px] text-[#5a6c50]/60 mb-0.5">
                     <span>{label}</span>
-                    <span className="text-[#e4eee1]">{count}</span>
+                    <span className="text-[#2a3328]">{count}</span>
                   </div>
-                  <div className="h-1.5 bg-white/[0.05] overflow-hidden">
-                    <div className="h-full bg-[#9cb092]" style={{ width: `${(count / foodMax) * 100}%` }} />
+                  <div className="h-1.5 bg-white/70 overflow-hidden">
+                    <div className="h-full bg-[#5f7256]" style={{ width: `${(count / foodMax) * 100}%` }} />
                   </div>
                 </div>
               ))}
@@ -179,10 +179,10 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
         </div>
 
         {/* Group size donut */}
-        <div className="border border-white/[0.07] bg-white/[0.02] p-4">
-          <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092] mb-3">Guests Attending (by group size)</p>
+        <div className="border border-[#3d4a35]/12 bg-white/60 p-4">
+          <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#5f7256] mb-3">Guests Attending (by group size)</p>
           {groupTotal === 0 ? (
-            <p className="font-display text-[10px] text-[#b2c3b1]/35 py-4">No attending groups yet.</p>
+            <p className="font-display text-[10px] text-[#5a6c50]/35 py-4">No attending groups yet.</p>
           ) : (
             <div className="flex items-center gap-4">
               <svg viewBox="0 0 100 100" className="w-24 h-24 flex-shrink-0 -rotate-90">
@@ -211,10 +211,10 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
               </svg>
               <div className="space-y-1">
                 {groupEntries.map(([label, count]) => (
-                  <div key={label} className="flex items-center gap-1.5 font-display text-[9px] text-[#b2c3b1]/60">
+                  <div key={label} className="flex items-center gap-1.5 font-display text-[9px] text-[#5a6c50]/60">
                     <span className="w-2 h-2 rounded-full" style={{ background: GROUP_COLORS[label] ?? '#9cb092' }} />
                     <span>{label === '5+' ? '5+ Guests' : `${label} ${label === '1' ? 'Guest' : 'Guests'}`}</span>
-                    <span className="text-[#e4eee1] ml-1">{count}</span>
+                    <span className="text-[#2a3328] ml-1">{count}</span>
                   </div>
                 ))}
               </div>
@@ -224,9 +224,9 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
       </div>
 
       {/* Guest responses table */}
-      <div className="border border-white/[0.07] bg-white/[0.02]">
-        <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-white/[0.06] flex-wrap">
-          <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#9cb092]">Guest Responses</p>
+      <div className="border border-[#3d4a35]/12 bg-white/60">
+        <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-[#3d4a35]/12 flex-wrap">
+          <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#5f7256]">Guest Responses</p>
           <div className="flex gap-1 flex-wrap">
             {[['all', 'All'], ['accepted', 'Will Attend'], ['maybe', 'Tentative'], ['declined', "Won't"], ['pending', 'No Response']].map(
               ([key, label]) => (
@@ -235,8 +235,8 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
                   onClick={() => setStatusFilter(key)}
                   className={`px-2 py-1 font-display text-[8px] tracking-[0.1em] uppercase border transition-colors ${
                     statusFilter === key
-                      ? 'border-[#9cb092] text-[#9cb092] bg-[#9cb092]/10'
-                      : 'border-white/10 text-[#b2c3b1]/40 hover:border-[#9cb092]/40'
+                      ? 'border-[#5f7256] text-[#5f7256] bg-[#5f7256]/10'
+                      : 'border-[#3d4a35]/15 text-[#5a6c50]/40 hover:border-[#5f7256]/40'
                   }`}
                 >
                   {label}
@@ -248,16 +248,16 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse min-w-[560px]">
             <thead>
-              <tr className="border-b border-white/[0.06]">
+              <tr className="border-b border-[#3d4a35]/12">
                 {['Guest', 'Contact', 'Status', 'Attending', 'Kids', 'Food', 'Responded'].map((h) => (
-                  <th key={h} className="text-left px-3 py-2 font-display text-[8px] tracking-[0.12em] uppercase text-[#9cb092]/70">{h}</th>
+                  <th key={h} className="text-left px-3 py-2 font-display text-[8px] tracking-[0.12em] uppercase text-[#5f7256]/70">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filteredGuests.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-6 text-center font-display text-[10px] text-[#b2c3b1]/35">
+                  <td colSpan={7} className="px-3 py-6 text-center font-display text-[10px] text-[#5a6c50]/35">
                     No guests in this view yet.
                   </td>
                 </tr>
@@ -265,18 +265,18 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
                 filteredGuests.map((g, i) => {
                   const meta = STATUS_META[g.status] ?? STATUS_META.pending;
                   return (
-                    <tr key={i} className="border-b border-white/[0.03] last:border-b-0">
-                      <td className="px-3 py-2 font-display text-[11px] text-[#e4eee1]">{g.name || '—'}</td>
-                      <td className="px-3 py-2 font-display text-[9px] text-[#b2c3b1]/50 truncate max-w-[160px]">{g.email || g.phone || '—'}</td>
+                    <tr key={i} className="border-b border-[#3d4a35]/10 last:border-b-0">
+                      <td className="px-3 py-2 font-display text-[11px] text-[#2a3328]">{g.name || '—'}</td>
+                      <td className="px-3 py-2 font-display text-[9px] text-[#5a6c50]/50 truncate max-w-[160px]">{g.email || g.phone || '—'}</td>
                       <td className="px-3 py-2">
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 border font-display text-[8px] tracking-[0.1em] uppercase" style={{ color: meta.color, borderColor: `${meta.color}55` }}>
                           {meta.label}
                         </span>
                       </td>
-                      <td className="px-3 py-2 font-display text-[10px] text-[#b2c3b1]/70">{g.party_size ?? '—'}</td>
-                      <td className="px-3 py-2 font-display text-[10px] text-[#b2c3b1]/70">{g.kids_count ?? '—'}</td>
-                      <td className="px-3 py-2 font-display text-[10px] text-[#b2c3b1]/70">{g.food_preference || '—'}</td>
-                      <td className="px-3 py-2 font-display text-[9px] text-[#b2c3b1]/50">
+                      <td className="px-3 py-2 font-display text-[10px] text-[#5a6c50]/70">{g.party_size ?? '—'}</td>
+                      <td className="px-3 py-2 font-display text-[10px] text-[#5a6c50]/70">{g.kids_count ?? '—'}</td>
+                      <td className="px-3 py-2 font-display text-[10px] text-[#5a6c50]/70">{g.food_preference || '—'}</td>
+                      <td className="px-3 py-2 font-display text-[9px] text-[#5a6c50]/50">
                         {g.responded_at ? new Date(g.responded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                       </td>
                     </tr>
