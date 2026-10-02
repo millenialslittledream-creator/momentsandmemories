@@ -1,0 +1,68 @@
+# Local secrets and Vercel metadata
+.env
+.env.*
+backend/.env
+backend/.env.*
+.vercel
+
+# Local dependencies, caches, and generated output
+node_modules
+dist
+.claude
+.playwright-mcp
+test-results
+playwright-report
+blob-report
+backend/.venv
+backend/**/__pycache__
+backend/**/*.pyc
+
+# Test and planning material is not needed by the deployment
+tests
+backend/tests
+docs
+.gitlab-ci.yml
+playwright.config.ts
+PROGRESS.md
+CLAUDE.md
+info.md
+build_output.txt
+tsc_errors.txt
+
+# Source artwork is duplicated into public/ for the web app
+templates
+orange-avenue-demo
+/orange-avenue-demo.zip
+
+# Root-level QA/reference captures are not runtime assets. Runtime copies live
+# under public/, which remains included.
+babyshower.jpeg
+bady.jpeg
+wedding.jpeg
+logo.png
+logobg.jpeg
+logomainpage.png
+logopage2.png
+datetime-picker-open.png
+editor-prefilled.png
+editor-prefilled-2.png
+evite-9-16.png
+evite-images-fixed.png
+evite-modal-fixed.png
+evite-page-after-fix.png
+evite-page-after-fix-2.png
+evite-page-test.png
+guest-popup-1.png
+manual-entry-popup.png
+multi-event-guests-checked.png
+cover-*.jpeg
+invite-*.jpeg
+ref-*.jpeg
+tour-*.jpeg
+v2-*.jpeg
+v3-*.jpeg
+wb-*.jpeg
+
+# Keep every web-runtime asset even when its basename matches a root QA file.
+!public/
+!public/**
