@@ -128,20 +128,20 @@ export default function BookBuilder({ eventId, eventTitle, onClose }: BookBuilde
   // before that resolves can either silently lose the edit or create a stray duplicate row.
   if (!loaded) {
     return (
-      <div data-testid="book-builder" className="fixed inset-0 z-50 flex items-center justify-center bg-[#0d1512]">
+      <div data-testid="book-builder" className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex items-center justify-center">
         <p className="font-display text-[10px] tracking-[0.28em] uppercase text-[#b2c3b1]/50">Loading…</p>
       </div>
     );
   }
 
   return (
-    <div data-testid="book-builder" className="fixed inset-0 z-50 flex flex-col bg-[#0d1512]">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/[0.07] bg-[#111914]">
+    <div data-testid="book-builder" className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex flex-col">
+      <div className="flex items-center justify-between gap-1 sm:gap-3 px-2 sm:px-4 py-3 border-b border-white/[0.07] bg-[#111914]">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={handleClose} aria-label="Close book builder">
             <span className="material-icons text-base">arrow_back</span>
           </Button>
-          <p className="font-display text-[10px] tracking-[0.28em] uppercase text-[#9cb092]">Invitation Book</p>
+          <p className="hidden sm:block font-display text-[10px] tracking-[0.28em] uppercase text-[#9cb092]">Invitation Book</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -155,7 +155,7 @@ export default function BookBuilder({ eventId, eventTitle, onClose }: BookBuilde
             {uploading ? 'Uploading…' : 'Add Page(s)'}
           </Button>
           <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleAddPage} />
-          <span className="font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/50 w-16 text-right">
+          <span className="hidden sm:block font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/50 w-16 text-right">
             {saveStatus === 'saving' && 'Saving…'}
             {saveStatus === 'saved' && 'Saved'}
             {saveStatus === 'error' && 'Save failed'}
@@ -167,7 +167,7 @@ export default function BookBuilder({ eventId, eventTitle, onClose }: BookBuilde
       </div>
 
       <div className="flex-1 flex min-h-0">
-        <div className="w-56 shrink-0 border-r border-white/[0.07] bg-[#141c15] px-3 py-5 overflow-y-auto scrollbar-subtle">
+        <div className="hidden lg:block w-56 shrink-0 border-r border-white/[0.07] bg-[#141c15] px-3 py-5 overflow-y-auto scrollbar-subtle">
           <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092] mb-3 px-1">Pages</p>
           {pages.length === 0 && (
             <p className="font-display text-[9px] tracking-[0.18em] text-[#b2c3b1]/40 px-1">
@@ -234,7 +234,7 @@ export default function BookBuilder({ eventId, eventTitle, onClose }: BookBuilde
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto scrollbar-subtle bg-[#1a1a1a] flex items-center justify-center py-8 px-4">
+        <div className="flex-1 overflow-y-auto scrollbar-subtle bg-transparent flex items-center justify-center py-8 px-4">
           <BookViewer pages={pages} />
         </div>
       </div>

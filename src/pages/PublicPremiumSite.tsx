@@ -36,13 +36,13 @@ export default function PublicPremiumSite() {
   }, [site]);
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0c1013] flex items-center justify-center">
+    <div className="page-bokeh-bg min-h-screen flex items-center justify-center">
       <div className="w-6 h-6 border-2 border-[#c19a4b]/30 border-t-[#c19a4b] rounded-full animate-spin" />
     </div>
   );
 
   if (error || !site || !resolved) return (
-    <div className="min-h-screen bg-[#0c1013] flex flex-col items-center justify-center gap-4 px-6">
+    <div className="page-bokeh-bg product-light-shell min-h-screen flex flex-col items-center justify-center gap-4 px-6">
       <span className="material-icons text-4xl text-[#c19a4b]/40">language</span>
       <p className="font-display text-[11px] tracking-[0.2em] uppercase text-[#9bb3a3]/70 text-center">
         {error || 'Page not found'}

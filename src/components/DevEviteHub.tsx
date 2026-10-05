@@ -87,7 +87,7 @@ function DesignCard({ card, accentColor, delay, onSelect, swatches }: {
     <button ref={cardRef} onClick={onSelect}
       className="group text-left flex flex-col overflow-hidden border border-white/[0.08] hover:border-white/20 transition-all duration-300 bg-white/[0.02] hover:bg-white/[0.04]"
       style={{ opacity: 0 }}>
-      <div className="relative aspect-[9/16] overflow-hidden flex flex-col items-center justify-center text-center px-4 gap-3" style={card.preview}>
+      <div data-preserve-theme className="relative aspect-[9/16] overflow-hidden flex flex-col items-center justify-center text-center px-4 gap-3" style={card.preview}>
         <span className="text-3xl leading-none" style={{ animation: 'ev-none' }}>{card.ornament}</span>
         <p className="leading-tight px-2 group-hover:scale-105 transition-transform duration-500"
           style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(1rem, 4vw, 1.5rem)', color: '#ece5d8', fontWeight: 300 }}>
@@ -101,8 +101,8 @@ function DesignCard({ card, accentColor, delay, onSelect, swatches }: {
         </div>
       </div>
       <div className="px-3 py-3 space-y-2">
-        <p className="text-[12px] leading-tight" style={{ color: '#e4eee1', fontFamily: "'Cormorant Garamond', serif" }}>{card.name}</p>
-        <p className="text-[9px] uppercase tracking-[0.18em] leading-snug" style={{ color: '#b2c3b1', fontFamily: "'Marcellus', sans-serif" }}>{card.sub}</p>
+        <p className="text-[12px] leading-tight text-[#2a3328]" style={{ fontFamily: "'Cormorant Garamond', serif" }}>{card.name}</p>
+        <p className="text-[9px] uppercase tracking-[0.18em] leading-snug text-[#3d4a35]" style={{ fontFamily: "'Marcellus', sans-serif" }}>{card.sub}</p>
         <div className="flex items-center gap-1 pt-0.5">
           {swatches.map((t, i) => (
             <span key={i} className="flex gap-0.5">
@@ -144,7 +144,7 @@ export default function DevEviteHub() {
 
   if (openDesignId) {
     return (
-      <Suspense fallback={<div className="fixed inset-0 bg-[#0c1013]" />}>
+      <Suspense fallback={<div className="hero-bokeh-bg fixed inset-0" />}>
         {view.editorKind === 'wedding' && <InviteEditor initialDesignId={openDesignId} onBack={closeEditor} onClose={exitToCreate} />}
         {view.editorKind === 'birthday' && <BirthdayEditor initialDesignId={openDesignId} onBack={closeEditor} onClose={exitToCreate} />}
         {view.editorKind === 'event' && view.eventKey && (
@@ -155,10 +155,8 @@ export default function DevEviteHub() {
   }
 
   return (
-    <div ref={pageRef} className="fixed inset-0 flex flex-col" style={{ background: '#111914' }}>
+    <div ref={pageRef} className="hero-bokeh-bg product-light-shell fixed inset-0 flex flex-col">
       <style>{`@keyframes ev-none{to{opacity:1}}`}</style>
-      <div className="fixed inset-0 z-0 opacity-[0.07] pointer-events-none"
-        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }} />
 
       {/* top bar — no event filter, event is chosen upstream */}
       <div className="relative z-10 flex items-center gap-4 px-6 md:px-10 py-4 border-b border-white/[0.07] flex-shrink-0">
@@ -180,7 +178,7 @@ export default function DevEviteHub() {
             Choose your{' '}
             <span style={{ color: '#9cb092', fontStyle: 'italic', fontFamily: "'Great Vibes', cursive" }}>{view.label}</span>{' '}website
           </h1>
-          <p className="text-[9px] uppercase tracking-[0.28em] mt-1" style={{ color: '#b2c3b1', fontFamily: "'Marcellus', sans-serif" }}>
+          <p className="text-[9px] uppercase tracking-[0.28em] mt-1 text-[#3d4a35]" style={{ fontFamily: "'Marcellus', sans-serif" }}>
             3 designs · 3 themes each · fully editable
           </p>
         </div>
@@ -195,7 +193,7 @@ export default function DevEviteHub() {
           </div>
 
           <div className="mt-10 max-w-lg">
-            <p className="text-[9px] uppercase tracking-[0.3em] mb-3" style={{ color: '#b2c3b1', fontFamily: "'Marcellus', sans-serif" }}>Available colour themes</p>
+            <p className="text-[9px] uppercase tracking-[0.3em] mb-3 text-[#3d4a35]" style={{ fontFamily: "'Marcellus', sans-serif" }}>Available colour themes</p>
             <div className="flex gap-3 flex-wrap">
               {view.swatches.map((t, i) => (
                 <span key={i} className="flex gap-0.5">

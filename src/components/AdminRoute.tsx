@@ -28,7 +28,7 @@ export default function AdminRoute({ children }: Props) {
   };
 
   if (!entered) return (
-    <div className="min-h-screen bg-[#1a2418] flex items-center justify-center px-6">
+    <div className="page-bokeh-bg product-light-shell min-h-screen flex items-center justify-center px-6">
       <div className={`w-full max-w-xs transition-transform ${shake ? 'animate-[shake_0.4s_ease]' : ''}`}>
         {/* Logo mark */}
         <div className="flex justify-center mb-8">

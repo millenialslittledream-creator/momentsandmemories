@@ -22,7 +22,7 @@ export default function LayerPanel({
   const sorted = [...elements].sort((a, b) => b.zIndex - a.zIndex);
 
   return (
-    <div className="w-48 shrink-0 border-r border-white/[0.07] bg-[#141c15] px-3 py-5 overflow-y-auto scrollbar-subtle">
+    <div className="hidden xl:block w-48 shrink-0 border-r border-white/[0.07] bg-[#141c15] px-3 py-5 overflow-y-auto scrollbar-subtle">
       <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092] mb-3 px-1">Layers</p>
       {sorted.length === 0 && (
         <p className="font-display text-[9px] tracking-[0.18em] text-[#b2c3b1]/40 px-1">

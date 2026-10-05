@@ -258,18 +258,17 @@ export default function PreviewStep({
   return (
     <div
       ref={backdropRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
-      style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
+      className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
       onClick={(e) => {
         if (e.target === e.currentTarget) onBack();
       }}
     >
       <div
         ref={panelRef}
-        className="relative w-full h-full flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
+        className="product-light-shell relative w-full h-full flex flex-col border overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <FlowLogo onClick={onClose} />
+        <FlowLogo onClick={onClose} tone="light" />
         {onClose && (
           <button
             onClick={onClose}
@@ -283,7 +282,7 @@ export default function PreviewStep({
         {/* ── Header — just the stepper; the title lives in the left column
              so the middle preview gets more room ── */}
         <div className="flex-shrink-0 px-6 md:px-8 py-2 border-b border-white/[0.06] bg-[#0e1712]">
-          <FlowStepper current={6} className="max-w-2xl mx-auto" />
+          <FlowStepper current={6} tone="light" className="max-w-2xl mx-auto" />
         </div>
 
         {/* ── Body — three columns ── */}
@@ -337,9 +336,9 @@ export default function PreviewStep({
           </div>
 
           {/* COL 2 — Phone preview + events */}
-          <div className="flex flex-col items-center min-h-0">
+          <div className="flex flex-col items-center">
             {/* Phone frame */}
-            <div className="relative w-[190px] flex-shrink-0 rounded-[26px] border-[6px] border-[#0a0f0c] bg-[#0d1512] shadow-2xl overflow-hidden">
+            <div data-preserve-theme className="relative w-[190px] flex-shrink-0 rounded-[26px] border-[6px] border-[#0a0f0c] bg-[#0d1512] shadow-2xl overflow-hidden">
               <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-16 h-1 rounded-full bg-black/50 z-10" />
               <div className="aspect-[9/16] w-full overflow-hidden">{renderCard()}</div>
             </div>
@@ -518,13 +517,12 @@ export default function PreviewStep({
       {/* ── Compact RSVP settings popup ── */}
       {rsvpEditing && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(13, 21, 18, 0.82)', backdropFilter: 'blur(3px)' }}
+          className="hero-bokeh-bg fixed inset-0 z-[60] flex items-center justify-center p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) setRsvpEditing(false);
           }}
         >
-          <div className="relative w-full max-w-md bg-[#141d18] border border-white/[0.1] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="product-light-shell relative w-full max-w-md border shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.07]">
               <h3 className="font-serif-exp text-base text-[#e4eee1] flex items-center gap-2">
                 <span className="material-icons text-[#9cb092] text-lg">how_to_reg</span>

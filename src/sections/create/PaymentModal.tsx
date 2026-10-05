@@ -99,18 +99,17 @@ export default function PaymentModal({
   return (
     <div
       ref={backdropRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
-      style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
+      className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
       onClick={(e) => {
         if (e.target === e.currentTarget) onBack();
       }}
     >
       <div
         ref={panelRef}
-        className="relative w-full h-full flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
+        className="product-light-shell relative w-full h-full flex flex-col border overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <FlowLogo onClick={onClose ?? onBack} />
+        <FlowLogo onClick={onClose ?? onBack} tone="light" />
         <button
           onClick={onClose ?? onBack}
           aria-label="Close"
@@ -120,7 +119,7 @@ export default function PaymentModal({
         </button>
         {/* Header */}
         <div className="flex-shrink-0 px-6 md:px-10 pt-4 pb-4 border-b border-white/[0.06] bg-[#0e1712]">
-          <FlowStepper current={7} className="max-w-2xl mx-auto mb-3" />
+          <FlowStepper current={7} tone="light" className="max-w-2xl mx-auto mb-3" />
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight">

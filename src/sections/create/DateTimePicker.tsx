@@ -139,14 +139,13 @@ export default function DateTimePicker({
     open &&
     createPortal(
       <div
-        className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-        style={{ backgroundColor: 'rgba(13, 21, 18, 0.78)', backdropFilter: 'blur(4px)' }}
+        className="hero-bokeh-bg fixed inset-0 z-[200] flex items-center justify-center p-4"
         onClick={(e) => {
           if (e.target === e.currentTarget) setOpen(false);
         }}
       >
         <div
-          className="w-auto p-0 bg-[#1a2418] border border-white/15 backdrop-blur-xl shadow-2xl"
+          className="product-light-shell w-auto p-0 border backdrop-blur-xl shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex">

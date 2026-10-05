@@ -158,7 +158,7 @@ function AdminContent() {
   ] : [];
 
   return (
-    <div className="min-h-screen bg-[#1a2418] flex">
+    <div className="page-bokeh-bg product-light-shell min-h-screen flex">
 
       {/* ── Main panel ── */}
       <div className={`flex-1 px-6 py-12 transition-all ${selectedUser ? 'max-w-3xl' : 'max-w-5xl mx-auto w-full'}`}>

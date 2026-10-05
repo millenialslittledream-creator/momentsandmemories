@@ -408,14 +408,13 @@ export default function Shop() {
       {selected && (
         <div
           ref={backdropRef}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
-          style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
+          className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
           {/* Modal panel */}
           <div
             ref={modalRef}
-            className="relative w-full max-w-5xl h-full max-h-[88vh] flex bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
+            className="product-light-shell relative w-full max-w-5xl h-full max-h-[88vh] flex border overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* X close button */}
@@ -427,7 +426,7 @@ export default function Shop() {
             </button>
 
             {/* ── LEFT — image viewer ─────────────────────────────────── */}
-            <div className="flex-1 flex flex-col overflow-hidden border-r border-white/[0.07]">
+            <div data-preserve-theme className="flex-1 flex flex-col overflow-hidden border-r border-white/[0.07]">
 
               {/* Main large image */}
               <div className="flex-1 relative overflow-hidden bg-[#0d1512]">

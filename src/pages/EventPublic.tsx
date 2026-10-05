@@ -58,13 +58,13 @@ export default function EventPublic() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#1a2418] flex items-center justify-center">
+    <div className="page-bokeh-bg product-light-shell min-h-screen flex items-center justify-center">
       <div className="w-6 h-6 border-2 border-[#9cb092]/30 border-t-[#9cb092] rounded-full animate-spin" />
     </div>
   );
 
   if (error || !event) return (
-    <div className="min-h-screen bg-[#1a2418] flex flex-col items-center justify-center gap-4 px-6">
+    <div className="page-bokeh-bg product-light-shell min-h-screen flex flex-col items-center justify-center gap-4 px-6">
       <span className="material-icons text-4xl text-[#9cb092]/30">event_busy</span>
       <p className="font-display text-[11px] tracking-[0.2em] uppercase text-[#b2c3b1]/60 text-center">
         {error || 'Event not found'}
@@ -103,12 +103,13 @@ export default function EventPublic() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1a2418]">
+    <div className="page-bokeh-bg product-light-shell min-h-screen">
       <div className="max-w-md mx-auto px-5 py-10 md:py-14">
         {/* Designed invitation */}
         {hasDesign && (
           <div className="mb-9">
             <div
+              data-preserve-theme
               className="relative w-full mx-auto overflow-hidden rounded-sm shadow-2xl border border-white/[0.06] bg-[#0d1512]"
               style={{ aspectRatio: aspect, maxWidth: 420 }}
             >
@@ -179,7 +180,7 @@ export default function EventPublic() {
       {showBook && (
         <div
           data-testid="book-viewer-modal"
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 p-4"
+          className="hero-bokeh-bg fixed inset-0 z-50 flex flex-col items-center justify-center p-4"
           onClick={() => setShowBook(false)}
         >
           <button
@@ -189,7 +190,7 @@ export default function EventPublic() {
           >
             <span className="material-icons text-2xl">close</span>
           </button>
-          <div onClick={(e) => e.stopPropagation()}>
+          <div data-preserve-theme className="relative z-10" onClick={(e) => e.stopPropagation()}>
             <BookViewer pages={bookPages} />
           </div>
         </div>

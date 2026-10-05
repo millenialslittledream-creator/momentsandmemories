@@ -167,46 +167,47 @@ export default function WebsiteBuilder({ eventId, eventTitle, eventDate, eventLo
   // before that resolves can either silently lose the edit or create a stray duplicate row.
   if (!loaded) {
     return (
-      <div data-testid="website-builder" className="fixed inset-0 z-50 flex items-center justify-center bg-[#0d1512]">
+      <div data-testid="website-builder" className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex items-center justify-center">
         <p className="font-display text-[10px] tracking-[0.28em] uppercase text-[#b2c3b1]/50">Loading…</p>
       </div>
     );
   }
 
   return (
-    <div data-testid="website-builder" className="fixed inset-0 z-50 flex flex-col bg-[#0d1512]">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/[0.07] bg-[#111914]">
-        <div className="flex items-center gap-2">
+    <div data-testid="website-builder" className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex flex-col">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 sm:px-4 sm:py-3 border-b border-white/[0.07] bg-[#111914]">
+        <div className="flex min-w-0 items-center gap-2">
           <Button variant="ghost" size="sm" onClick={handleClose} aria-label="Close website builder">
             <span className="material-icons text-base">arrow_back</span>
           </Button>
-          <p className="font-display text-[10px] tracking-[0.28em] uppercase text-[#9cb092]">Website Builder</p>
+          <p className="hidden sm:block font-display text-[10px] tracking-[0.28em] uppercase text-[#9cb092]">Website Builder</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
           {published ? (
             <button
               onClick={copyPublicUrl}
               title="Copy live link"
-              className="flex items-center gap-1.5 bg-[#9cb092]/10 border border-[#9cb092]/30 text-[#e4eee1] text-xs px-2.5 py-1.5 hover:border-[#9cb092]/60 transition-colors"
+              className="flex min-w-0 items-center gap-1.5 bg-[#9cb092]/10 border border-[#9cb092]/30 text-[#e4eee1] text-xs px-2.5 py-1.5 hover:border-[#9cb092]/60 transition-colors"
             >
               <span className="material-icons text-[13px] text-[#9cb092]">public</span>
-              <span className="max-w-[220px] truncate">{publicUrl}</span>
+              <span className="max-w-24 sm:max-w-[220px] truncate">{publicUrl}</span>
               <span className="material-icons text-[13px] text-[#b2c3b1]/60">content_copy</span>
             </button>
           ) : (
             <>
-              <span className="font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55">
+              <span className="hidden md:inline font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55">
                 mymomentsnmemories.com/w/
               </span>
               <input
                 value={slug}
                 onChange={(e) => setSlug(slugify(e.target.value))}
-                className="bg-[#192116] border border-white/[0.1] text-[#e4eee1] text-xs px-2 py-1 w-40 focus:outline-none focus:border-[#9cb092]/50"
+                aria-label="Website address"
+                className="min-w-0 w-28 sm:w-40 bg-[#192116] border border-white/[0.1] text-[#e4eee1] text-xs px-2 py-1 focus:outline-none focus:border-[#9cb092]/50"
               />
             </>
           )}
-          <span className="font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/50 w-16 text-right">
+          <span className="hidden sm:block font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/50 w-16 text-right">
             {saveStatus === 'saving' && 'Saving…'}
             {saveStatus === 'saved' && 'Saved'}
             {saveStatus === 'error' && 'Save failed'}
@@ -226,8 +227,8 @@ export default function WebsiteBuilder({ eventId, eventTitle, eventDate, eventLo
         </div>
       )}
 
-      <div className="flex-1 flex min-h-0">
-        <div className="w-56 shrink-0 border-r border-white/[0.07] bg-[#141c15] px-3 py-5 overflow-y-auto scrollbar-subtle">
+      <div className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden flex flex-col lg:flex-row">
+        <div className="w-full lg:w-56 shrink-0 border-b lg:border-b-0 lg:border-r border-white/[0.07] bg-[#141c15] px-3 py-4 lg:py-5 lg:overflow-y-auto scrollbar-subtle">
           <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092] mb-3 px-1">Sections</p>
           <div className="space-y-1">
             {sections.map((section, idx) => (
@@ -316,13 +317,13 @@ export default function WebsiteBuilder({ eventId, eventTitle, eventDate, eventLo
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto scrollbar-subtle bg-[#1a1a1a] flex justify-center py-8 px-4">
+        <div className="w-full min-h-[32rem] lg:min-h-0 lg:flex-1 lg:overflow-y-auto scrollbar-subtle bg-transparent flex justify-center py-4 px-2 sm:px-4 lg:py-8">
           <div className="w-full max-w-2xl bg-white shadow-2xl">
             <WebsiteRenderer sections={sections} theme={theme} eventTitle={eventTitle} eventDate={eventDate} eventLocation={eventLocation} eventId={eventId} />
           </div>
         </div>
 
-        <div className="w-72 shrink-0 border-l border-white/[0.07] bg-[#141c15] px-4 py-5 overflow-y-auto scrollbar-subtle">
+        <div className="w-full lg:w-72 shrink-0 border-t lg:border-t-0 lg:border-l border-white/[0.07] bg-[#141c15] px-4 py-5 lg:overflow-y-auto scrollbar-subtle">
           {selectedSection ? (
             <>
               <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092] mb-2">

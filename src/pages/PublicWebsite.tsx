@@ -28,13 +28,13 @@ export default function PublicWebsite() {
   }, [slug]);
 
   if (loading) return (
-    <div className="min-h-screen bg-[#fbf9f4] flex items-center justify-center">
+    <div className="page-bokeh-bg min-h-screen flex items-center justify-center">
       <div className="w-6 h-6 border-2 border-[#9cb092]/30 border-t-[#9cb092] rounded-full animate-spin" />
     </div>
   );
 
   if (error || !site) return (
-    <div className="min-h-screen bg-[#fbf9f4] flex flex-col items-center justify-center gap-4 px-6">
+    <div className="page-bokeh-bg min-h-screen flex flex-col items-center justify-center gap-4 px-6">
       <span className="material-icons text-4xl text-[#9cb092]/40">language</span>
       <p className="text-sm uppercase tracking-[0.2em] text-[#8a8470] text-center">
         {error || 'Page not found'}

@@ -1111,10 +1111,9 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {showResume && (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(13, 21, 18, 0.94)', backdropFilter: 'blur(6px)' }}
+          className="hero-bokeh-bg fixed inset-0 z-[70] flex items-center justify-center p-4"
         >
-          <div className="relative w-full max-w-md bg-[#111914] border border-white/[0.09] shadow-2xl p-8 md:p-10 text-center">
+          <div className="product-light-shell relative w-full max-w-md border shadow-2xl p-8 md:p-10 text-center">
             <div className="w-14 h-14 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center mx-auto mb-5">
               <span className="material-icons text-[#9cb092] text-3xl">history</span>
             </div>
@@ -1521,18 +1520,17 @@ export default function CreateEvite() {
       {modalPhase === 'upload' && (
         <div
           ref={editorBackdropRef}
-          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
-          style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
+          className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeAnyModal();
           }}
         >
           <div
             ref={editorPanelRef}
-            className="relative w-full h-full bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl flex flex-col"
+            className="product-light-shell relative w-full h-full border overflow-hidden shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <FlowLogo onClick={closeToHome} />
+            <FlowLogo onClick={closeToHome} tone="light" />
             <button
               onClick={closeToHome}
               aria-label="Close"
@@ -1542,7 +1540,7 @@ export default function CreateEvite() {
             </button>
 
             <div className="px-6 md:px-10 pt-4 pb-3 border-b border-white/[0.06]">
-              <FlowStepper current={2} className="max-w-2xl mx-auto mb-2.5" />
+              <FlowStepper current={2} tone="light" className="max-w-2xl mx-auto mb-2.5" />
               <div className="flex items-baseline gap-3 flex-wrap">
                 <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight">
                   Upload Your Own <span className="text-[#9cb092] font-agatho italic">Design</span>
@@ -1913,21 +1911,20 @@ export default function CreateEvite() {
       {(selectedTemplate || uploadedTemplate) && modalPhase === 'editor' && (
         <div
           ref={editorBackdropRef}
-          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
-          style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
+          className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeAnyModal();
           }}
         >
           <div
             ref={editorPanelRef}
-            className="relative w-full h-full flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
+            className="product-light-shell relative w-full h-full flex flex-col border overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <FlowLogo onClick={closeToHome} />
+            <FlowLogo onClick={closeToHome} tone="light" />
             {/* ── Modal top bar: stepper on top, then title + controls ── */}
             <div className="flex-shrink-0 px-6 md:px-8 py-3 border-b border-white/[0.07] bg-[#0e1712]">
-              <FlowStepper current={3} className="max-w-2xl mx-auto mb-2.5" />
+              <FlowStepper current={3} tone="light" className="max-w-2xl mx-auto mb-2.5" />
               <div className="flex items-center justify-between gap-4">
               {/* Left: title + optional invitation slot label */}
               <div className="min-w-0">
@@ -2667,14 +2664,13 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {modalPhase === 'signin' && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(13, 21, 18, 0.94)', backdropFilter: 'blur(6px)' }}
+          className="hero-bokeh-bg fixed inset-0 z-[60] flex items-center justify-center p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) backToEditor();
           }}
         >
           <div
-            className="relative w-full max-w-md bg-[#111914] border border-white/[0.09] shadow-2xl p-8 md:p-10 text-center"
+            className="product-light-shell relative w-full max-w-md border shadow-2xl p-8 md:p-10 text-center"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -2776,11 +2772,10 @@ export default function CreateEvite() {
           'group flex flex-col items-center justify-center gap-1.5 py-4 border border-white/10 bg-white/[0.03] hover:border-[#9cb092]/40 hover:bg-[#9cb092]/[0.05] transition-all duration-200 font-display text-[10px] tracking-[0.15em] uppercase text-[#e4eee1]';
         return (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
-            style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
+            className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
           >
-            <div className="relative w-full h-full flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl">
-              <FlowLogo onClick={closeToHome} />
+            <div className="product-light-shell relative w-full h-full flex flex-col border overflow-hidden shadow-2xl">
+              <FlowLogo onClick={closeToHome} tone="light" />
               <button
                 onClick={closeToHome}
                 aria-label="Close"
@@ -2791,7 +2786,7 @@ export default function CreateEvite() {
 
               {/* Header */}
               <div className="flex-shrink-0 px-6 md:px-10 pt-2.5 pb-3 border-b border-white/[0.06]">
-                <FlowStepper current={4} className="max-w-2xl mx-auto mb-2" />
+                <FlowStepper current={4} tone="light" className="max-w-2xl mx-auto mb-2" />
                 <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight">
                   Your invitation is <span className="text-[#9cb092] font-agatho italic">live</span>
                 </h2>
@@ -2990,10 +2985,9 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {modalPhase === 'sent' && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(13, 21, 18, 0.96)', backdropFilter: 'blur(6px)' }}
+          className="hero-bokeh-bg fixed inset-0 z-[60] flex items-center justify-center p-4"
         >
-          <div className="flex flex-col items-center text-center max-w-md">
+          <div className="product-light-shell flex flex-col items-center text-center max-w-md border shadow-2xl px-8 py-10 md:px-12 md:py-12">
             <div className="w-20 h-20 rounded-full bg-[#9cb092]/20 border border-[#9cb092]/40 flex items-center justify-center mb-8">
               <span className="material-icons text-[#9cb092] text-4xl">check</span>
             </div>

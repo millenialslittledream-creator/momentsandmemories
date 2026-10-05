@@ -77,7 +77,7 @@ export default function InviteEditor({
     setContent((c) => ({ ...c, galleryImages: c.galleryImages.map((g, j) => (j === i ? url : g)) }));
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-[#0c1013]">
+    <div className="hero-bokeh-bg product-light-shell fixed inset-0 flex flex-col">
       {/* top bar */}
       <div className="flex items-center justify-between gap-4 px-5 py-2.5 border-b border-white/[0.07] bg-[#10161a] flex-wrap">
         <div className="flex items-center gap-3">
@@ -132,13 +132,12 @@ export default function InviteEditor({
         </div>
       </div>
 
-      <div className="flex-1 flex min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-y-auto lg:overflow-hidden">
         {/* LEFT — live preview in an iPhone 13 Pro–ratio device frame.
             The opening animation plays by default (autoOpen=false → starts on
             the cover); remounts only when the design changes. */}
-        <div className="flex-1 min-w-0 flex flex-col items-center justify-center p-6 overflow-hidden"
-          style={{ background: 'radial-gradient(circle at 50% 30%, #16201f, #0c1013)' }}>
-          <div className="relative" style={{ aspectRatio: '390 / 844', height: 844, maxHeight: '100%', maxWidth: '100%' }}>
+        <div className="w-full h-[460px] flex-none lg:h-auto lg:flex-1 min-w-0 flex flex-col items-center justify-center p-3 sm:p-6 overflow-hidden">
+          <div data-preserve-theme className="relative" style={{ aspectRatio: '390 / 844', height: 844, maxHeight: '100%', maxWidth: '100%' }}>
             <div className="absolute inset-0 rounded-[44px] overflow-hidden shadow-2xl"
               style={{ border: '10px solid #1b2227' }}>
               <Design theme={theme} content={content} autoOpen={false} key={designId} />
@@ -147,7 +146,7 @@ export default function InviteEditor({
         </div>
 
         {/* RIGHT — text + image fields only */}
-        <div data-lenis-prevent className="w-[340px] md:w-[380px] flex-shrink-0 border-l border-white/[0.07] bg-[#10161a] overflow-y-auto px-5 py-5 space-y-4">
+        <div data-lenis-prevent className="w-full lg:w-[380px] flex-shrink-0 border-t lg:border-t-0 lg:border-l border-white/[0.07] bg-[#10161a] overflow-visible lg:overflow-y-auto px-5 py-5 space-y-4">
           <Group title="The Couple">
             <div className="grid grid-cols-2 gap-2">
               <Text label="Bride" value={content.brideName} onChange={(v) => set('brideName', v)} />

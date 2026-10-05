@@ -168,7 +168,7 @@ function DatePicker({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-auto p-0 bg-[#1a2418] border-white/15 backdrop-blur-xl"
+        className="product-light-shell w-auto p-0 border backdrop-blur-xl"
         align="start"
       >
         <Calendar

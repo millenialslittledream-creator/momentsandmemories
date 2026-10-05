@@ -52,13 +52,13 @@ export default function GuestGalleryUpload() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#1a2418] flex items-center justify-center">
+    <div className="page-bokeh-bg product-light-shell min-h-screen flex items-center justify-center">
       <div className="w-6 h-6 border-2 border-[#9cb092]/30 border-t-[#9cb092] rounded-full animate-spin" />
     </div>
   );
 
   if (notFound) return (
-    <div className="min-h-screen bg-[#1a2418] flex flex-col items-center justify-center gap-4 px-6">
+    <div className="page-bokeh-bg product-light-shell min-h-screen flex flex-col items-center justify-center gap-4 px-6">
       <span className="material-icons text-4xl text-[#9cb092]/30">photo_library</span>
       <p className="font-display text-[11px] tracking-[0.2em] uppercase text-[#b2c3b1]/60 text-center">
         This event is not available
@@ -67,7 +67,7 @@ export default function GuestGalleryUpload() {
   );
 
   return (
-    <div className="min-h-screen bg-[#1a2418] px-4 md:px-8 py-10">
+    <div className="page-bokeh-bg product-light-shell min-h-screen px-4 md:px-8 py-10">
       <div className="max-w-3xl mx-auto">
         <p className="font-display text-[10px] tracking-[0.35em] uppercase text-[#9cb092] mb-2 text-center">
           Share Your Photos

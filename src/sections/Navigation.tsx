@@ -157,7 +157,7 @@ export default function Navigation() {
 
       {/* Mobile menu overlay */}
       {menuOpen && (
-        <div className="fixed inset-0 z-40 bg-[#111914]/97 backdrop-blur-xl flex flex-col items-center justify-center gap-7 md:hidden">
+        <div className="hero-bokeh-bg product-light-shell fixed inset-0 z-40 flex flex-col items-center justify-center gap-7 md:hidden">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.label}

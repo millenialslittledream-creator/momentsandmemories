@@ -253,21 +253,21 @@ export default function CanvasEditor({
   };
 
   return (
-    <div data-testid="canvas-editor" className="fixed inset-0 z-50 flex flex-col bg-[#0d1512]">
+    <div data-testid="canvas-editor" className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex flex-col">
       {/* Top toolbar */}
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/[0.07] bg-[#111914]">
+      <div className="flex items-center justify-between gap-1 sm:gap-3 px-2 sm:px-4 py-3 border-b border-white/[0.07] bg-[#111914]">
         <button
           onClick={handleClose}
           aria-label="Moments & Memories — home"
-          className="flex items-center gap-2.5 select-none transition-opacity duration-200 hover:opacity-80"
+          className="hidden sm:flex items-center gap-2.5 select-none transition-opacity duration-200 hover:opacity-80"
         >
-          <img src="/logo-pages.png" alt="Moments & Memories" className="h-9 w-auto object-contain" />
+          <img src="/logo-landing.png" alt="Moments & Memories" className="h-9 w-auto object-contain" />
           <span className="font-display text-[10px] tracking-[0.28em] uppercase text-[#9cb092] hidden sm:inline">
             Design Editor
           </span>
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between sm:justify-start gap-1 sm:gap-2 w-full sm:w-auto">
           <Button variant="outline" size="sm" onClick={addText}>
             <span className="material-icons text-base mr-1">text_fields</span>
             Add Text
@@ -298,7 +298,7 @@ export default function CanvasEditor({
             />
           </label>
 
-          <span className="font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/50 w-16 text-right">
+          <span className="hidden sm:block font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/50 w-16 text-right">
             {saveStatus === 'saving' && 'Saving…'}
             {saveStatus === 'saved' && 'Saved'}
             {saveStatus === 'error' && 'Save failed'}
@@ -326,8 +326,9 @@ export default function CanvasEditor({
           onReorder={reorder}
         />
 
-        <div className="flex-1 flex items-center justify-center overflow-auto p-6">
+        <div className="flex-1 flex items-center justify-center overflow-auto p-2 sm:p-6">
           <div
+            data-preserve-theme
             ref={containerRef}
             className="relative bg-white shadow-2xl"
             style={{ width: '100%', maxWidth: 480, aspectRatio: `${canvasWidth} / ${canvasHeight}` }}

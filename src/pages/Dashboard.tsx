@@ -287,7 +287,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#111914] flex items-center justify-center">
+      <div className="page-bokeh-bg product-light-shell min-h-screen flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-[#9cb092]/30 border-t-[#9cb092] rounded-full animate-spin" />
       </div>
     );
@@ -581,8 +581,8 @@ export default function Dashboard() {
 
       {/* ── Add Guests Modal ── */}
       {addGuestsEvent && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-[#1a2418] border border-[#9cb092]/30 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="hero-bokeh-bg fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="product-light-shell border border-[#9cb092]/30 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
 
             {/* Header */}
             <div className="flex items-start justify-between p-6 border-b border-white/10">
@@ -697,8 +697,8 @@ export default function Dashboard() {
 
       {/* QR scan modal */}
       {modalQrSession && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-[#1a2418] border border-[#9cb092]/30 p-8 max-w-sm w-full text-center">
+        <div className="hero-bokeh-bg fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="product-light-shell border border-[#9cb092]/30 p-8 max-w-sm w-full text-center shadow-2xl">
             <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-2">Scan with Phone</h3>
             <p className="font-display text-[10px] tracking-[0.15em] text-[#b2c3b1]/60 uppercase mb-6">
               Open this QR on your phone → pick contacts → they appear here automatically

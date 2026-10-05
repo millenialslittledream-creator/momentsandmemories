@@ -93,13 +93,13 @@ export default function RSVPPage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#1a2418] flex items-center justify-center">
+    <div className="page-bokeh-bg product-light-shell min-h-screen flex items-center justify-center">
       <div className="w-6 h-6 border-2 border-[#9cb092]/30 border-t-[#9cb092] rounded-full animate-spin" />
     </div>
   );
 
   if (error || !event || !invitee) return (
-    <div className="min-h-screen bg-[#1a2418] flex flex-col items-center justify-center gap-4 px-6">
+    <div className="page-bokeh-bg product-light-shell min-h-screen flex flex-col items-center justify-center gap-4 px-6">
       <span className="material-icons text-4xl text-[#9cb092]/30">mail</span>
       <p className="font-display text-[11px] tracking-[0.2em] uppercase text-[#b2c3b1]/60 text-center max-w-xs">
         {error || 'Invitation not found'}
@@ -112,12 +112,12 @@ export default function RSVPPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#1a2418] flex flex-col items-center justify-center px-6 py-16">
+    <div className="page-bokeh-bg product-light-shell min-h-screen flex flex-col items-center justify-center px-6 py-16">
       <div className="w-full max-w-md">
 
         {/* Cover strip */}
         {event.cover_image_url && (
-          <div className="w-full h-32 overflow-hidden mb-8 -mx-0">
+          <div data-preserve-theme className="w-full h-32 overflow-hidden mb-8 -mx-0">
             <img src={event.cover_image_url} alt={event.title} className="w-full h-full object-cover opacity-60" />
           </div>
         )}

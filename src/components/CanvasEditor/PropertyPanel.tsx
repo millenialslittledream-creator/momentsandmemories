@@ -12,7 +12,7 @@ function isText(el: CanvasElementData | null): el is TextElementData {
 export default function PropertyPanel({ element, onChange }: PropertyPanelProps) {
   if (!element) {
     return (
-      <div className="w-64 shrink-0 border-l border-white/[0.07] bg-[#141c15] px-4 py-6">
+      <div className="hidden xl:block w-64 shrink-0 border-l border-white/[0.07] bg-[#141c15] px-4 py-6">
         <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#b2c3b1]/40">
           Select an element to edit
         </p>
@@ -22,7 +22,7 @@ export default function PropertyPanel({ element, onChange }: PropertyPanelProps)
 
   if (!isText(element)) {
     return (
-      <div className="w-64 shrink-0 border-l border-white/[0.07] bg-[#141c15] px-4 py-6">
+      <div className="hidden xl:block w-64 shrink-0 border-l border-white/[0.07] bg-[#141c15] px-4 py-6">
         <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092]">
           {element.mediaKind === 'video' ? 'Video' : 'Image'}
         </p>
@@ -36,7 +36,7 @@ export default function PropertyPanel({ element, onChange }: PropertyPanelProps)
   const set = (patch: Partial<TextElementData>) => onChange(element.id, patch);
 
   return (
-    <div className="w-64 shrink-0 border-l border-white/[0.07] bg-[#141c15] px-4 py-5 overflow-y-auto scrollbar-subtle">
+    <div className="hidden xl:block w-64 shrink-0 border-l border-white/[0.07] bg-[#141c15] px-4 py-5 overflow-y-auto scrollbar-subtle">
       <p className="font-display text-[9px] tracking-[0.28em] uppercase text-[#9cb092] mb-4">Edit Text</p>
 
       <label className="font-display text-[8px] tracking-[0.18em] uppercase text-[#b2c3b1]/55 block mb-1.5">

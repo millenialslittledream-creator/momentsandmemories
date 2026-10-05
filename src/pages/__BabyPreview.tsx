@@ -213,7 +213,7 @@ export default function BabyPreview() {
   }
 
   return (
-    <div style={{ padding: 16, background: '#efeae3', minHeight: '100vh' }}>
+    <div className="page-bokeh-bg product-light-shell" style={{ padding: 16, minHeight: '100vh' }}>
       <h1 style={{ fontFamily: 'monospace', fontSize: 14 }}>
         Baby tuning ({concepts.length}) — ?id=baby-c1 · &amp;w=1600 · &amp;ruler=1 · &amp;bare=1
       </h1>

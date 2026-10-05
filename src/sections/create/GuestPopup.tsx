@@ -454,18 +454,17 @@ export default function GuestPopup({
   return (
     <div
       ref={backdropRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
-      style={{ backgroundColor: 'rgba(13, 21, 18, 0.92)', backdropFilter: 'blur(4px)' }}
+      className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
       onClick={(e) => {
         if (e.target === e.currentTarget) onBack();
       }}
     >
       <div
         ref={panelRef}
-        className="relative w-full h-full flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
+        className="product-light-shell relative w-full h-full flex flex-col border overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <FlowLogo onClick={handleClose} />
+        <FlowLogo onClick={handleClose} tone="light" />
         <button
           onClick={handleClose}
           aria-label="Close"
@@ -476,7 +475,7 @@ export default function GuestPopup({
 
         {/* Header */}
         <div className="flex-shrink-0 px-6 md:px-10 pt-2.5 pb-3 border-b border-white/[0.06]">
-          <FlowStepper current={5} className="max-w-2xl mx-auto mb-2" />
+          <FlowStepper current={5} tone="light" className="max-w-2xl mx-auto mb-2" />
           <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight">
             {showAddGuests ? (
               <>Who's on the <span className="text-[#9cb092] font-agatho italic">guest list?</span></>
@@ -616,14 +615,13 @@ export default function GuestPopup({
       {/* ── Sub-popup: contact-method specific (manual / excel / qr) ── */}
       {activeMethod && (
         <div
-          className="fixed inset-0 z-[55] flex items-center justify-center p-4 md:p-8"
-          style={{ backgroundColor: 'rgba(13, 21, 18, 0.85)', backdropFilter: 'blur(4px)' }}
+          className="hero-bokeh-bg fixed inset-0 z-[55] flex items-center justify-center p-4 md:p-8"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeSubPopup();
           }}
         >
           <div
-            className="relative w-full max-w-4xl max-h-[85vh] flex flex-col bg-[#111914] border border-white/[0.09] overflow-hidden shadow-2xl"
+            className="product-light-shell relative w-full max-w-4xl max-h-[85vh] flex flex-col border overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button

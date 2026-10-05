@@ -87,7 +87,7 @@ export default function TemplateGallery({
 
       {/* ── Zoom overlay ────────────────────────────────────────── */}
       {zoomedTemplate && (
-        <div className="fixed inset-0 z-[100] bg-[#0d1510]/96 backdrop-blur-sm flex flex-col items-center justify-center gap-4 px-4">
+        <div className="hero-bokeh-bg product-light-shell fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 px-4">
 
           {/* Template name */}
           <div className="text-center">
@@ -98,7 +98,7 @@ export default function TemplateGallery({
           </div>
 
           {/* Card: back arrow overlaid + details at bottom */}
-          <div className="relative max-w-[200px] md:max-w-[230px] w-full">
+          <div data-preserve-theme className="relative max-w-[200px] md:max-w-[230px] w-full">
             <div className="relative overflow-hidden shadow-2xl border border-white/10">
               {zoomedTemplate.layout ? (
                 <TemplateRenderer template={zoomedTemplate} formData={formData} />
