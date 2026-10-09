@@ -11,7 +11,7 @@ export default function About() {
   }, []);
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-background-dark">
+    <div className="page-bokeh-bg product-light-shell relative flex min-h-screen flex-col">
       <Navigation />
       <main className="relative w-full">
         <AboutSection />

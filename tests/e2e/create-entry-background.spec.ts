@@ -39,11 +39,21 @@ test('Create entry screens share the bokeh background', async ({ page }) => {
 });
 
 test('public full-page screens use the exact homepage background', async ({ page }) => {
+  test.setTimeout(120_000);
   await page.goto('/');
   const homeBackground = await backgroundImage(page.locator('section.hero-bokeh-bg'));
 
-  for (const route of ['/sign-in', '/sign-up', '/forgot-password', '/shop']) {
+  for (const route of [
+    '/about',
+    '/sign-in',
+    '/sign-up',
+    '/forgot-password',
+    '/reset-password',
+    '/verify-email',
+    '/shop',
+    '/admin',
+  ]) {
     await page.goto(route);
-    expect(await backgroundImage(page.locator('.page-bokeh-bg'))).toBe(homeBackground);
+    expect(await backgroundImage(page.locator('.page-bokeh-bg').first())).toBe(homeBackground);
   }
 });
