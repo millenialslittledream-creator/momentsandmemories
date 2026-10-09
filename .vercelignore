@@ -66,3 +66,7 @@ wb-*.jpeg
 # Keep every web-runtime asset even when its basename matches a root QA file.
 !public/
 !public/**
+
+# Production template artwork is served from the public Supabase Storage
+# bucket instead of being uploaded with every Vercel deployment.
+public/templates

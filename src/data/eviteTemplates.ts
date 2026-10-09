@@ -1,4 +1,5 @@
 import type { EventType } from './eventFields';
+import { templateAssetUrl } from '@/lib/templateAssets';
 
 export interface TemplateFieldLayout {
   formKey?: string;
@@ -229,7 +230,7 @@ function sizedLayout(naturalWidth: number, naturalHeight: number, fields: Templa
   return { naturalWidth, naturalHeight, fields };
 }
 
-export const eviteTemplates: EviteTemplate[] = [
+const localEviteTemplates: EviteTemplate[] = [
   // -- Birthday concept cards (bday-c1 ... bday-c13) ----------------------
   // Rebuilt against the designer's revised artwork ("FINAL WITH CHANGES"),
   // which dropped the "HOSTED BY" and "APPROX. GUEST COUNT" rows from every
@@ -1897,3 +1898,9 @@ export const eviteTemplates: EviteTemplate[] = [
     },
   },
 ];
+
+export const eviteTemplates: EviteTemplate[] = localEviteTemplates.map((template) => ({
+  ...template,
+  previewImage: templateAssetUrl(template.previewImage),
+  realImage: template.realImage ? templateAssetUrl(template.realImage) : undefined,
+}));

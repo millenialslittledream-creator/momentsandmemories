@@ -3,13 +3,14 @@ import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import PageTransition from "@/components/PageTransition";
+import { getSafeRedirectPath } from "@/lib/authRedirect";
 
 const VerifyEmail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   // Where to continue after verifying (e.g. /create to resume the evite flow).
-  const redirectTo = searchParams.get('redirect') || '/';
+  const redirectTo = getSafeRedirectPath(searchParams.get('redirect'));
   const email = (location.state as { email?: string })?.email || "";
 
   const [otp, setOtp] = useState(["", "", "", "", "", "", "", ""]);

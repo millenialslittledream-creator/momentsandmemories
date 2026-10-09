@@ -4,11 +4,12 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import PageTransition from "@/components/PageTransition";
 import GoogleIcon from "@/components/GoogleIcon";
+import { getSafeRedirectPath, rememberOAuthRedirect } from "@/lib/authRedirect";
 
 const SignUp = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/';
+  const redirectTo = getSafeRedirectPath(searchParams.get('redirect'));
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     firstName: "", lastName: "", email: "", password: "", confirmPassword: "",
@@ -80,6 +81,7 @@ const SignUp = () => {
   const handleGoogle = async () => {
     setLoading(true);
     try {
+      rememberOAuthRedirect(redirectTo);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {

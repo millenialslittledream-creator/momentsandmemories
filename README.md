@@ -1,5 +1,24 @@
 # React + TypeScript + Vite
 
+## Production template assets
+
+The checked-in invitation artwork remains under `public/templates` for local
+development, but `.vercelignore` excludes it from production uploads. Production
+builds resolve those URLs from the public Supabase Storage bucket
+`template-assets`, reducing the Vercel source upload by roughly 125 MB.
+
+To create/update the bucket and upload the artwork, run:
+
+```powershell
+$env:SUPABASE_URL = "https://<project-ref>.supabase.co"
+$env:SUPABASE_SERVICE_KEY = "<service-role-key>"
+node scripts/upload-template-assets.mjs
+```
+
+The service-role key is used only by this one-time migration script and must not
+be exposed to the browser or committed. Set `VITE_TEMPLATE_ASSET_BASE_URL` only
+when the public bucket is hosted somewhere other than the app's Supabase project.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
