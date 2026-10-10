@@ -454,7 +454,7 @@ export default function GuestPopup({
   return (
     <div
       ref={backdropRef}
-      className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
+      className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
       onClick={(e) => {
         if (e.target === e.currentTarget) onBack();
       }}
@@ -615,7 +615,7 @@ export default function GuestPopup({
       {/* ── Sub-popup: contact-method specific (manual / excel / qr) ── */}
       {activeMethod && (
         <div
-          className="hero-bokeh-bg fixed inset-0 z-[55] flex items-center justify-center p-4 md:p-8"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-[55] flex items-center justify-center p-4 md:p-8"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeSubPopup();
           }}

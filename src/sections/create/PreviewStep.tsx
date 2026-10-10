@@ -258,7 +258,7 @@ export default function PreviewStep({
   return (
     <div
       ref={backdropRef}
-      className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
+      className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
       onClick={(e) => {
         if (e.target === e.currentTarget) onBack();
       }}
@@ -517,7 +517,7 @@ export default function PreviewStep({
       {/* ── Compact RSVP settings popup ── */}
       {rsvpEditing && (
         <div
-          className="hero-bokeh-bg fixed inset-0 z-[60] flex items-center justify-center p-4"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-[60] flex items-center justify-center p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) setRsvpEditing(false);
           }}

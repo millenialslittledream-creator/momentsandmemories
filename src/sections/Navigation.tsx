@@ -29,7 +29,8 @@ export default function Navigation() {
   const isLightTop =
     location.pathname === '/' ||
     location.pathname === '/about' ||
-    location.pathname === '/shop';
+    location.pathname === '/shop' ||
+    location.pathname === '/dashboard';
 
   // Smooth-scroll to a section id (Lenis-aware, like ScrollToTop). Empty id or
   // 'hero' scrolls to the top. The offset clears the fixed nav bar.

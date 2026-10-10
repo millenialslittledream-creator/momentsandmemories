@@ -294,7 +294,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="page-bokeh-bg min-h-screen text-[#2a3328] relative">
+    <div className="page-bokeh-bg product-light-shell min-h-screen text-[#2a3328] relative">
       <Navigation />
       <div className="relative z-10 pt-24 px-4 md:px-8 pb-16 max-w-7xl mx-auto">
         {/* ── Welcome header — full-width so the gift panel below sits at the
@@ -581,7 +581,7 @@ export default function Dashboard() {
 
       {/* ── Add Guests Modal ── */}
       {addGuestsEvent && (
-        <div className="hero-bokeh-bg fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="hero-bokeh-bg product-light-shell fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="product-light-shell border border-[#9cb092]/30 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
 
             {/* Header */}
@@ -697,7 +697,7 @@ export default function Dashboard() {
 
       {/* QR scan modal */}
       {modalQrSession && (
-        <div className="hero-bokeh-bg fixed inset-0 z-[110] flex items-center justify-center p-4">
+        <div className="hero-bokeh-bg product-light-shell fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="product-light-shell border border-[#9cb092]/30 p-8 max-w-sm w-full text-center shadow-2xl">
             <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-2">Scan with Phone</h3>
             <p className="font-display text-[10px] tracking-[0.15em] text-[#b2c3b1]/60 uppercase mb-6">

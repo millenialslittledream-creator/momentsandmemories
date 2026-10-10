@@ -36,7 +36,7 @@ export default function PublicPremiumSite() {
   }, [site]);
 
   if (loading) return (
-    <div className="page-bokeh-bg min-h-screen flex items-center justify-center">
+    <div className="page-bokeh-bg product-light-shell min-h-screen flex items-center justify-center">
       <div className="w-6 h-6 border-2 border-[#c19a4b]/30 border-t-[#c19a4b] rounded-full animate-spin" />
     </div>
   );

@@ -99,7 +99,7 @@ export default function PaymentModal({
   return (
     <div
       ref={backdropRef}
-      className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
+      className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
       onClick={(e) => {
         if (e.target === e.currentTarget) onBack();
       }}

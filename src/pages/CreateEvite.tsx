@@ -1103,7 +1103,7 @@ export default function CreateEvite() {
   return (
     <div
       ref={pageRef}
-      className="hero-bokeh-bg h-screen flex flex-col overflow-hidden relative"
+      className="hero-bokeh-bg product-light-shell h-screen flex flex-col overflow-hidden relative"
     >
       {/* ════════════════════════════════════════════════════════════
           RESUME PROMPT (H10) — greet a returning host with their
@@ -1111,7 +1111,7 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {showResume && (
         <div
-          className="hero-bokeh-bg fixed inset-0 z-[70] flex items-center justify-center p-4"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-[70] flex items-center justify-center p-4"
         >
           <div className="product-light-shell relative w-full max-w-md border shadow-2xl p-8 md:p-10 text-center">
             <div className="w-14 h-14 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center mx-auto mb-5">
@@ -1246,7 +1246,7 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {flowStage === 'picker' && (
         <div
-          className="hero-bokeh-bg fixed inset-0 z-40 flex flex-col overflow-hidden"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-40 flex flex-col overflow-hidden"
           data-lenis-prevent
         >
           <FlowLogo size="lg" tone="light" />
@@ -1325,7 +1325,7 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {flowStage === 'choose-design' && (
         <div
-          className="hero-bokeh-bg fixed inset-0 z-40 flex flex-col overflow-hidden"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-40 flex flex-col overflow-hidden"
           data-lenis-prevent
         >
           <FlowLogo size="lg" tone="light" />
@@ -1480,7 +1480,7 @@ export default function CreateEvite() {
         if (!ev) return null;
         return (
           <div
-            className="hero-bokeh-bg fixed inset-0 z-40 flex flex-col items-center justify-center px-6"
+            className="hero-bokeh-bg product-light-shell fixed inset-0 z-40 flex flex-col items-center justify-center px-6"
           >
             <div className="relative z-10 flex flex-col items-center text-center">
               <div
@@ -1520,7 +1520,7 @@ export default function CreateEvite() {
       {modalPhase === 'upload' && (
         <div
           ref={editorBackdropRef}
-          className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeAnyModal();
           }}
@@ -1911,7 +1911,7 @@ export default function CreateEvite() {
       {(selectedTemplate || uploadedTemplate) && modalPhase === 'editor' && (
         <div
           ref={editorBackdropRef}
-          className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeAnyModal();
           }}
@@ -2664,7 +2664,7 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {modalPhase === 'signin' && (
         <div
-          className="hero-bokeh-bg fixed inset-0 z-[60] flex items-center justify-center p-4"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-[60] flex items-center justify-center p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) backToEditor();
           }}
@@ -2772,7 +2772,7 @@ export default function CreateEvite() {
           'group flex flex-col items-center justify-center gap-1.5 py-4 border border-white/10 bg-white/[0.03] hover:border-[#9cb092]/40 hover:bg-[#9cb092]/[0.05] transition-all duration-200 font-display text-[10px] tracking-[0.15em] uppercase text-[#e4eee1]';
         return (
           <div
-            className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
+            className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
           >
             <div className="product-light-shell relative w-full h-full flex flex-col border overflow-hidden shadow-2xl">
               <FlowLogo onClick={closeToHome} tone="light" />
@@ -2985,7 +2985,7 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {modalPhase === 'sent' && (
         <div
-          className="hero-bokeh-bg fixed inset-0 z-[60] flex items-center justify-center p-4"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-[60] flex items-center justify-center p-4"
         >
           <div className="product-light-shell flex flex-col items-center text-center max-w-md border shadow-2xl px-8 py-10 md:px-12 md:py-12">
             <div className="w-20 h-20 rounded-full bg-[#9cb092]/20 border border-[#9cb092]/40 flex items-center justify-center mb-8">

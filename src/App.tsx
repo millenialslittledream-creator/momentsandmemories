@@ -65,7 +65,7 @@ function App() {
       <ReactLenis root ref={lenisRef} options={{ lerp: 0.07, wheelMultiplier: 0.9 }}>
         <Router>
           <ScrollToTop />
-          <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background-light" />}>
+          <Suspense fallback={<div className="page-bokeh-bg product-light-shell flex items-center justify-center h-screen" />}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/shop" element={<Shop />} />
