@@ -17,6 +17,8 @@ class CreateEventRequest(BaseModel):
     # Full create-flow form snapshot, used to re-render the designed
     # invitation on the public evite page.
     form_data: Optional[Dict[str, Any]] = None
+    rsvp_enabled: Optional[bool] = None
+    rsvp_config: Optional[Dict[str, Any]] = None
 
 
 class UpdateEventRequest(BaseModel):
@@ -29,6 +31,8 @@ class UpdateEventRequest(BaseModel):
     template_id: Optional[str] = None
     cover_image_url: Optional[str] = None
     form_data: Optional[Dict[str, Any]] = None
+    rsvp_enabled: Optional[bool] = None
+    rsvp_config: Optional[Dict[str, Any]] = None
 
 
 class InviteeIn(BaseModel):

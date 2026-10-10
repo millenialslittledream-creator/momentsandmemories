@@ -17,7 +17,8 @@ import DateTimePicker from '@/sections/create/DateTimePicker';
 import FlowStepper from '@/sections/create/FlowStepper';
 import FlowLogo from '@/sections/create/FlowLogo';
 import EventIllustration from '@/sections/create/EventIllustration';
-import PreviewStep, { DEFAULT_RSVP_SETTINGS, type RSVPSettings } from '@/sections/create/PreviewStep';
+import PreviewStep from '@/sections/create/PreviewStep';
+import { DEFAULT_RSVP_SETTINGS, type RSVPSettings } from '@/sections/create/rsvpSettings';
 import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRenderer';
 import CanvasEditor from '@/components/CanvasEditor';
 import { type CanvasTemplate } from '@/data/canvasTemplates';
@@ -59,6 +60,24 @@ interface InvitationSlot {
 }
 
 const SUPPORTS_MULTI_EVENTS: EventType[] = ['marriage', 'custom'];
+
+function normalizeRsvpSettings(value: Partial<RSVPSettings> | null | undefined): RSVPSettings {
+  return {
+    ...DEFAULT_RSVP_SETTINGS,
+    ...(value ?? {}),
+    responseOptions: {
+      ...DEFAULT_RSVP_SETTINGS.responseOptions,
+      ...(value?.responseOptions ?? {}),
+      yes: true,
+      no: true,
+    },
+    foodOptions:
+      Array.isArray(value?.foodOptions) && value.foodOptions.length > 0
+        ? value.foodOptions
+        : DEFAULT_RSVP_SETTINGS.foodOptions,
+    childAgeCutoff: Math.max(1, Math.min(21, Number(value?.childAgeCutoff) || 12)),
+  };
+}
 
 // ── Single field renderer (used for everything except the grouped date/time/tz block) ──
 function renderEditorField(
@@ -280,6 +299,7 @@ export default function CreateEvite() {
       if (parsed.formData) setFormData(parsed.formData);
       if (parsed.guests?.length) setGuests(parsed.guests);
       if (parsed.deliveryPreference) setDeliveryPreference(parsed.deliveryPreference);
+      if (parsed.rsvpSettings) setRsvpSettings(normalizeRsvpSettings(parsed.rsvpSettings));
       if (parsed.selectedTemplateId) setSelectedTemplateId(parsed.selectedTemplateId);
       if (parsed.uploadedTemplate) setUploadedTemplate(parsed.uploadedTemplate);
       if (parsed.hasSubEvents) setHasSubEvents(!!parsed.hasSubEvents);
@@ -323,12 +343,13 @@ export default function CreateEvite() {
           selectedTemplateId,
           uploadedTemplate: safeUploaded,
           hasSubEvents,
+          rsvpSettings,
         })
       );
     } catch {
       /* ignore */
     }
-  }, [formData, guests, deliveryPreference, selectedTemplateId, uploadedTemplate, hasSubEvents]);
+  }, [formData, guests, deliveryPreference, selectedTemplateId, uploadedTemplate, hasSubEvents, rsvpSettings]);
 
   // ── Customizable text fields for the active template ───────────────
   // Each entry's key matches the override key TemplateRenderer merges on
@@ -450,6 +471,7 @@ export default function CreateEvite() {
       if (p.formData) setFormData(p.formData);
       if (p.guests?.length) setGuests(p.guests);
       if (p.deliveryPreference) setDeliveryPreference(p.deliveryPreference);
+      if (p.rsvpSettings) setRsvpSettings(normalizeRsvpSettings(p.rsvpSettings));
       if (p.hasSubEvents) setHasSubEvents(!!p.hasSubEvents);
       if (p.selectedTemplateId) {
         const t = eviteTemplates.find((x) => x.id === p.selectedTemplateId);
@@ -485,6 +507,7 @@ export default function CreateEvite() {
     setSelectedTemplateId(null);
     setUploadedTemplate(null);
     setHasSubEvents(false);
+    setRsvpSettings(DEFAULT_RSVP_SETTINGS);
     setGuests([createGuest()]);
     setFlowStage('picker');
   }, []);
@@ -498,6 +521,7 @@ export default function CreateEvite() {
       // draft) so the Guests page doesn't show event checkboxes that belong
       // to a previous session.
       setFormData({});
+      setRsvpSettings(DEFAULT_RSVP_SETTINGS);
       setHasSubEvents(false);
       setFieldOverrides({});
       setPhotoOverlay(null);
@@ -515,6 +539,7 @@ export default function CreateEvite() {
     // Clear stale formData from any previous abandoned session so sub-event
     // checkboxes don't bleed into a fresh upload flow.
     setFormData({});
+    setRsvpSettings(DEFAULT_RSVP_SETTINGS);
     setHasSubEvents(false);
     setFieldOverrides({});
     setPhotoOverlay(null);
@@ -534,6 +559,7 @@ export default function CreateEvite() {
     setUploadedTemplate(null);
     setPickedCanvasTemplate(null);
     setFormData({});
+    setRsvpSettings(DEFAULT_RSVP_SETTINGS);
     setHasSubEvents(false);
     setModalPhase('canvas-editor');
   }, []);
@@ -671,7 +697,7 @@ export default function CreateEvite() {
       }
       setModalPhase('signin');
     }
-  }, [user, multipleInvitations, invitationSlots, currentSlotIdx, formData]);
+  }, [user, multipleInvitations, formData]);
 
   const backToEditor = useCallback(() => setModalPhase('editor'), []);
 
@@ -740,7 +766,9 @@ export default function CreateEvite() {
         location: formData.venue || null,
         template_id: selectedTemplateId,
         cover_image_url: coverImageUrl,
-        form_data: formData,
+        form_data: { ...formData, rsvpSettings },
+        rsvp_enabled: rsvpSettings.enabled,
+        rsvp_config: rsvpSettings,
         status: 'published',
       };
 
@@ -776,7 +804,7 @@ export default function CreateEvite() {
     } finally {
       setPublishing(false);
     }
-  }, [uploadedTemplate, selectedTemplate, selectedTemplateId, formData, fieldOverrides, photoOverlay, publishedEventId]);
+  }, [uploadedTemplate, selectedTemplate, selectedTemplateId, formData, rsvpSettings, fieldOverrides, photoOverlay, publishedEventId]);
 
   const handlePaymentConfirm = useCallback(async () => {
     try {

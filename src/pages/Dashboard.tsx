@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import RSVPAnalytics from '@/sections/dashboard/RSVPAnalytics';
+import OverallRSVPAnalytics from '@/sections/dashboard/OverallRSVPAnalytics';
 import MessagingPanel from '@/sections/dashboard/MessagingPanel';
 // GalleryPanel and the Website Builder entry point are intentionally hidden from the
 // dashboard for now (not polished enough yet) — both stay reachable by direct URL.
@@ -117,6 +118,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
   const [expandedTab, setExpandedTab] = useState<'analytics' | 'messages' | 'gallery'>('analytics');
+  const [analyticsRefreshToken, setAnalyticsRefreshToken] = useState(0);
 
   // Website builder modal state
   const [websiteBuilderEvent, setWebsiteBuilderEvent] = useState<EventRow | null>(null);
@@ -177,6 +179,29 @@ export default function Dashboard() {
       );
       setLoading(false);
     });
+  }, []);
+
+  useEffect(() => {
+    if (!events.length) return;
+    const channel = supabase.channel(`dashboard-rsvps-${user?.id ?? 'host'}`);
+
+    events.forEach((event) => {
+      channel.on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'event_invitees', filter: `event_id=eq.${event.id}` },
+        () => setAnalyticsRefreshToken((value) => value + 1)
+      );
+    });
+
+    channel.subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [events, user?.id]);
+
+  // Realtime is the fast path. Polling is a reliable fallback for projects
+  // where the invitee table has not been added to the Supabase publication.
+  useEffect(() => {
+    const timer = window.setInterval(() => setAnalyticsRefreshToken((value) => value + 1), 15_000);
+    return () => window.clearInterval(timer);
   }, []);
 
   const upcoming = events.filter(
@@ -305,6 +330,8 @@ export default function Dashboard() {
             {user?.email?.split('@')[0]}
           </h1>
         </div>
+
+        <OverallRSVPAnalytics refreshToken={analyticsRefreshToken} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 lg:gap-12 items-start">
 
@@ -492,7 +519,7 @@ export default function Dashboard() {
                           ))}
                         </div>
                         {expandedTab === 'analytics' && (
-                          <RSVPAnalytics eventId={event.id} eventTitle={event.title} />
+                          <RSVPAnalytics eventId={event.id} eventTitle={event.title} refreshToken={analyticsRefreshToken} />
                         )}
                         {expandedTab === 'messages' && (
                           <MessagingPanel eventId={event.id} />

@@ -100,3 +100,36 @@ def test_remove_invitee(mock_db):
     from events.service import remove_invitee
     result = remove_invitee("event-123", "inv-1")
     assert result["deleted"] is True
+
+
+def test_rsvp_stats_count_people_and_each_meal_quantity():
+    from events.service import _build_rsvp_stats
+
+    stats = _build_rsvp_stats([
+        {
+            "name": "Asha",
+            "rsvp_status": "accepted",
+            "party_size": 3,
+            "kids_count": 1,
+            "meal_preferences": {"Vegetarian": 2, "Kids Meal": 1},
+            "dietary_requirements": "One gluten-free meal",
+        },
+        {
+            "name": "Ravi",
+            "rsvp_status": "accepted",
+            "party_size": 2,
+            "kids_count": 0,
+            "meal_preferences": {"Non-Vegetarian": 2},
+        },
+        {"name": "Mina", "rsvp_status": "declined"},
+        {"name": "No reply", "rsvp_status": "pending"},
+    ])
+
+    assert stats["total"] == 4
+    assert stats["responded"] == 3
+    assert stats["response_rate"] == 75
+    assert stats["adults"] == 4
+    assert stats["kids"] == 1
+    assert stats["total_people"] == 5
+    assert stats["food_preferences"] == {"Vegetarian": 2, "Kids Meal": 1, "Non-Vegetarian": 2}
+    assert stats["guests"][0]["dietary_requirements"] == "One gluten-free meal"

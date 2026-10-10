@@ -84,19 +84,7 @@ def remove_invitee(event_id: str, invitee_id: str) -> dict:
     return {"deleted": True}
 
 
-def get_rsvp_stats(user_id: str, event_id: str) -> dict:
-    db = database.get_db()
-    event = db.table("events").select("id").eq("id", event_id).eq("user_id", user_id).execute()
-    if not event.data:
-        raise ValueError("Event not found")
-    rows = (
-        db.table("event_invitees")
-        .select("name,email,phone,rsvp_status,dietary_requirements,party_size,kids_count,food_preference,responded_at")
-        .eq("event_id", event_id)
-        .execute()
-        .data
-    )
-
+def _build_rsvp_stats(rows: list[dict], include_guests: bool = True) -> dict:
     def status_of(r):
         return r.get("rsvp_status") or "pending"
 
@@ -106,12 +94,23 @@ def get_rsvp_stats(user_id: str, event_id: str) -> dict:
     maybe = sum(1 for r in rows if status_of(r) == "maybe")
     pending = sum(1 for r in rows if status_of(r) == "pending")
 
-    # Food-preference tallies (any guest who provided one).
+    responded = accepted + declined + maybe
+
+    # Quantity-based meal tallies for attending guests. Older rows that only
+    # have food_preference retain the previous one-response-equals-one count.
     food_preferences: dict = {}
     for r in rows:
-        fp = (r.get("food_preference") or "").strip()
-        if fp:
-            food_preferences[fp] = food_preferences.get(fp, 0) + 1
+        if status_of(r) != "accepted":
+            continue
+        meals = r.get("meal_preferences")
+        if isinstance(meals, dict) and meals:
+            for option, quantity in meals.items():
+                if isinstance(quantity, int) and not isinstance(quantity, bool) and quantity > 0:
+                    food_preferences[option] = food_preferences.get(option, 0) + quantity
+        else:
+            fp = (r.get("food_preference") or "").strip()
+            if fp:
+                food_preferences[fp] = food_preferences.get(fp, 0) + 1
 
     # Head-count + party-size buckets for attending guests.
     adults = 0
@@ -144,6 +143,8 @@ def get_rsvp_stats(user_id: str, event_id: str) -> dict:
             "party_size": r.get("party_size"),
             "kids_count": r.get("kids_count"),
             "food_preference": r.get("food_preference"),
+            "meal_preferences": r.get("meal_preferences") or {},
+            "dietary_requirements": r.get("dietary_requirements"),
             "responded_at": r.get("responded_at"),
         }
         for r in rows
@@ -155,6 +156,8 @@ def get_rsvp_stats(user_id: str, event_id: str) -> dict:
         "accepted": accepted,
         "declined": declined,
         "pending": pending,
+        "responded": responded,
+        "response_rate": round((responded / total) * 100) if total else 0,
         # Extended analytics.
         "maybe": maybe,
         "adults": adults,
@@ -162,5 +165,63 @@ def get_rsvp_stats(user_id: str, event_id: str) -> dict:
         "total_people": adults + kids,
         "food_preferences": food_preferences,
         "group_sizes": group_sizes,
-        "guests": guests,
+        "guests": guests if include_guests else [],
     }
+
+
+def get_rsvp_stats(user_id: str, event_id: str) -> dict:
+    db = database.get_db()
+    event = db.table("events").select("id").eq("id", event_id).eq("user_id", user_id).execute()
+    if not event.data:
+        raise ValueError("Event not found")
+    rows = (
+        db.table("event_invitees")
+        .select("name,email,phone,rsvp_status,dietary_requirements,party_size,kids_count,food_preference,meal_preferences,responded_at")
+        .eq("event_id", event_id)
+        .execute()
+        .data
+    )
+    return _build_rsvp_stats(rows)
+
+
+def get_overall_rsvp_summary(user_id: str) -> dict:
+    db = database.get_db()
+    events = (
+        db.table("events")
+        .select("id,title,event_date,status")
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .execute()
+        .data
+    )
+    event_ids = [event["id"] for event in events]
+    rows: list[dict] = []
+    if event_ids:
+        rows = (
+            db.table("event_invitees")
+            .select("event_id,name,email,phone,rsvp_status,dietary_requirements,party_size,kids_count,food_preference,meal_preferences,responded_at")
+            .in_("event_id", event_ids)
+            .execute()
+            .data
+        )
+
+    totals = _build_rsvp_stats(rows, include_guests=False)
+    totals["total_events"] = len(events)
+
+    rows_by_event: dict[str, list[dict]] = {event_id: [] for event_id in event_ids}
+    for row in rows:
+        if row.get("event_id") in rows_by_event:
+            rows_by_event[row["event_id"]].append(row)
+
+    event_summaries = []
+    for event in events:
+        stats = _build_rsvp_stats(rows_by_event[event["id"]], include_guests=False)
+        event_summaries.append({
+            "event_id": event["id"],
+            "event_title": event.get("title") or "Untitled event",
+            "event_date": event.get("event_date"),
+            "status": event.get("status"),
+            **stats,
+        })
+
+    return {"totals": totals, "events": event_summaries}

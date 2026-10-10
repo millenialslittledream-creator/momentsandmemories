@@ -58,12 +58,39 @@ async function mockDashboardData(page: Page) {
       declined: 2,
       pending: 1,
       maybe: 1,
+      responded: 11,
+      response_rate: 92,
       adults: 14,
       kids: 5,
       total_people: 19,
       food_preferences: { Vegetarian: 8, 'Non-Vegetarian': 7, Vegan: 2, 'Kids Meal': 2 },
       group_sizes: { '1': 4, '2': 3, '3-4': 4, '5+': 1 },
       guests: [],
+    }),
+  );
+  await page.route('**/events/rsvp-summary', (route) =>
+    reply(route, {
+      totals: {
+        total_events: 1,
+        total: 12,
+        accepted: 8,
+        declined: 2,
+        pending: 1,
+        maybe: 1,
+        responded: 11,
+        response_rate: 92,
+        adults: 14,
+        kids: 5,
+        total_people: 19,
+        food_preferences: { Vegetarian: 8, 'Non-Vegetarian': 7, Vegan: 2, 'Kids Meal': 2 },
+        group_sizes: { '1': 4, '2': 3, '3-4': 4, '5+': 1 },
+        guests: [],
+      },
+      events: [{
+        event_id: 'event-theme', event_title: 'Theme Audit Wedding', event_date: '2027-02-12', status: 'published',
+        total: 12, accepted: 8, declined: 2, pending: 1, maybe: 1, responded: 11, response_rate: 92,
+        adults: 14, kids: 5, total_people: 19, food_preferences: {}, group_sizes: {}, guests: [],
+      }],
     }),
   );
   await page.route('**/events/event-theme/invitees', (route) => reply(route, []));
@@ -96,6 +123,7 @@ test('protected dashboard and its nested panels keep the home theme', async ({ p
   await mockDashboardData(page);
   await page.goto('/dashboard');
   await expect(page.getByText('Theme Audit Wedding')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: 'Overall RSVP Analytics' })).toBeVisible();
 
   const dashboard = page.locator('.page-bokeh-bg.product-light-shell').first();
   await expect(dashboard).toBeVisible();
