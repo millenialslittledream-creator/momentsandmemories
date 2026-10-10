@@ -180,7 +180,7 @@ export default function EventPublic() {
       {showBook && (
         <div
           data-testid="book-viewer-modal"
-          className="hero-bokeh-bg fixed inset-0 z-50 flex flex-col items-center justify-center p-4"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex flex-col items-center justify-center p-4"
           onClick={() => setShowBook(false)}
         >
           <button

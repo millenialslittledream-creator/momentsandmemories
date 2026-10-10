@@ -7,7 +7,12 @@ function editor(page: Page): Locator {
 test.describe('Canvas template editor', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/create');
-    await page.getByRole('button', { name: /Build Your Own Design/ }).click();
+    await page.locator('.picker-card').filter({ hasText: 'Birthday' }).click();
+    await page
+      .locator('.design-card')
+      .filter({ hasText: 'Build from Scratch' })
+      .getByRole('button', { name: 'Start Designing' })
+      .click();
     await expect(editor(page)).toBeVisible();
   });
 
@@ -108,8 +113,8 @@ test.describe('Canvas template editor', () => {
   });
 
   test('back arrow closes the editor without saving', async ({ page }) => {
-    await editor(page).getByLabel('Close editor').click();
+    await editor(page).getByLabel('Close', { exact: true }).click();
     await expect(editor(page)).toBeHidden();
-    await expect(page.getByRole('button', { name: /Build Your Own Design/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Build from Scratch' })).toBeVisible();
   });
 });

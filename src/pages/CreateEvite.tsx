@@ -17,7 +17,8 @@ import DateTimePicker from '@/sections/create/DateTimePicker';
 import FlowStepper from '@/sections/create/FlowStepper';
 import FlowLogo from '@/sections/create/FlowLogo';
 import EventIllustration from '@/sections/create/EventIllustration';
-import PreviewStep, { DEFAULT_RSVP_SETTINGS, type RSVPSettings } from '@/sections/create/PreviewStep';
+import PreviewStep from '@/sections/create/PreviewStep';
+import { DEFAULT_RSVP_SETTINGS, type RSVPSettings } from '@/sections/create/rsvpSettings';
 import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRenderer';
 import CanvasEditor from '@/components/CanvasEditor';
 import { type CanvasTemplate } from '@/data/canvasTemplates';
@@ -59,6 +60,24 @@ interface InvitationSlot {
 }
 
 const SUPPORTS_MULTI_EVENTS: EventType[] = ['marriage', 'custom'];
+
+function normalizeRsvpSettings(value: Partial<RSVPSettings> | null | undefined): RSVPSettings {
+  return {
+    ...DEFAULT_RSVP_SETTINGS,
+    ...(value ?? {}),
+    responseOptions: {
+      ...DEFAULT_RSVP_SETTINGS.responseOptions,
+      ...(value?.responseOptions ?? {}),
+      yes: true,
+      no: true,
+    },
+    foodOptions:
+      Array.isArray(value?.foodOptions) && value.foodOptions.length > 0
+        ? value.foodOptions
+        : DEFAULT_RSVP_SETTINGS.foodOptions,
+    childAgeCutoff: Math.max(1, Math.min(21, Number(value?.childAgeCutoff) || 12)),
+  };
+}
 
 // ── Single field renderer (used for everything except the grouped date/time/tz block) ──
 function renderEditorField(
@@ -280,6 +299,7 @@ export default function CreateEvite() {
       if (parsed.formData) setFormData(parsed.formData);
       if (parsed.guests?.length) setGuests(parsed.guests);
       if (parsed.deliveryPreference) setDeliveryPreference(parsed.deliveryPreference);
+      if (parsed.rsvpSettings) setRsvpSettings(normalizeRsvpSettings(parsed.rsvpSettings));
       if (parsed.selectedTemplateId) setSelectedTemplateId(parsed.selectedTemplateId);
       if (parsed.uploadedTemplate) setUploadedTemplate(parsed.uploadedTemplate);
       if (parsed.hasSubEvents) setHasSubEvents(!!parsed.hasSubEvents);
@@ -323,12 +343,13 @@ export default function CreateEvite() {
           selectedTemplateId,
           uploadedTemplate: safeUploaded,
           hasSubEvents,
+          rsvpSettings,
         })
       );
     } catch {
       /* ignore */
     }
-  }, [formData, guests, deliveryPreference, selectedTemplateId, uploadedTemplate, hasSubEvents]);
+  }, [formData, guests, deliveryPreference, selectedTemplateId, uploadedTemplate, hasSubEvents, rsvpSettings]);
 
   // ── Customizable text fields for the active template ───────────────
   // Each entry's key matches the override key TemplateRenderer merges on
@@ -450,6 +471,7 @@ export default function CreateEvite() {
       if (p.formData) setFormData(p.formData);
       if (p.guests?.length) setGuests(p.guests);
       if (p.deliveryPreference) setDeliveryPreference(p.deliveryPreference);
+      if (p.rsvpSettings) setRsvpSettings(normalizeRsvpSettings(p.rsvpSettings));
       if (p.hasSubEvents) setHasSubEvents(!!p.hasSubEvents);
       if (p.selectedTemplateId) {
         const t = eviteTemplates.find((x) => x.id === p.selectedTemplateId);
@@ -485,6 +507,7 @@ export default function CreateEvite() {
     setSelectedTemplateId(null);
     setUploadedTemplate(null);
     setHasSubEvents(false);
+    setRsvpSettings(DEFAULT_RSVP_SETTINGS);
     setGuests([createGuest()]);
     setFlowStage('picker');
   }, []);
@@ -498,6 +521,7 @@ export default function CreateEvite() {
       // draft) so the Guests page doesn't show event checkboxes that belong
       // to a previous session.
       setFormData({});
+      setRsvpSettings(DEFAULT_RSVP_SETTINGS);
       setHasSubEvents(false);
       setFieldOverrides({});
       setPhotoOverlay(null);
@@ -515,6 +539,7 @@ export default function CreateEvite() {
     // Clear stale formData from any previous abandoned session so sub-event
     // checkboxes don't bleed into a fresh upload flow.
     setFormData({});
+    setRsvpSettings(DEFAULT_RSVP_SETTINGS);
     setHasSubEvents(false);
     setFieldOverrides({});
     setPhotoOverlay(null);
@@ -534,6 +559,7 @@ export default function CreateEvite() {
     setUploadedTemplate(null);
     setPickedCanvasTemplate(null);
     setFormData({});
+    setRsvpSettings(DEFAULT_RSVP_SETTINGS);
     setHasSubEvents(false);
     setModalPhase('canvas-editor');
   }, []);
@@ -671,7 +697,7 @@ export default function CreateEvite() {
       }
       setModalPhase('signin');
     }
-  }, [user, multipleInvitations, invitationSlots, currentSlotIdx, formData]);
+  }, [user, multipleInvitations, formData]);
 
   const backToEditor = useCallback(() => setModalPhase('editor'), []);
 
@@ -740,7 +766,9 @@ export default function CreateEvite() {
         location: formData.venue || null,
         template_id: selectedTemplateId,
         cover_image_url: coverImageUrl,
-        form_data: formData,
+        form_data: { ...formData, rsvpSettings },
+        rsvp_enabled: rsvpSettings.enabled,
+        rsvp_config: rsvpSettings,
         status: 'published',
       };
 
@@ -776,7 +804,7 @@ export default function CreateEvite() {
     } finally {
       setPublishing(false);
     }
-  }, [uploadedTemplate, selectedTemplate, selectedTemplateId, formData, fieldOverrides, photoOverlay, publishedEventId]);
+  }, [uploadedTemplate, selectedTemplate, selectedTemplateId, formData, rsvpSettings, fieldOverrides, photoOverlay, publishedEventId]);
 
   const handlePaymentConfirm = useCallback(async () => {
     try {
@@ -1103,7 +1131,7 @@ export default function CreateEvite() {
   return (
     <div
       ref={pageRef}
-      className="hero-bokeh-bg h-screen flex flex-col overflow-hidden relative"
+      className="hero-bokeh-bg product-light-shell h-screen flex flex-col overflow-hidden relative"
     >
       {/* ════════════════════════════════════════════════════════════
           RESUME PROMPT (H10) — greet a returning host with their
@@ -1111,7 +1139,7 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {showResume && (
         <div
-          className="hero-bokeh-bg fixed inset-0 z-[70] flex items-center justify-center p-4"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-[70] flex items-center justify-center p-4"
         >
           <div className="product-light-shell relative w-full max-w-md border shadow-2xl p-8 md:p-10 text-center">
             <div className="w-14 h-14 rounded-full bg-[#9cb092]/15 border border-[#9cb092]/40 flex items-center justify-center mx-auto mb-5">
@@ -1246,7 +1274,7 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {flowStage === 'picker' && (
         <div
-          className="hero-bokeh-bg fixed inset-0 z-40 flex flex-col overflow-hidden"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-40 flex flex-col overflow-hidden"
           data-lenis-prevent
         >
           <FlowLogo size="lg" tone="light" />
@@ -1325,7 +1353,7 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {flowStage === 'choose-design' && (
         <div
-          className="hero-bokeh-bg fixed inset-0 z-40 flex flex-col overflow-hidden"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-40 flex flex-col overflow-hidden"
           data-lenis-prevent
         >
           <FlowLogo size="lg" tone="light" />
@@ -1480,7 +1508,7 @@ export default function CreateEvite() {
         if (!ev) return null;
         return (
           <div
-            className="hero-bokeh-bg fixed inset-0 z-40 flex flex-col items-center justify-center px-6"
+            className="hero-bokeh-bg product-light-shell fixed inset-0 z-40 flex flex-col items-center justify-center px-6"
           >
             <div className="relative z-10 flex flex-col items-center text-center">
               <div
@@ -1520,7 +1548,7 @@ export default function CreateEvite() {
       {modalPhase === 'upload' && (
         <div
           ref={editorBackdropRef}
-          className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeAnyModal();
           }}
@@ -1911,7 +1939,7 @@ export default function CreateEvite() {
       {(selectedTemplate || uploadedTemplate) && modalPhase === 'editor' && (
         <div
           ref={editorBackdropRef}
-          className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeAnyModal();
           }}
@@ -2664,7 +2692,7 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {modalPhase === 'signin' && (
         <div
-          className="hero-bokeh-bg fixed inset-0 z-[60] flex items-center justify-center p-4"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-[60] flex items-center justify-center p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) backToEditor();
           }}
@@ -2772,7 +2800,7 @@ export default function CreateEvite() {
           'group flex flex-col items-center justify-center gap-1.5 py-4 border border-white/10 bg-white/[0.03] hover:border-[#9cb092]/40 hover:bg-[#9cb092]/[0.05] transition-all duration-200 font-display text-[10px] tracking-[0.15em] uppercase text-[#e4eee1]';
         return (
           <div
-            className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
+            className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
           >
             <div className="product-light-shell relative w-full h-full flex flex-col border overflow-hidden shadow-2xl">
               <FlowLogo onClick={closeToHome} tone="light" />
@@ -2985,7 +3013,7 @@ export default function CreateEvite() {
           ════════════════════════════════════════════════════════════ */}
       {modalPhase === 'sent' && (
         <div
-          className="hero-bokeh-bg fixed inset-0 z-[60] flex items-center justify-center p-4"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-[60] flex items-center justify-center p-4"
         >
           <div className="product-light-shell flex flex-col items-center text-center max-w-md border shadow-2xl px-8 py-10 md:px-12 md:py-12">
             <div className="w-20 h-20 rounded-full bg-[#9cb092]/20 border border-[#9cb092]/40 flex items-center justify-center mb-8">

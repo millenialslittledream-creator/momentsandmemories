@@ -6,6 +6,7 @@ import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRender
 import { eventTypes, type EventType } from '@/data/eventFields';
 import type { EviteTemplate, TemplateFieldLayout } from '@/data/eviteTemplates';
 import type { Guest } from './GuestDetails';
+import { ALL_FOOD_OPTIONS, type RSVPSettings } from './rsvpSettings';
 
 export interface InvitationSetPreview {
   id: string;
@@ -13,30 +14,6 @@ export interface InvitationSetPreview {
   url: string;
   type: 'image' | 'video';
 }
-
-// What guests are asked to provide when they RSVP. Held in the create-flow
-// state and shown/edited on the Preview step.
-export interface RSVPSettings {
-  enabled: boolean;
-  responseOptions: { yes: boolean; no: boolean; maybe: boolean };
-  collectGuestCount: boolean;
-  collectKidsCount: boolean;
-  collectFoodPreference: boolean;
-  foodOptions: string[];
-  collectAdditionalInfo: boolean;
-}
-
-export const ALL_FOOD_OPTIONS = ['Vegetarian', 'Non-Vegetarian', 'Vegan', 'Kids Meal'];
-
-export const DEFAULT_RSVP_SETTINGS: RSVPSettings = {
-  enabled: true,
-  responseOptions: { yes: true, no: true, maybe: true },
-  collectGuestCount: true,
-  collectKidsCount: true,
-  collectFoodPreference: true,
-  foodOptions: [...ALL_FOOD_OPTIONS],
-  collectAdditionalInfo: true,
-};
 
 interface PreviewStepProps {
   eventType: EventType | null;
@@ -86,7 +63,7 @@ export default function PreviewStep({
   const [rsvpEditing, setRsvpEditing] = useState(false);
 
   const isMulti = (invitationSets?.length ?? 0) >= 2;
-  const guestList = guests ?? [];
+  const guestList = useMemo(() => guests ?? [], [guests]);
 
   // ── Invitation versions shown in the left rail ──────────────────────
   const guestsBySet = useMemo(() => {
@@ -205,6 +182,7 @@ export default function PreviewStep({
   const patchRsvp = (patch: Partial<RSVPSettings>) => onRsvpSettingsChange({ ...rsvpSettings, ...patch });
   const toggleFoodOption = (opt: string) => {
     const has = rsvpSettings.foodOptions.includes(opt);
+    if (has && rsvpSettings.foodOptions.length === 1) return;
     patchRsvp({
       foodOptions: has ? rsvpSettings.foodOptions.filter((o) => o !== opt) : [...rsvpSettings.foodOptions, opt],
     });
@@ -258,7 +236,7 @@ export default function PreviewStep({
   return (
     <div
       ref={backdropRef}
-      className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
+      className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3"
       onClick={(e) => {
         if (e.target === e.currentTarget) onBack();
       }}
@@ -517,7 +495,7 @@ export default function PreviewStep({
       {/* ── Compact RSVP settings popup ── */}
       {rsvpEditing && (
         <div
-          className="hero-bokeh-bg fixed inset-0 z-[60] flex items-center justify-center p-4"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-[60] flex items-center justify-center p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) setRsvpEditing(false);
           }}
@@ -557,10 +535,13 @@ export default function PreviewStep({
                         return (
                           <button
                             key={k}
-                            onClick={() => patchRsvp({ responseOptions: { ...rsvpSettings.responseOptions, [k]: !on } })}
+                            type="button"
+                            disabled={k !== 'maybe'}
+                            title={k === 'maybe' ? 'Show or hide the tentative response' : `${label} is required`}
+                            onClick={() => k === 'maybe' && patchRsvp({ responseOptions: { ...rsvpSettings.responseOptions, maybe: !on } })}
                             className={`flex-1 px-3 py-1.5 font-display text-[10px] tracking-[0.1em] uppercase transition-colors border ${
                               on ? 'bg-[#9cb092]/15 border-[#9cb092]/50 text-[#9cb092]' : 'bg-white/[0.03] border-white/10 text-[#b2c3b1]/45'
-                            }`}
+                            } ${k !== 'maybe' ? 'cursor-default' : ''}`}
                           >
                             {label}
                           </button>
@@ -581,6 +562,34 @@ export default function PreviewStep({
                     on={rsvpSettings.collectKidsCount}
                     onToggle={() => patchRsvp({ collectKidsCount: !rsvpSettings.collectKidsCount })}
                   />
+                  {rsvpSettings.collectKidsCount && (
+                    <div className="flex items-center justify-between gap-4 border border-white/10 bg-white/[0.03] px-3 py-2.5">
+                      <div>
+                        <p className="font-display text-[10px] tracking-[0.12em] uppercase text-[#e4eee1]">
+                          Children age cutoff
+                        </p>
+                        <p className="font-display text-[9px] text-[#b2c3b1]/50 mt-0.5">
+                          Guests at or below this age count as children.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <input
+                          aria-label="Children age cutoff"
+                          type="number"
+                          min={1}
+                          max={21}
+                          value={rsvpSettings.childAgeCutoff}
+                          onChange={(event) =>
+                            patchRsvp({
+                              childAgeCutoff: Math.max(1, Math.min(21, Number(event.target.value) || 12)),
+                            })
+                          }
+                          className="w-16 border border-white/15 bg-[#192116] px-2 py-1.5 text-center font-display text-xs text-[#e4eee1] outline-none focus:border-[#9cb092]/60"
+                        />
+                        <span className="font-display text-[9px] uppercase tracking-[0.12em] text-[#b2c3b1]/55">years</span>
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <RsvpToggleRow

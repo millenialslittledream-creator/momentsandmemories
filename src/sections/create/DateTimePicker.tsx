@@ -139,7 +139,7 @@ export default function DateTimePicker({
     open &&
     createPortal(
       <div
-        className="hero-bokeh-bg fixed inset-0 z-[200] flex items-center justify-center p-4"
+        className="hero-bokeh-bg product-light-shell fixed inset-0 z-[200] flex items-center justify-center p-4"
         onClick={(e) => {
           if (e.target === e.currentTarget) setOpen(false);
         }}

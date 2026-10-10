@@ -5,7 +5,12 @@ test('visual snapshots for manual review', async ({ page }) => {
   await page.waitForTimeout(800);
   await page.screenshot({ path: 'test-results/manual-01-gallery.png', fullPage: false });
 
-  await page.getByRole('button', { name: /Build Your Own Design/ }).click();
+  await page.locator('.picker-card').filter({ hasText: 'Birthday' }).click();
+  await page
+    .locator('.design-card')
+    .filter({ hasText: 'Build from Scratch' })
+    .getByRole('button', { name: 'Start Designing' })
+    .click();
   const editor = page.getByTestId('canvas-editor');
   await expect(editor).toBeVisible();
   await page.screenshot({ path: 'test-results/manual-02-editor-empty.png' });
@@ -30,10 +35,9 @@ test('visual snapshots for manual review', async ({ page }) => {
 
 test('regression: existing template picker flow still works', async ({ page }) => {
   await page.goto('/create');
-  await page.getByRole('button', { name: 'Wedding', exact: true }).click();
-  await page.waitForTimeout(300);
-  // Index 0 = Upload Your Own, 1 = Build Your Own Design, 2 = Start from a Premade Design — first real evite template is now at 3.
-  const firstTemplate = page.locator('.template-card').nth(3);
+  await page.getByRole('button', { name: /^Wedding\b/ }).click();
+  await page.getByRole('button', { name: 'Browse Templates' }).click();
+  const firstTemplate = page.locator('.template-card').first();
   await firstTemplate.click();
   await expect(page.locator('text=Continue').first()).toBeVisible({ timeout: 5000 });
   await page.screenshot({ path: 'test-results/manual-07-existing-template-flow.png' });
@@ -41,7 +45,12 @@ test('regression: existing template picker flow still works', async ({ page }) =
 
 test('regression: existing upload-your-own flow still works', async ({ page }) => {
   await page.goto('/create');
-  await page.getByRole('button', { name: /Upload Your Own Design/ }).click();
+  await page.locator('.picker-card').filter({ hasText: 'Birthday' }).click();
+  await page
+    .locator('.design-card')
+    .filter({ hasText: 'Upload Your Own Design' })
+    .getByRole('button', { name: 'Choose This' })
+    .click();
   await expect(page.getByText(/Choose a file|Upload/).first()).toBeVisible({ timeout: 5000 });
   await page.screenshot({ path: 'test-results/manual-08-existing-upload-flow.png' });
 });

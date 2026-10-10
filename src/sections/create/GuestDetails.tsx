@@ -587,7 +587,7 @@ export default function GuestDetails({
 
       {/* QR scan modal */}
       {qrSession && (
-        <div className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="product-light-shell border border-[#9cb092]/30 p-8 max-w-sm w-full text-center shadow-2xl">
             <h3 className="font-serif-exp text-lg text-[#e4eee1] italic mb-2">Scan with Phone</h3>
             <p className="font-display text-[10px] tracking-[0.15em] text-[#b2c3b1]/60 uppercase mb-6">

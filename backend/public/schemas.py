@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Dict, Optional
 
 
 class PublicEventResponse(BaseModel):
@@ -21,6 +21,9 @@ class RSVPRequest(BaseModel):
     party_size: Optional[int] = None
     kids_count: Optional[int] = None
     food_preference: Optional[str] = None
+    adults_count: Optional[int] = None
+    children_count: Optional[int] = None
+    meal_preferences: Dict[str, int] = Field(default_factory=dict)
 
 
 class RSVPResponse(BaseModel):

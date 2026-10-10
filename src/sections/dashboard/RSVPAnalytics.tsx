@@ -1,34 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api } from '@/lib/api';
-
-interface GuestRow {
-  name: string | null;
-  email: string | null;
-  phone: string | null;
-  status: string;
-  party_size: number | null;
-  kids_count: number | null;
-  food_preference: string | null;
-  responded_at: string | null;
-}
-
-interface Stats {
-  total: number;
-  accepted: number;
-  declined: number;
-  pending: number;
-  maybe?: number;
-  adults?: number;
-  kids?: number;
-  total_people?: number;
-  food_preferences?: Record<string, number>;
-  group_sizes?: Record<string, number>;
-  guests?: GuestRow[];
-}
+import { api, type RSVPStats } from '@/lib/api';
 
 interface Props {
   eventId: string;
   eventTitle: string;
+  refreshToken?: number;
 }
 
 const STATUS_META: Record<string, { label: string; color: string; icon: string }> = {
@@ -45,19 +21,18 @@ const GROUP_COLORS: Record<string, string> = {
   '5+': '#c98f8f',
 };
 
-export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
-  const [stats, setStats] = useState<Stats | null>(null);
+export default function RSVPAnalytics({ eventId, eventTitle, refreshToken = 0 }: Props) {
+  const [stats, setStats] = useState<RSVPStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
-    setLoading(true);
     api
       .getEventRSVPStats(eventId)
-      .then((s) => setStats(s as Stats))
-      .catch(() => setStats({ total: 0, accepted: 0, declined: 0, pending: 0 }))
+      .then(setStats)
+      .catch(() => setStats(null))
       .finally(() => setLoading(false));
-  }, [eventId]);
+  }, [eventId, refreshToken]);
 
   const pct = (n: number) => (stats && stats.total > 0 ? Math.round((n / stats.total) * 100) : 0);
 
@@ -87,14 +62,15 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
     );
   if (!stats) return null;
 
-  const maybe = stats.maybe ?? 0;
-  const adults = stats.adults ?? 0;
-  const kids = stats.kids ?? 0;
-  const totalPeople = stats.total_people ?? adults + kids;
+  const maybe = stats.maybe;
+  const adults = stats.adults;
+  const kids = stats.kids;
+  const totalPeople = stats.total_people;
   const avgPerRsvp = stats.accepted > 0 ? (totalPeople / stats.accepted).toFixed(1) : '0';
 
   const statCards = [
-    { key: 'total', label: 'Total Guests', value: stats.total, color: '#e4eee1', icon: 'groups', pctText: '100%' },
+    { key: 'total', label: 'Invited', value: stats.total, color: '#2a3328', icon: 'groups', pctText: '100%' },
+    { key: 'responded', label: 'Responded', value: stats.responded, color: '#5f7256', icon: 'mark_email_read', pctText: `${stats.response_rate}%` },
     { key: 'accepted', label: 'Will Attend', value: stats.accepted, color: '#9cb092', icon: 'check_circle', pctText: `${pct(stats.accepted)}%` },
     { key: 'maybe', label: 'Tentative', value: maybe, color: '#fbbf24', icon: 'help', pctText: `${pct(maybe)}%` },
     { key: 'declined', label: "Won't Attend", value: stats.declined, color: '#f87171', icon: 'cancel', pctText: `${pct(stats.declined)}%` },
@@ -119,7 +95,7 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
         {statCards.map((c) => (
           <div key={c.key} className="border border-[#3d4a35]/12 bg-white/60 p-3">
             <div className="flex items-center gap-1.5 mb-2">
@@ -142,7 +118,7 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
               <p className="font-serif-exp text-xl text-[#2a3328]">{adults}</p>
             </div>
             <div>
-              <p className="font-display text-[8px] tracking-[0.12em] uppercase text-[#5a6c50]/40">Kids (Under 12)</p>
+              <p className="font-display text-[8px] tracking-[0.12em] uppercase text-[#5a6c50]/40">Children</p>
               <p className="font-serif-exp text-xl text-[#2a3328]">{kids}</p>
             </div>
             <div>
@@ -205,7 +181,7 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
                   offset += dash;
                   return seg;
                 })}
-                <text x="50" y="52" textAnchor="middle" transform="rotate(90 50 50)" fill="#e4eee1" fontSize="14" fontFamily="serif">
+                <text x="50" y="52" textAnchor="middle" transform="rotate(90 50 50)" fill="#2a3328" fontSize="14" fontFamily="serif">
                   {groupTotal}
                 </text>
               </svg>
@@ -249,7 +225,7 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
           <table className="w-full border-collapse min-w-[560px]">
             <thead>
               <tr className="border-b border-[#3d4a35]/12">
-                {['Guest', 'Contact', 'Status', 'Attending', 'Kids', 'Food', 'Responded'].map((h) => (
+                {['Guest', 'Contact', 'Status', 'Attending', 'Children', 'Meals', 'Dietary notes', 'Responded'].map((h) => (
                   <th key={h} className="text-left px-3 py-2 font-display text-[8px] tracking-[0.12em] uppercase text-[#5f7256]/70">{h}</th>
                 ))}
               </tr>
@@ -257,7 +233,7 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
             <tbody>
               {filteredGuests.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-6 text-center font-display text-[10px] text-[#5a6c50]/35">
+                  <td colSpan={8} className="px-3 py-6 text-center font-display text-[10px] text-[#5a6c50]/35">
                     No guests in this view yet.
                   </td>
                 </tr>
@@ -275,7 +251,12 @@ export default function RSVPAnalytics({ eventId, eventTitle }: Props) {
                       </td>
                       <td className="px-3 py-2 font-display text-[10px] text-[#5a6c50]/70">{g.party_size ?? '—'}</td>
                       <td className="px-3 py-2 font-display text-[10px] text-[#5a6c50]/70">{g.kids_count ?? '—'}</td>
-                      <td className="px-3 py-2 font-display text-[10px] text-[#5a6c50]/70">{g.food_preference || '—'}</td>
+                      <td className="px-3 py-2 font-display text-[10px] text-[#5a6c50]/70">
+                        {Object.entries(g.meal_preferences ?? {}).length
+                          ? Object.entries(g.meal_preferences).map(([meal, count]) => `${meal} × ${count}`).join(', ')
+                          : g.food_preference || '—'}
+                      </td>
+                      <td className="px-3 py-2 font-display text-[10px] text-[#5a6c50]/70">{g.dietary_requirements || '—'}</td>
                       <td className="px-3 py-2 font-display text-[9px] text-[#5a6c50]/50">
                         {g.responded_at ? new Date(g.responded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                       </td>

@@ -6,6 +6,58 @@ export interface BookPageDto {
   frame?: string;
 }
 
+export interface RSVPConfig {
+  enabled: boolean;
+  responseOptions: { yes: boolean; no: boolean; maybe: boolean };
+  collectGuestCount: boolean;
+  collectKidsCount: boolean;
+  collectFoodPreference: boolean;
+  foodOptions: string[];
+  collectAdditionalInfo: boolean;
+  childAgeCutoff: number;
+}
+
+export interface RSVPGuestStats {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  status: string;
+  party_size: number | null;
+  kids_count: number | null;
+  food_preference: string | null;
+  meal_preferences: Record<string, number>;
+  dietary_requirements: string | null;
+  responded_at: string | null;
+}
+
+export interface RSVPStats {
+  total: number;
+  accepted: number;
+  declined: number;
+  pending: number;
+  responded: number;
+  response_rate: number;
+  maybe: number;
+  adults: number;
+  kids: number;
+  total_people: number;
+  food_preferences: Record<string, number>;
+  group_sizes: Record<string, number>;
+  guests: RSVPGuestStats[];
+}
+
+export interface EventRSVPSummary extends RSVPStats {
+  event_id: string;
+  event_title: string;
+  event_date: string | null;
+  status: string;
+}
+
+export interface OverallRSVPSummary {
+  totals: RSVPStats & { total_events: number };
+  events: EventRSVPSummary[];
+}
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export async function getToken(): Promise<string | null> {
@@ -131,28 +183,10 @@ export const api = {
 
   // ── RSVP stats (auth required) ────────────────────────────────────────
   getEventRSVPStats: (eventId: string) =>
-    apiFetch<{
-      total: number;
-      accepted: number;
-      declined: number;
-      pending: number;
-      maybe?: number;
-      adults?: number;
-      kids?: number;
-      total_people?: number;
-      food_preferences?: Record<string, number>;
-      group_sizes?: Record<string, number>;
-      guests?: Array<{
-        name: string | null;
-        email: string | null;
-        phone: string | null;
-        status: string;
-        party_size: number | null;
-        kids_count: number | null;
-        food_preference: string | null;
-        responded_at: string | null;
-      }>;
-    }>(`/events/${eventId}/rsvp-stats`),
+    apiFetch<RSVPStats>(`/events/${eventId}/rsvp-stats`),
+
+  getOverallRSVPSummary: () =>
+    apiFetch<OverallRSVPSummary>('/events/rsvp-summary'),
 
   // ── Public endpoints (no auth) ────────────────────────────────────────
   getPublicEvent: (eventId: string) => publicGet(`/public/events/${eventId}`),
@@ -169,6 +203,9 @@ export const api = {
       party_size?: number | null;
       kids_count?: number | null;
       food_preference?: string | null;
+      adults_count?: number | null;
+      children_count?: number | null;
+      meal_preferences?: Record<string, number>;
     }
   ) =>
     fetch(`${API_URL}/public/events/${eventId}/rsvp/${inviteeId}`, {

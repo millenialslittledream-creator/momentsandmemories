@@ -144,7 +144,7 @@ export default function DevEviteHub() {
 
   if (openDesignId) {
     return (
-      <Suspense fallback={<div className="hero-bokeh-bg fixed inset-0" />}>
+      <Suspense fallback={<div className="hero-bokeh-bg product-light-shell fixed inset-0" />}>
         {view.editorKind === 'wedding' && <InviteEditor initialDesignId={openDesignId} onBack={closeEditor} onClose={exitToCreate} />}
         {view.editorKind === 'birthday' && <BirthdayEditor initialDesignId={openDesignId} onBack={closeEditor} onClose={exitToCreate} />}
         {view.editorKind === 'event' && view.eventKey && (

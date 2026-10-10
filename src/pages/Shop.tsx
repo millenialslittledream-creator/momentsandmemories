@@ -234,7 +234,7 @@ export default function Shop() {
   return (
     <div
       ref={pageRef}
-      className="page-bokeh-bg h-screen flex flex-col overflow-hidden relative"
+      className="page-bokeh-bg product-light-shell h-screen flex flex-col overflow-hidden relative"
     >
       <Navigation />
 
@@ -408,7 +408,7 @@ export default function Shop() {
       {selected && (
         <div
           ref={backdropRef}
-          className="hero-bokeh-bg fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
+          className="hero-bokeh-bg product-light-shell fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
           {/* Modal panel */}

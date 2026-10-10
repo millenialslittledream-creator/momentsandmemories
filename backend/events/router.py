@@ -21,6 +21,11 @@ def list_events(
     return service.list_events(current_user["sub"], limit=limit, offset=offset)
 
 
+@router.get("/rsvp-summary")
+def get_overall_rsvp_summary(current_user: dict = Depends(get_current_user)):
+    return service.get_overall_rsvp_summary(current_user["sub"])
+
+
 @router.get("/{event_id}")
 def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
     try:
