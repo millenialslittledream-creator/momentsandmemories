@@ -24,4 +24,3 @@ COMMENT ON COLUMN public.events.rsvp_config IS
 
 COMMENT ON COLUMN public.event_invitees.meal_preferences IS
   'Meal option to quantity map, e.g. {"Vegetarian": 2, "Kids Meal": 1}.';
-

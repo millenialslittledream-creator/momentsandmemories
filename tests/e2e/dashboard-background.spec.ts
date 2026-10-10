@@ -122,7 +122,7 @@ test('protected dashboard and its nested panels keep the home theme', async ({ p
   await installTestSession(page);
   await mockDashboardData(page);
   await page.goto('/dashboard');
-  await expect(page.getByText('Theme Audit Wedding')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText('Theme Audit Wedding').first()).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('heading', { name: 'Overall RSVP Analytics' })).toBeVisible();
 
   const dashboard = page.locator('.page-bokeh-bg.product-light-shell').first();

@@ -2,6 +2,13 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Public event website (/w/:slug)', () => {
   test('shows not-found state for a slug that does not exist', async ({ page }) => {
+    await page.route('**/public/websites/this-slug-does-not-exist-123', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ detail: 'Website not found' }),
+      });
+    });
     await page.goto('/w/this-slug-does-not-exist-123');
     await expect(page.getByText(/not available|not been published|Page not found/)).toBeVisible();
   });
