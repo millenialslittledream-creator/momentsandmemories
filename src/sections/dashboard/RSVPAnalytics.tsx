@@ -96,7 +96,7 @@ export default function RSVPAnalytics({ eventId, eventTitle, refreshToken = 0 }:
   let offset = 0;
 
   return (
-    <div className="py-3 space-y-3">
+    <div className="min-w-0 max-w-full py-3 space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <p className="font-display text-[9px] tracking-[0.3em] uppercase text-[#5f7256]">RSVP Analytics</p>
@@ -213,7 +213,7 @@ export default function RSVPAnalytics({ eventId, eventTitle, refreshToken = 0 }:
       </div>
 
       {/* Guest responses table */}
-      <div className="border border-[#3d4a35]/12 bg-white/60">
+      <div className="min-w-0 max-w-full border border-[#3d4a35]/12 bg-white/60">
         <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-[#3d4a35]/12 flex-wrap">
           <p className="font-display text-[9px] tracking-[0.2em] uppercase text-[#5f7256]">Guest Responses</p>
           <div className="flex gap-1 flex-wrap">
@@ -234,7 +234,7 @@ export default function RSVPAnalytics({ eventId, eventTitle, refreshToken = 0 }:
             )}
           </div>
         </div>
-        <div className="overflow-x-auto">
+        <div data-lenis-prevent className="max-w-full overflow-x-auto scrollbar-subtle">
           <table className="w-full border-collapse min-w-[1040px]">
             <thead>
               <tr className="border-b border-[#3d4a35]/12">

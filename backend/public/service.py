@@ -288,6 +288,7 @@ def submit_rsvp(
 def submit_open_rsvp(
     event_id: str,
     name: str,
+    phone: str,
     status: str,
     message: str,
     dietary_requirements: str,
@@ -304,6 +305,10 @@ def submit_open_rsvp(
         raise ValueError("Guest name is required")
     if len(cleaned_name) > 100:
         raise ValueError("Guest name must be 100 characters or fewer")
+    cleaned_phone = " ".join((phone or "").split())
+    phone_digits = "".join(ch for ch in cleaned_phone if ch.isdigit())
+    if len(phone_digits) < 7 or len(phone_digits) > 15:
+        raise ValueError("Enter a valid phone number with 7 to 15 digits")
 
     event, config = _get_rsvp_event(event_id)
     update = _build_rsvp_update(
@@ -322,6 +327,7 @@ def submit_open_rsvp(
     result = db.table("event_invitees").insert({
         "event_id": event_id,
         "name": cleaned_name,
+        "phone": cleaned_phone,
         "source": "share_link",
         **update,
     }).execute()

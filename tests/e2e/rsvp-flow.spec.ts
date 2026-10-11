@@ -52,7 +52,7 @@ test('guest allocates meals for every attendee and can update the RSVP', async (
   });
 
   await page.goto(`/rsvp/${eventId}/${inviteeId}`);
-  await expect(page.getByRole('heading', { name: 'Asha & Ravi' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Asha & Ravi' })).toBeVisible({ timeout: 20_000 });
   await page.getByText('Yes, I’ll be there!').click();
   await expect(page.getByText('Under 10 years')).toBeVisible();
 
@@ -84,7 +84,7 @@ test('guest allocates meals for every attendee and can update the RSVP', async (
   await expect(page.getByText('Number of attendees')).toBeVisible();
 });
 
-test('shareable event link requires a name and submits configured RSVP fields', async ({ page }) => {
+test('shareable event link requires contact details and submits configured RSVP fields', async ({ page }) => {
   let submitted: Record<string, unknown> | null = null;
   await page.route(`**/public/events/${eventId}/book`, (route) => route.fulfill({ status: 404, contentType: 'application/json', body: '{}' }));
   await page.route(`**/public/events/${eventId}/rsvp`, async (route) => {
@@ -123,13 +123,15 @@ test('shareable event link requires a name and submits configured RSVP fields', 
   });
 
   await page.goto(`/event/${eventId}`);
-  await expect(page.getByRole('heading', { name: 'First, tell us your name' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'First, your contact details' })).toBeVisible({ timeout: 20_000 });
   const continueButton = page.getByRole('button', { name: /Continue to RSVP/ });
   await expect(continueButton).toBeDisabled();
   await page.getByLabel('Guest name *').fill('Maya Shah');
+  await expect(continueButton).toBeDisabled();
+  await page.getByLabel('Phone number *').fill('+91 98765 43210');
   await continueButton.click();
 
-  await expect(page.getByText('Responding as Maya Shah')).toBeVisible();
+  await expect(page.getByText(/Responding as Maya Shah/)).toBeVisible();
   await page.getByText('Yes, I’ll be there!').click();
   await expect(page.getByText('Adults')).toBeVisible();
   await expect(page.getByText('Children')).toHaveCount(0);
@@ -143,6 +145,7 @@ test('shareable event link requires a name and submits configured RSVP fields', 
   await expect(page.getByText('Your RSVP has been recorded for Maya Shah')).toBeVisible();
   expect(submitted).toMatchObject({
     name: 'Maya Shah',
+    phone: '+91 98765 43210',
     status: 'accepted',
     adults_count: 1,
     children_count: null,

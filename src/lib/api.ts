@@ -221,7 +221,7 @@ export const api = {
 
   submitOpenRSVP: (
     eventId: string,
-    data: RSVPSubmission & { name: string }
+    data: RSVPSubmission & { name: string; phone: string }
   ) =>
     fetch(`${API_URL}/public/events/${eventId}/rsvp`, {
       method: 'POST',

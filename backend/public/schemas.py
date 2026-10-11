@@ -30,6 +30,7 @@ class OpenRSVPRequest(RSVPRequest):
     """RSVP submitted from an event's public share link."""
 
     name: str = Field(min_length=1, max_length=100)
+    phone: str = Field(min_length=7, max_length=32)
 
 
 class RSVPResponse(BaseModel):

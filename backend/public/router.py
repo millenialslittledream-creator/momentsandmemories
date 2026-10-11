@@ -114,6 +114,7 @@ def submit_open_rsvp(event_id: str, data: OpenRSVPRequest):
         return service.submit_open_rsvp(
             event_id,
             data.name,
+            data.phone,
             data.status,
             data.message or "",
             data.dietary_requirements or "",
