@@ -31,6 +31,7 @@ const GuestGalleryUpload = lazy(() => import('./pages/GuestGalleryUpload'));
 // "Build an Event Website" tile on the Create Evite page.
 const DevEviteHub = lazy(() => import('./components/DevEviteHub'));
 const BabyPreview = lazy(() => import('./pages/__BabyPreview')); // DEV-ONLY tuning preview
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 // Register GSAP plugins globally
 gsap.registerPlugin(ScrollTrigger);
@@ -85,6 +86,7 @@ function App() {
               <Route path="/gallery/:eventId" element={<GuestGalleryUpload />} />
               <Route path="/website-builder" element={<DevEviteHub />} />
               <Route path="/__baby-preview" element={<BabyPreview />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
           <Toaster position="top-center" richColors />
