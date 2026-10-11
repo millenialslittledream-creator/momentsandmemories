@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '@/lib/api';
-import { toast } from 'sonner';
 import BookViewer, { type BookPage } from '@/components/BookBuilder/BookViewer';
 import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRenderer';
 import { eviteTemplates, type TemplateFieldLayout } from '@/data/eviteTemplates';
@@ -35,6 +34,8 @@ export default function EventPublic() {
   const [error, setError] = useState('');
   const [bookPages, setBookPages] = useState<BookPage[]>([]);
   const [showBook, setShowBook] = useState(false);
+  const [showInvitation, setShowInvitation] = useState(false);
+  const rsvpSectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!eventId) return;
@@ -47,6 +48,14 @@ export default function EventPublic() {
       .catch(() => setBookPages([]));
   }, [eventId]);
 
+  // A direct event link can inherit the browser's previous scroll restoration
+  // position. Always start a newly opened invitation at its artwork hero.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    const frame = requestAnimationFrame(() => window.scrollTo(0, 0));
+    return () => cancelAnimationFrame(frame);
+  }, [eventId]);
+
   // The stock template (with its positioned layout) used to re-render the
   // designed invitation. Null for uploaded / canvas designs, which fall back
   // to the hosted cover image instead.
@@ -55,9 +64,8 @@ export default function EventPublic() {
     [event]
   );
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success('Event link copied!');
+  const scrollToRsvp = () => {
+    rsvpSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   if (loading) return (
@@ -83,7 +91,11 @@ export default function EventPublic() {
   // (with the host's text + font/colour/size/position overrides + photo) when
   // available, otherwise the hosted cover image (uploaded / canvas designs).
   const hasTemplateDesign = !!(template?.layout && event.form_data);
-  const hasDesign = hasTemplateDesign || !!event.cover_image_url;
+  // Some older uploaded cover URLs were persisted with an empty trailing '?'.
+  // It is harmless for most browsers but can prevent a direct image request in
+  // stricter environments, so normalize it before rendering the public hero.
+  const coverImageUrl = event.cover_image_url?.replace(/\?$/, '') || null;
+  const hasDesign = hasTemplateDesign || !!coverImageUrl;
   const aspect = template?.layout
     ? `${template.layout.naturalWidth} / ${template.layout.naturalHeight}`
     : '9 / 16';
@@ -99,8 +111,8 @@ export default function EventPublic() {
         />
       );
     }
-    if (event.cover_image_url) {
-      return <img src={event.cover_image_url} alt={event.title} className="w-full h-full object-cover" />;
+    if (coverImageUrl) {
+      return <img src={coverImageUrl} alt={event.title} loading="eager" decoding="async" className="w-full h-full object-cover" />;
     }
     return null;
   };
@@ -111,12 +123,38 @@ export default function EventPublic() {
         {/* Designed invitation */}
         {hasDesign && (
           <div className="mb-9">
-            <div
-              data-preserve-theme
-              className="relative w-full mx-auto overflow-hidden rounded-sm shadow-2xl border border-white/[0.06] bg-[#0d1512]"
-              style={{ aspectRatio: aspect, maxWidth: 420 }}
+            <button
+              type="button"
+              data-testid="public-invitation"
+              aria-label="Open invitation preview"
+              onClick={() => setShowInvitation(true)}
+              className="group relative block w-full mx-auto cursor-zoom-in rounded-sm text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#9cb092] focus-visible:ring-offset-4 focus-visible:ring-offset-[#e8eee2]"
+              style={{ maxWidth: 420 }}
             >
-              {renderInvitation()}
+              <div
+                data-preserve-theme
+                className="relative w-full overflow-hidden rounded-sm shadow-2xl border border-white/[0.06] bg-[#0d1512]"
+                style={{ aspectRatio: aspect }}
+              >
+                {renderInvitation()}
+                <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-[#0d1512]/75 to-transparent px-4 pb-3 pt-10 font-display text-[9px] uppercase tracking-[0.2em] text-white/90 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                  <span className="material-icons text-sm">zoom_in</span>
+                  Tap to view full invitation
+                </span>
+              </div>
+            </button>
+            <div className="mt-5 flex flex-col items-center gap-2 text-center">
+              <p className="font-display text-[9px] uppercase tracking-[0.24em] text-[#44533e]/65">
+                Invitation preview · tap to enlarge
+              </p>
+              <button
+                type="button"
+                onClick={scrollToRsvp}
+                className="inline-flex items-center gap-2 rounded-full border border-[#5f7256]/35 bg-[#fdfefb]/75 px-4 py-2 font-display text-[10px] uppercase tracking-[0.2em] text-[#405138] transition hover:border-[#405138] hover:bg-white"
+              >
+                Scroll down to RSVP
+                <span className="material-icons text-base">south</span>
+              </button>
             </div>
           </div>
         )}
@@ -158,9 +196,10 @@ export default function EventPublic() {
             </div>
           )}
 
-          {/* Actions */}
-          <div className={`flex flex-col sm:flex-row gap-3 ${hasDesign ? 'justify-center' : ''}`}>
-            {bookPages.length > 0 && (
+          {/* Optional invitation book — sharing is intentionally omitted here;
+              guests already arrived through the host's invite link. */}
+          {bookPages.length > 0 && (
+            <div className={`flex flex-col sm:flex-row gap-3 ${hasDesign ? 'justify-center' : ''}`}>
               <button
                 onClick={() => setShowBook(true)}
                 className="flex-1 py-3 border border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
@@ -168,15 +207,8 @@ export default function EventPublic() {
                 <span className="material-icons text-sm">menu_book</span>
                 View Invitation Book
               </button>
-            )}
-            <button
-              onClick={handleShare}
-              className="flex-1 py-3 border border-[#9cb092]/30 hover:border-[#9cb092]/60 bg-[#9cb092]/5 hover:bg-[#9cb092]/10 transition-all font-display text-[10px] tracking-[0.2em] uppercase text-[#9cb092] flex items-center justify-center gap-2"
-            >
-              <span className="material-icons text-sm">share</span>
-              Share Event
-            </button>
-          </div>
+            </div>
+          )}
 
           <div className="my-9 flex items-center gap-3" aria-hidden="true">
             <span className="h-px flex-1 bg-[#5f7256]/25" />
@@ -184,7 +216,7 @@ export default function EventPublic() {
             <span className="h-px flex-1 bg-[#5f7256]/25" />
           </div>
 
-          <section className="border border-[#5f7256]/25 bg-[#fdfefb]/85 p-5 text-left shadow-[0_16px_50px_rgba(61,74,53,0.12)] backdrop-blur-sm sm:p-7" aria-labelledby="public-rsvp-heading">
+          <section ref={rsvpSectionRef} className="scroll-mt-6 border border-[#5f7256]/25 bg-[#fdfefb]/85 p-5 text-left shadow-[0_16px_50px_rgba(61,74,53,0.12)] backdrop-blur-sm sm:p-7" aria-labelledby="public-rsvp-heading">
             <div className="mb-6 text-center">
               <p className="font-display text-[9px] uppercase tracking-[0.28em] text-[#405138]">Guest RSVP</p>
               <h2 id="public-rsvp-heading" className="mt-1 font-serif-exp text-2xl italic text-[#2a3328]">Let the host know</h2>
@@ -194,6 +226,34 @@ export default function EventPublic() {
           </section>
         </div>
       </div>
+
+      {showInvitation && (
+        <div
+          data-testid="invitation-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Invitation preview"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0d1512]/90 p-4 backdrop-blur-md"
+          onClick={() => setShowInvitation(false)}
+        >
+          <button
+            type="button"
+            aria-label="Close invitation preview"
+            onClick={() => setShowInvitation(false)}
+            className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-[#0d1512]/70 text-white transition hover:border-[#9cb092] hover:text-[#9cb092]"
+          >
+            <span className="material-icons">close</span>
+          </button>
+          <div
+            data-preserve-theme
+            className="relative max-h-[90vh] w-[min(92vw,520px)] overflow-hidden rounded-sm bg-[#0d1512] shadow-2xl"
+            style={{ aspectRatio: aspect }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {renderInvitation()}
+          </div>
+        </div>
+      )}
 
       {showBook && (
         <div

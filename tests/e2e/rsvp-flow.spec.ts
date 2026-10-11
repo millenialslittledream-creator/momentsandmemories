@@ -154,3 +154,41 @@ test('shareable event link requires contact details and submits configured RSVP 
     message: 'Looking forward to it',
   });
 });
+
+test('public invitation is the first view and opens as a full preview', async ({ page }) => {
+  const previewEventId = '33333333-3333-4333-8333-333333333333';
+  const invitationImage = 'data:image/svg+xml,%3Csvg xmlns=%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width=%229%22 height=%2216%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%239cb092%22%2F%3E%3C%2Fsvg%3E';
+
+  await page.route(`**/public/events/${previewEventId}/book`, (route) => route.fulfill({ status: 404, contentType: 'application/json', body: '{}' }));
+  await page.route(`**/public/events/${previewEventId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: previewEventId,
+        title: 'Preview Celebration',
+        description: 'A celebration preview.',
+        event_date: '2027-05-20',
+        event_time: '18:00',
+        location: 'Garden Hall',
+        cover_image_url: invitationImage,
+        rsvp_enabled: true,
+        invitee_count: 0,
+        template_id: null,
+        form_data: null,
+        customization: null,
+        rsvp_config: { enabled: true, responseOptions: { yes: true, no: true, maybe: false }, collectGuestCount: true, collectKidsCount: false, collectFoodPreference: false, collectAdditionalInfo: true, childAgeCutoff: 12 },
+      }),
+    });
+  });
+
+  await page.goto(`/event/${previewEventId}`);
+  await expect(page.getByTestId('public-invitation')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Scroll down to RSVP/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Share Event' })).toHaveCount(0);
+
+  await page.getByTestId('public-invitation').click();
+  await expect(page.getByTestId('invitation-lightbox')).toBeVisible();
+  await page.getByRole('button', { name: 'Close invitation preview' }).click();
+  await expect(page.getByTestId('invitation-lightbox')).toHaveCount(0);
+});

@@ -225,6 +225,7 @@ export default function CreateEvite() {
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
+  const [messageCopied, setMessageCopied] = useState(false);
 
   // ── Resume-in-progress prompt (H10) ──────────────────────────────────
   // If the host left a half-finished evite behind (saved in localStorage),
@@ -2767,7 +2768,26 @@ export default function CreateEvite() {
         shareLines.push('', '🔗 RSVP & Evite Details:');
         const shareBody = shareLines.join('\n');
         const shareMsg = `${shareBody}\n${shareUrl}`;
-        const waHref = `https://wa.me/?text=${encodeURIComponent(shareMsg)}`;
+
+        // WhatsApp's web hand-off can replace some four-byte emoji with � on
+        // older desktop/browser builds. Use a conservative BMP-only fallback
+        // for that hand-off while keeping the richer message for copy/email.
+        const whatsappEmoji: Record<EventType, string> = {
+          birthday: '\u2728\u2665',
+          marriage: '\u2665\u2728',
+          babyshower: '\u2728\u2665',
+          bridetobe: '\u2728\u2665',
+          genderreveal: '\u2726\u2665',
+          housewarming: '\u2302\u2728',
+          custom: '\u2728',
+        };
+        const whatsappLines = [`Please join us as we celebrate ${shareTitle} ${flavor.phrase}! ${whatsappEmoji[currentEventType ?? 'custom']}`];
+        if (formData.customMessage?.trim()) whatsappLines.push(formData.customMessage.trim());
+        if (formData.venue) whatsappLines.push(`Where: ${formData.venue}`);
+        if (shareWhen) whatsappLines.push(`When: ${shareWhen}`);
+        whatsappLines.push('', 'RSVP & Evite Details:');
+        const whatsappMsg = `${whatsappLines.join('\n')}\n${shareUrl}`;
+        const waHref = `https://wa.me/?${new URLSearchParams({ text: whatsappMsg }).toString()}`;
         const mailHref = `mailto:?subject=${encodeURIComponent(`You're invited: ${shareTitle}`)}&body=${encodeURIComponent(shareMsg)}`;
         // Keep the primary copy action literal: copy exactly the visible link.
         const copyLink = () => {
@@ -2775,6 +2795,12 @@ export default function CreateEvite() {
           navigator.clipboard.writeText(shareUrl);
           setLinkCopied(true);
           setTimeout(() => setLinkCopied(false), 2000);
+        };
+        const copyMessage = () => {
+          if (!shareMsg) return;
+          navigator.clipboard.writeText(shareMsg);
+          setMessageCopied(true);
+          setTimeout(() => setMessageCopied(false), 2000);
         };
         const nativeShare = async () => {
           if (!shareUrl) return;
@@ -2801,7 +2827,7 @@ export default function CreateEvite() {
               </button>
 
               {/* Header */}
-              <div className="flex-shrink-0 px-6 md:px-10 pt-2.5 pb-3 border-b border-white/[0.06]">
+              <div className="flex-shrink-0 px-6 md:px-10 pl-32 md:pl-44 pr-14 pt-2.5 pb-3 border-b border-white/[0.06]">
                 <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight">
                   Your invitation is <span className="text-[#9cb092] font-agatho italic">live</span>
                 </h2>
@@ -2839,10 +2865,29 @@ export default function CreateEvite() {
                         <span className="material-icons text-sm">chat_bubble_outline</span>
                         Message guests will receive
                       </p>
-                      <div className="mb-4 px-4 py-3.5 bg-white/[0.05] border border-white/12 max-h-44 overflow-y-auto scrollbar-subtle">
-                        <p className="font-display text-[12px] leading-relaxed text-[#e4eee1]/85 whitespace-pre-line break-words">
-                          {shareMsg}
-                        </p>
+                      <div className="mb-4 bg-white/[0.05] border border-white/12">
+                        <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2.5">
+                          <span className="font-display text-[9px] uppercase tracking-[0.18em] text-[#b2c3b1]/60">
+                            Full message + link
+                          </span>
+                          <button
+                            type="button"
+                            onClick={copyMessage}
+                            className={`flex-shrink-0 inline-flex items-center gap-1.5 border px-3 py-1.5 font-display text-[9px] uppercase tracking-[0.15em] transition-colors ${
+                              messageCopied
+                                ? 'border-[#9cb092]/50 bg-[#9cb092]/20 text-[#9cb092]'
+                                : 'border-[#9cb092]/35 text-[#b2c3b1] hover:border-[#9cb092] hover:text-[#e4eee1]'
+                            }`}
+                          >
+                            <span className="material-icons text-sm">{messageCopied ? 'check' : 'content_copy'}</span>
+                            {messageCopied ? 'Copied' : 'Copy full message'}
+                          </button>
+                        </div>
+                        <div className="max-h-44 overflow-y-auto px-4 py-3.5 scrollbar-subtle">
+                          <p className="font-display text-[12px] leading-relaxed text-[#e4eee1]/85 whitespace-pre-line break-words">
+                            {shareMsg}
+                          </p>
+                        </div>
                       </div>
 
                       {/* Link + copy */}
