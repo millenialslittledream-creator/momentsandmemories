@@ -124,6 +124,8 @@ def test_rsvp_stats_count_people_and_each_meal_quantity():
             "kids_count": 1,
             "meal_preferences": {"Vegetarian": 2, "Kids Meal": 1},
             "dietary_requirements": "One gluten-free meal",
+            "rsvp_message": "We cannot wait",
+            "source": "share_link",
         },
         {
             "name": "Ravi",
@@ -144,3 +146,6 @@ def test_rsvp_stats_count_people_and_each_meal_quantity():
     assert stats["total_people"] == 5
     assert stats["food_preferences"] == {"Vegetarian": 2, "Kids Meal": 1, "Non-Vegetarian": 2}
     assert stats["guests"][0]["dietary_requirements"] == "One gluten-free meal"
+    assert stats["guests"][0]["adults_count"] == 2
+    assert stats["guests"][0]["rsvp_message"] == "We cannot wait"
+    assert stats["guests"][0]["source"] == "share_link"

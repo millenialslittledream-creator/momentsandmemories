@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from uuid import UUID
-from public.schemas import RSVPRequest
+from public.schemas import OpenRSVPRequest, RSVPRequest
 from public import service
 from gallery import service as gallery_service
 from middleware.ratelimit import ip_limit
@@ -92,6 +92,28 @@ def submit_rsvp(event_id: str, invitee_id: str, data: RSVPRequest):
     try:
         return service.submit_rsvp(
             event_id, invitee_id,
+            data.status,
+            data.message or "",
+            data.dietary_requirements or "",
+            data.party_size,
+            data.kids_count,
+            data.food_preference,
+            data.adults_count,
+            data.children_count,
+            data.meal_preferences,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/events/{event_id}/rsvp", dependencies=[Depends(ip_limit("open-rsvp", 15, 60))])
+def submit_open_rsvp(event_id: str, data: OpenRSVPRequest):
+    """Create and record an RSVP from the event's public share link."""
+    event_id = _validated_uuid(event_id, "Event")
+    try:
+        return service.submit_open_rsvp(
+            event_id,
+            data.name,
             data.status,
             data.message or "",
             data.dietary_requirements or "",

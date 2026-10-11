@@ -144,12 +144,16 @@ def _build_rsvp_stats(rows: list[dict], include_guests: bool = True) -> dict:
             "name": r.get("name"),
             "email": r.get("email"),
             "phone": r.get("phone"),
+            "source": r.get("source") or "manual",
             "status": status_of(r),
             "party_size": r.get("party_size"),
             "kids_count": r.get("kids_count"),
+            "adults_count": max((r.get("party_size") or 0) - (r.get("kids_count") or 0), 0)
+            if status_of(r) == "accepted" else None,
             "food_preference": r.get("food_preference"),
             "meal_preferences": r.get("meal_preferences") or {},
             "dietary_requirements": r.get("dietary_requirements"),
+            "rsvp_message": r.get("rsvp_message"),
             "responded_at": r.get("responded_at"),
         }
         for r in rows
@@ -181,7 +185,7 @@ def get_rsvp_stats(user_id: str, event_id: str) -> dict:
         raise ValueError("Event not found")
     rows = (
         db.table("event_invitees")
-        .select("name,email,phone,rsvp_status,dietary_requirements,party_size,kids_count,food_preference,meal_preferences,responded_at")
+        .select("name,email,phone,source,rsvp_status,rsvp_message,dietary_requirements,party_size,kids_count,food_preference,meal_preferences,responded_at")
         .eq("event_id", event_id)
         .execute()
         .data
@@ -204,7 +208,7 @@ def get_overall_rsvp_summary(user_id: str) -> dict:
     if event_ids:
         rows = (
             db.table("event_invitees")
-            .select("event_id,name,email,phone,rsvp_status,dietary_requirements,party_size,kids_count,food_preference,meal_preferences,responded_at")
+            .select("event_id,name,email,phone,source,rsvp_status,rsvp_message,dietary_requirements,party_size,kids_count,food_preference,meal_preferences,responded_at")
             .in_("event_id", event_ids)
             .execute()
             .data

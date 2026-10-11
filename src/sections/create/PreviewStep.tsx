@@ -500,7 +500,7 @@ export default function PreviewStep({
             if (e.target === e.currentTarget) setRsvpEditing(false);
           }}
         >
-          <div className="product-light-shell relative w-full max-w-md border shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="product-light-shell relative flex max-h-[92vh] w-full max-w-4xl flex-col border shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.07]">
               <h3 className="font-serif-exp text-base text-[#e4eee1] flex items-center gap-2">
                 <span className="material-icons text-[#9cb092] text-lg">how_to_reg</span>
@@ -514,16 +514,18 @@ export default function PreviewStep({
               </button>
             </div>
 
-            <div className="px-5 py-4 space-y-3">
-              <RsvpToggleRow
+            <div className="scrollbar-subtle overflow-y-auto px-5 py-4">
+              <div className="grid gap-5 md:grid-cols-[1.05fr_0.95fr]">
+                <div className="space-y-3">
+                  <RsvpToggleRow
                 label="Collect RSVPs from guests"
                 sub="Let guests confirm whether they'll attend."
                 on={rsvpSettings.enabled}
                 onToggle={() => patchRsvp({ enabled: !rsvpSettings.enabled })}
-              />
+                  />
 
-              {rsvpSettings.enabled && (
-                <div className="space-y-3 pt-1 border-t border-white/[0.06]">
+                  {rsvpSettings.enabled && (
+                    <div className="space-y-3 pt-1 border-t border-white/[0.06]">
                   <div>
                     <p className="font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]/60 mb-1.5">
                       Response Options
@@ -551,14 +553,14 @@ export default function PreviewStep({
                   </div>
 
                   <RsvpToggleRow
-                    label="Guests Count"
-                    sub="Ask how many people are coming."
+                    label="Adult Count"
+                    sub="Ask how many adults are coming, including the guest."
                     on={rsvpSettings.collectGuestCount}
                     onToggle={() => patchRsvp({ collectGuestCount: !rsvpSettings.collectGuestCount })}
                   />
                   <RsvpToggleRow
-                    label="Kids Count"
-                    sub="Ask how many children are attending."
+                    label="Children Count"
+                    sub="Ask separately how many children are attending."
                     on={rsvpSettings.collectKidsCount}
                     onToggle={() => patchRsvp({ collectKidsCount: !rsvpSettings.collectKidsCount })}
                   />
@@ -624,8 +626,59 @@ export default function PreviewStep({
                     on={rsvpSettings.collectAdditionalInfo}
                     onToggle={() => patchRsvp({ collectAdditionalInfo: !rsvpSettings.collectAdditionalInfo })}
                   />
+                    </div>
+                  )}
                 </div>
-              )}
+
+                <div className="self-start border border-[#5f7256]/25 bg-white/65 p-4 shadow-sm md:sticky md:top-0" data-testid="rsvp-settings-preview">
+                  <div className="mb-4 flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-display text-[8px] uppercase tracking-[0.24em] text-[#405138]">Share-link preview</p>
+                      <h4 className="mt-1 font-serif-exp text-lg italic text-[#2a3328]">What every guest will see</h4>
+                    </div>
+                    <span className={`rounded-full px-2 py-1 font-display text-[7px] uppercase tracking-[0.12em] ${rsvpSettings.enabled ? 'bg-[#dfe7db] text-[#405138]' : 'bg-[#eee8dc] text-[#6f6658]'}`}>{rsvpSettings.enabled ? 'Live' : 'Off'}</span>
+                  </div>
+                  {!rsvpSettings.enabled ? (
+                    <div className="rounded-lg border border-[#5f7256]/20 bg-[#f7f2e8]/75 px-4 py-8 text-center">
+                      <span className="material-icons text-2xl text-[#5f7256]/55">event_busy</span>
+                      <p className="mt-2 text-sm text-[#44533e]/75">The invitation opens normally, but no RSVP form is shown.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 text-left">
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-[#2a3328]">Guest name <span className="text-red-700">*</span></label>
+                        <div className="rounded-lg border border-[#5f7256]/30 bg-white/80 px-3 py-2 text-xs text-[#44533e]/55">Required before RSVP questions</div>
+                      </div>
+                      <div>
+                        <p className="mb-1.5 text-xs font-semibold text-[#2a3328]">Will you be attending?</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className="rounded-full border border-[#5f7256]/35 bg-[#eef2e9] px-2.5 py-1 text-[10px] text-[#2a3328]">Yes</span>
+                          <span className="rounded-full border border-[#5f7256]/35 bg-white/75 px-2.5 py-1 text-[10px] text-[#2a3328]">No</span>
+                          {rsvpSettings.responseOptions.maybe && <span className="rounded-full border border-[#5f7256]/35 bg-white/75 px-2.5 py-1 text-[10px] text-[#2a3328]">Maybe</span>}
+                        </div>
+                      </div>
+                      {(rsvpSettings.collectGuestCount || rsvpSettings.collectKidsCount) && (
+                        <div className="rounded-lg border border-[#5f7256]/20 bg-white/65 p-3">
+                          <p className="text-xs font-semibold text-[#2a3328]">Number of attendees</p>
+                          <div className="mt-2 space-y-1 text-[11px] text-[#44533e]/75">
+                            {rsvpSettings.collectGuestCount && <div className="flex justify-between"><span>Adults (including yourself)</span><strong>1</strong></div>}
+                            {rsvpSettings.collectKidsCount && <div className="flex justify-between"><span>Children under {rsvpSettings.childAgeCutoff}</span><strong>0</strong></div>}
+                          </div>
+                        </div>
+                      )}
+                      {rsvpSettings.collectFoodPreference && (
+                        <div>
+                          <p className="text-xs font-semibold text-[#2a3328]">Food preferences + quantities</p>
+                          <div className="mt-1.5 flex flex-wrap gap-1">{rsvpSettings.foodOptions.map((option) => <span key={option} className="border border-[#5f7256]/25 bg-white/75 px-2 py-1 text-[9px] text-[#44533e]">{option}</span>)}</div>
+                          <p className="mt-1.5 text-[10px] text-[#44533e]/65">Meal quantities must equal total attendees.</p>
+                        </div>
+                      )}
+                      {rsvpSettings.collectAdditionalInfo && <div className="rounded-lg border border-[#5f7256]/20 bg-white/65 p-3 text-[11px] text-[#44533e]/75">Special dietary needs + optional message to host</div>}
+                      <div className="rounded-full bg-[#20251f] py-2.5 text-center font-display text-[8px] uppercase tracking-[0.2em] text-white">Confirm RSVP</div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="px-5 py-3 border-t border-white/[0.07] flex justify-end">

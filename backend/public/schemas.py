@@ -26,6 +26,12 @@ class RSVPRequest(BaseModel):
     meal_preferences: Dict[str, int] = Field(default_factory=dict, max_length=30)
 
 
+class OpenRSVPRequest(RSVPRequest):
+    """RSVP submitted from an event's public share link."""
+
+    name: str = Field(min_length=1, max_length=100)
+
+
 class RSVPResponse(BaseModel):
     invitee_id: str
     status: str

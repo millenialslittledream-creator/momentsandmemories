@@ -292,6 +292,7 @@
   /* Keep bokeh decoration behind the usable product surface. */
   .hero-bokeh-bg > .product-light-shell:not([class*="fixed"]) {
     z-index: 3;
+    background-color: rgba(247, 242, 232, 0.9) !important;
   }
 
   .hero-bokeh-bg.product-light-shell > :not([class*="fixed"]),
@@ -339,6 +340,39 @@
 
   .product-light-shell :not([data-preserve-theme], [data-preserve-theme] *)[class*="border-white"] {
     border-color: rgba(42, 51, 40, 0.16) !important;
+  }
+
+  /* Dark-flow controls originally used translucent white labels. On the shared
+     light homepage background those labels became almost invisible, especially
+     for disabled Continue buttons. Keep disabled state obvious without hiding
+     the action or its reason from the user. */
+  .product-light-shell :not([data-preserve-theme], [data-preserve-theme] *)[class*="text-white/20"],
+  .product-light-shell :not([data-preserve-theme], [data-preserve-theme] *)[class*="text-white/30"],
+  .product-light-shell :not([data-preserve-theme], [data-preserve-theme] *)[class*="text-white/40"] {
+    color: #596653 !important;
+  }
+
+  .product-light-shell button[class*="border-white/15"],
+  .product-light-shell button[class*="border-white/20"] {
+    border-color: rgba(42, 51, 40, 0.34) !important;
+    background-color: rgba(255, 255, 255, 0.28);
+  }
+
+  .product-light-shell button:disabled[class*="bg-white/5"],
+  .product-light-shell button:disabled[class*="bg-white/[0.05]"] {
+    border-color: rgba(42, 51, 40, 0.26) !important;
+    background-color: rgba(255, 255, 255, 0.5) !important;
+    color: #65705f !important;
+    opacity: 1 !important;
+  }
+
+  .product-light-shell button:focus-visible,
+  .product-light-shell a:focus-visible,
+  .product-light-shell input:focus-visible,
+  .product-light-shell select:focus-visible,
+  .product-light-shell textarea:focus-visible {
+    outline: 2px solid #3d4a35;
+    outline-offset: 2px;
   }
 
   .product-light-shell :not([data-preserve-theme], [data-preserve-theme] *) input:not([type="color"]),

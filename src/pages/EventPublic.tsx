@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import BookViewer, { type BookPage } from '@/components/BookBuilder/BookViewer';
 import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRenderer';
 import { eviteTemplates, type TemplateFieldLayout } from '@/data/eviteTemplates';
+import GuestRSVPForm from '@/components/GuestRSVPForm';
+import type { RSVPConfig } from '@/lib/api';
 
 interface PublicEvent {
   id: string;
@@ -15,6 +17,7 @@ interface PublicEvent {
   location: string | null;
   cover_image_url: string | null;
   rsvp_enabled: boolean;
+  rsvp_config?: Partial<RSVPConfig>;
   invitee_count: number;
   template_id: string | null;
   form_data: Record<string, string> | null;
@@ -174,6 +177,21 @@ export default function EventPublic() {
               Share Event
             </button>
           </div>
+
+          <div className="my-9 flex items-center gap-3" aria-hidden="true">
+            <span className="h-px flex-1 bg-[#5f7256]/25" />
+            <span className="material-icons text-lg text-[#405138]/70">how_to_reg</span>
+            <span className="h-px flex-1 bg-[#5f7256]/25" />
+          </div>
+
+          <section className="border border-[#5f7256]/25 bg-[#fdfefb]/85 p-5 text-left shadow-[0_16px_50px_rgba(61,74,53,0.12)] backdrop-blur-sm sm:p-7" aria-labelledby="public-rsvp-heading">
+            <div className="mb-6 text-center">
+              <p className="font-display text-[9px] uppercase tracking-[0.28em] text-[#405138]">Guest RSVP</p>
+              <h2 id="public-rsvp-heading" className="mt-1 font-serif-exp text-2xl italic text-[#2a3328]">Let the host know</h2>
+              <p className="mt-2 text-sm text-[#44533e]/75">Your answers are added directly to the host’s event analytics.</p>
+            </div>
+            <GuestRSVPForm eventId={event.id} event={event} requireName />
+          </section>
         </div>
       </div>
 
