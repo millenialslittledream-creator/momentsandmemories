@@ -60,6 +60,16 @@ async function installApiMocks(page: Page) {
     template_id: null,
     form_data: null,
     customization: null,
+    rsvp_config: {
+      enabled: true,
+      responseOptions: { yes: true, no: true, maybe: false },
+      collectGuestCount: true,
+      collectKidsCount: true,
+      collectFoodPreference: true,
+      foodOptions: ['Vegetarian', 'Non-Vegetarian', 'Kids Meal'],
+      collectAdditionalInfo: true,
+      childAgeCutoff: 12,
+    },
     status: 'published',
     created_at: new Date().toISOString(),
   };
@@ -223,7 +233,10 @@ test('protected dashboard nested surfaces render with test-only authentication',
 
   await page.getByRole('button', { name: /RSVPs/ }).click();
   await expect(page.getByText('Attendance Summary')).toBeVisible();
-  await page.screenshot({ path: 'test-results/release-route-audit/desktop/dashboard-event-analytics.png' });
+  await expect(page.getByRole('columnheader', { name: 'Adults' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Dietary notes' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Message' })).toBeVisible();
+  await page.screenshot({ path: 'test-results/release-route-audit/desktop/dashboard-event-analytics.png', fullPage: true });
 
   await page.getByRole('button', { name: 'Messages' }).click();
   await expect(page.getByText(/No messages yet|Messages/).first()).toBeVisible();

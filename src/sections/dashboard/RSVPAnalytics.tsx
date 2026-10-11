@@ -24,15 +24,23 @@ const GROUP_COLORS: Record<string, string> = {
 export default function RSVPAnalytics({ eventId, eventTitle, refreshToken = 0 }: Props) {
   const [stats, setStats] = useState<RSVPStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [retryToken, setRetryToken] = useState(0);
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
     api
       .getEventRSVPStats(eventId)
-      .then(setStats)
-      .catch(() => setStats(null))
+      .then((next) => {
+        setLoadError('');
+        setStats(next);
+      })
+      .catch(() => {
+        setStats(null);
+        setLoadError('Event analytics could not be loaded. Your RSVP data is still safe.');
+      })
       .finally(() => setLoading(false));
-  }, [eventId, refreshToken]);
+  }, [eventId, refreshToken, retryToken]);
 
   const pct = (n: number) => (stats && stats.total > 0 ? Math.round((n / stats.total) * 100) : 0);
 
@@ -60,7 +68,12 @@ export default function RSVPAnalytics({ eventId, eventTitle, refreshToken = 0 }:
         <div className="w-5 h-5 border-2 border-[#5f7256]/30 border-t-[#9cb092] rounded-full animate-spin" />
       </div>
     );
-  if (!stats) return null;
+  if (!stats) return (
+    <div className="my-3 border border-amber-800/20 bg-amber-50/70 p-5 text-center" role="alert">
+      <p className="text-sm font-medium text-amber-950">{loadError || 'Event analytics are unavailable.'}</p>
+      <button type="button" onClick={() => { setLoading(true); setLoadError(''); setRetryToken((value) => value + 1); }} className="mt-3 border border-amber-900/30 bg-white/60 px-4 py-2 font-display text-[9px] uppercase tracking-[0.16em] text-amber-950">Retry analytics</button>
+    </div>
+  );
 
   const maybe = stats.maybe;
   const adults = stats.adults;
@@ -222,10 +235,10 @@ export default function RSVPAnalytics({ eventId, eventTitle, refreshToken = 0 }:
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse min-w-[560px]">
+          <table className="w-full border-collapse min-w-[1040px]">
             <thead>
               <tr className="border-b border-[#3d4a35]/12">
-                {['Guest', 'Contact', 'Status', 'Attending', 'Children', 'Meals', 'Dietary notes', 'Responded'].map((h) => (
+                {['Guest', 'Contact', 'Status', 'Adults', 'Children', 'Total', 'Meals', 'Dietary notes', 'Message', 'Source', 'Responded'].map((h) => (
                   <th key={h} className="text-left px-3 py-2 font-display text-[8px] tracking-[0.12em] uppercase text-[#5f7256]/70">{h}</th>
                 ))}
               </tr>
@@ -233,7 +246,7 @@ export default function RSVPAnalytics({ eventId, eventTitle, refreshToken = 0 }:
             <tbody>
               {filteredGuests.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-3 py-6 text-center font-display text-[10px] text-[#5a6c50]/35">
+                  <td colSpan={11} className="px-3 py-6 text-center font-display text-[10px] text-[#5a6c50]/55">
                     No guests in this view yet.
                   </td>
                 </tr>
@@ -249,16 +262,19 @@ export default function RSVPAnalytics({ eventId, eventTitle, refreshToken = 0 }:
                           {meta.label}
                         </span>
                       </td>
-                      <td className="px-3 py-2 font-display text-[10px] text-[#5a6c50]/70">{g.party_size ?? '—'}</td>
+                      <td className="px-3 py-2 font-display text-[10px] text-[#5a6c50]/70">{g.adults_count ?? '—'}</td>
                       <td className="px-3 py-2 font-display text-[10px] text-[#5a6c50]/70">{g.kids_count ?? '—'}</td>
+                      <td className="px-3 py-2 font-display text-[10px] font-semibold text-[#2a3328]">{g.party_size ?? '—'}</td>
                       <td className="px-3 py-2 font-display text-[10px] text-[#5a6c50]/70">
                         {Object.entries(g.meal_preferences ?? {}).length
                           ? Object.entries(g.meal_preferences).map(([meal, count]) => `${meal} × ${count}`).join(', ')
                           : g.food_preference || '—'}
                       </td>
                       <td className="px-3 py-2 font-display text-[10px] text-[#5a6c50]/70">{g.dietary_requirements || '—'}</td>
+                      <td className="max-w-[220px] px-3 py-2 font-display text-[10px] text-[#5a6c50]/70">{g.rsvp_message || '—'}</td>
+                      <td className="px-3 py-2 font-display text-[9px] uppercase tracking-[0.08em] text-[#5a6c50]/55">{g.source === 'share_link' ? 'Share link' : g.source || 'Manual'}</td>
                       <td className="px-3 py-2 font-display text-[9px] text-[#5a6c50]/50">
-                        {g.responded_at ? new Date(g.responded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+                        {g.responded_at ? new Date(g.responded_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'}
                       </td>
                     </tr>
                   );

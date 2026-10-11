@@ -122,3 +122,68 @@ def test_public_route_passes_normalized_uuid_to_service():
 
     get_event.assert_called_once_with(expected)
     assert result == {"id": expected}
+
+
+def test_share_link_rsvp_creates_named_guest_and_updates_all_analytics(client, fake_db):
+    headers = {"Authorization": "Bearer token-alice"}
+    event = client.post("/events", headers=headers, json={
+        "title": "Analytics Dinner",
+        "event_date": "2027-02-12",
+        "status": "published",
+        "rsvp_enabled": True,
+        "rsvp_config": {
+            "enabled": True,
+            "responseOptions": {"yes": True, "no": True, "maybe": False},
+            "collectGuestCount": True,
+            "collectKidsCount": True,
+            "collectFoodPreference": True,
+            "foodOptions": ["Vegetarian", "Kids Meal"],
+            "collectAdditionalInfo": True,
+            "childAgeCutoff": 12,
+        },
+    }).json()
+
+    response = client.post(f"/public/events/{event['id']}/rsvp", json={
+        "name": "  Maya   Shah  ",
+        "status": "accepted",
+        "message": "Looking forward to it",
+        "dietary_requirements": "One meal must be nut-free",
+        "adults_count": 2,
+        "children_count": 1,
+        "meal_preferences": {"Vegetarian": 2, "Kids Meal": 1},
+    })
+    assert response.status_code == 200
+    invitee_id = response.json()["invitee_id"]
+
+    stored = next(row for row in fake_db.STORE["event_invitees"] if row["id"] == invitee_id)
+    assert stored["name"] == "Maya Shah"
+    assert stored["source"] == "share_link"
+    assert stored["party_size"] == 3
+
+    event_stats = client.get(f"/events/{event['id']}/rsvp-stats", headers=headers).json()
+    assert event_stats["adults"] == 2
+    assert event_stats["kids"] == 1
+    assert event_stats["food_preferences"] == {"Vegetarian": 2, "Kids Meal": 1}
+    guest = event_stats["guests"][0]
+    assert guest["name"] == "Maya Shah"
+    assert guest["adults_count"] == 2
+    assert guest["rsvp_message"] == "Looking forward to it"
+    assert guest["dietary_requirements"] == "One meal must be nut-free"
+    assert guest["source"] == "share_link"
+
+    overall = client.get("/events/rsvp-summary", headers=headers).json()
+    assert overall["totals"]["total_people"] == 3
+    assert overall["totals"]["food_preferences"]["Vegetarian"] == 2
+    assert overall["events"][0]["event_title"] == "Analytics Dinner"
+
+
+def test_share_link_rsvp_requires_a_non_blank_name(client, fake_db):
+    headers = {"Authorization": "Bearer token-alice"}
+    event = client.post("/events", headers=headers, json={
+        "title": "Named Guests Only", "event_date": "2027-02-12", "status": "published",
+    }).json()
+    response = client.post(f"/public/events/{event['id']}/rsvp", json={
+        "name": "   ", "status": "declined",
+    })
+    assert response.status_code == 400
+    assert fake_db.STORE.get("event_invitees", []) == []

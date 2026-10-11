@@ -83,3 +83,71 @@ test('guest allocates meals for every attendee and can update the RSVP', async (
   await page.getByRole('button', { name: 'Update RSVP' }).click();
   await expect(page.getByText('Number of attendees')).toBeVisible();
 });
+
+test('shareable event link requires a name and submits configured RSVP fields', async ({ page }) => {
+  let submitted: Record<string, unknown> | null = null;
+  await page.route(`**/public/events/${eventId}/book`, (route) => route.fulfill({ status: 404, contentType: 'application/json', body: '{}' }));
+  await page.route(`**/public/events/${eventId}/rsvp`, async (route) => {
+    submitted = route.request().postDataJSON();
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ invitee_id: inviteeId, status: 'accepted' }) });
+  });
+  await page.route(`**/public/events/${eventId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: eventId,
+        title: 'Garden Celebration',
+        description: 'Please RSVP below.',
+        event_date: '2027-02-12',
+        event_time: '18:00',
+        location: 'Garden Hall',
+        cover_image_url: null,
+        rsvp_enabled: true,
+        invitee_count: 0,
+        template_id: null,
+        form_data: null,
+        customization: null,
+        rsvp_config: {
+          enabled: true,
+          responseOptions: { yes: true, no: true, maybe: false },
+          collectGuestCount: true,
+          collectKidsCount: false,
+          collectFoodPreference: true,
+          foodOptions: ['Vegetarian', 'Vegan'],
+          collectAdditionalInfo: true,
+          childAgeCutoff: 12,
+        },
+      }),
+    });
+  });
+
+  await page.goto(`/event/${eventId}`);
+  await expect(page.getByRole('heading', { name: 'First, tell us your name' })).toBeVisible();
+  const continueButton = page.getByRole('button', { name: /Continue to RSVP/ });
+  await expect(continueButton).toBeDisabled();
+  await page.getByLabel('Guest name *').fill('Maya Shah');
+  await continueButton.click();
+
+  await expect(page.getByText('Responding as Maya Shah')).toBeVisible();
+  await page.getByText('Yes, I’ll be there!').click();
+  await expect(page.getByText('Adults')).toBeVisible();
+  await expect(page.getByText('Children')).toHaveCount(0);
+  await expect(page.getByRole('checkbox', { name: 'Vegan' })).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: 'Kids Meal' })).toHaveCount(0);
+  await page.getByRole('checkbox', { name: 'Vegetarian' }).check();
+  await page.getByLabel('Other / Special dietary needs (optional)').fill('Nut-free please');
+  await page.getByLabel('Message to host (optional)').fill('Looking forward to it');
+  await page.getByRole('button', { name: /Confirm RSVP/ }).click();
+
+  await expect(page.getByText('Your RSVP has been recorded for Maya Shah')).toBeVisible();
+  expect(submitted).toMatchObject({
+    name: 'Maya Shah',
+    status: 'accepted',
+    adults_count: 1,
+    children_count: null,
+    meal_preferences: { Vegetarian: 1 },
+    dietary_requirements: 'Nut-free please',
+    message: 'Looking forward to it',
+  });
+});

@@ -117,22 +117,7 @@ def get_invitee_for_rsvp(event_id: str, invitee_id: str) -> dict:
     return result.data[0]
 
 
-def submit_rsvp(
-    event_id: str,
-    invitee_id: str,
-    status: str,
-    message: str,
-    dietary_requirements: str,
-    party_size: int | None = None,
-    kids_count: int | None = None,
-    food_preference: str | None = None,
-    adults_count: int | None = None,
-    children_count: int | None = None,
-    meal_preferences: dict[str, int] | None = None,
-) -> dict:
-    if status not in VALID_RSVP_STATUSES:
-        raise ValueError(f"Invalid RSVP status: {status!r}. Must be 'accepted', 'declined', or 'maybe'")
-
+def _get_rsvp_event(event_id: str) -> tuple[dict, dict]:
     db = database.get_db()
     event_result = (
         db.table("events")
@@ -147,20 +132,27 @@ def submit_rsvp(
     config = normalize_rsvp_config(event.get("rsvp_config"))
     if not event.get("rsvp_enabled", True) or not config.get("enabled", True):
         raise ValueError("RSVPs are closed for this event")
+    return event, config
+
+
+def _build_rsvp_update(
+    status: str,
+    message: str,
+    dietary_requirements: str,
+    config: dict,
+    party_size: int | None = None,
+    kids_count: int | None = None,
+    food_preference: str | None = None,
+    adults_count: int | None = None,
+    children_count: int | None = None,
+    meal_preferences: dict[str, int] | None = None,
+) -> dict:
+    if status not in VALID_RSVP_STATUSES:
+        raise ValueError(f"Invalid RSVP status: {status!r}. Must be 'accepted', 'declined', or 'maybe'")
 
     status_key = {"accepted": "yes", "declined": "no", "maybe": "maybe"}[status]
     if not config["responseOptions"].get(status_key, False):
         raise ValueError("That RSVP response is not available for this event")
-
-    check = (
-        db.table("event_invitees")
-        .select("id")
-        .eq("id", invitee_id)
-        .eq("event_id", event_id)
-        .execute()
-    )
-    if not check.data:
-        raise ValueError("Invitee not found for this event")
 
     from datetime import datetime, timezone
     update = {
@@ -228,6 +220,47 @@ def submit_rsvp(
             "meal_preferences": {},
         })
 
+    return update
+
+
+def submit_rsvp(
+    event_id: str,
+    invitee_id: str,
+    status: str,
+    message: str,
+    dietary_requirements: str,
+    party_size: int | None = None,
+    kids_count: int | None = None,
+    food_preference: str | None = None,
+    adults_count: int | None = None,
+    children_count: int | None = None,
+    meal_preferences: dict[str, int] | None = None,
+) -> dict:
+    event, config = _get_rsvp_event(event_id)
+    db = database.get_db()
+    check = (
+        db.table("event_invitees")
+        .select("id")
+        .eq("id", invitee_id)
+        .eq("event_id", event_id)
+        .execute()
+    )
+    if not check.data:
+        raise ValueError("Invitee not found for this event")
+
+    update = _build_rsvp_update(
+        status,
+        message,
+        dietary_requirements,
+        config,
+        party_size,
+        kids_count,
+        food_preference,
+        adults_count,
+        children_count,
+        meal_preferences,
+    )
+
     db.table("event_invitees").update(update).eq("id", invitee_id).execute()
 
     _log(
@@ -238,6 +271,73 @@ def submit_rsvp(
             "event_id": event_id,
             "event_title": event.get("title"),
             "invitee_id": invitee_id,
+            "status": status,
+            "party_size": update.get("party_size"),
+        },
+    )
+    return {
+        "invitee_id": invitee_id,
+        "status": status,
+        "message": message,
+        "party_size": update.get("party_size"),
+        "kids_count": update.get("kids_count"),
+        "meal_preferences": update.get("meal_preferences", {}),
+    }
+
+
+def submit_open_rsvp(
+    event_id: str,
+    name: str,
+    status: str,
+    message: str,
+    dietary_requirements: str,
+    party_size: int | None = None,
+    kids_count: int | None = None,
+    food_preference: str | None = None,
+    adults_count: int | None = None,
+    children_count: int | None = None,
+    meal_preferences: dict[str, int] | None = None,
+) -> dict:
+    """Create an invitee and RSVP atomically from a public share link."""
+    cleaned_name = " ".join((name or "").split())
+    if not cleaned_name:
+        raise ValueError("Guest name is required")
+    if len(cleaned_name) > 100:
+        raise ValueError("Guest name must be 100 characters or fewer")
+
+    event, config = _get_rsvp_event(event_id)
+    update = _build_rsvp_update(
+        status,
+        message,
+        dietary_requirements,
+        config,
+        party_size,
+        kids_count,
+        food_preference,
+        adults_count,
+        children_count,
+        meal_preferences,
+    )
+    db = database.get_db()
+    result = db.table("event_invitees").insert({
+        "event_id": event_id,
+        "name": cleaned_name,
+        "source": "share_link",
+        **update,
+    }).execute()
+    if not result.data:
+        raise ValueError("Unable to record RSVP")
+    invitee_id = result.data[0]["id"]
+
+    _log(
+        "public",
+        "rsvp.submitted",
+        user_id=event.get("user_id"),
+        metadata={
+            "event_id": event_id,
+            "event_title": event.get("title"),
+            "invitee_id": invitee_id,
+            "source": "share_link",
             "status": status,
             "party_size": update.get("party_size"),
         },

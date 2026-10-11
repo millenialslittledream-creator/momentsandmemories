@@ -2900,8 +2900,8 @@ export default function CreateEvite() {
                       </div>
 
                       <p className="font-display text-[9px] text-[#b2c3b1]/45 leading-relaxed mt-6 text-center">
-                        Anyone with this link can view your invitation. Add guests on the next step to send it
-                        by email or SMS and collect RSVPs.
+                        Anyone with this link can view your invitation and RSVP by entering their name. Add
+                        guests on the next step only if you also want individual email or SMS delivery.
                       </p>
                     </>
                   )}

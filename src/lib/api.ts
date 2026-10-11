@@ -21,12 +21,15 @@ export interface RSVPGuestStats {
   name: string | null;
   email: string | null;
   phone: string | null;
+  source: string;
   status: string;
   party_size: number | null;
   kids_count: number | null;
+  adults_count: number | null;
   food_preference: string | null;
   meal_preferences: Record<string, number>;
   dietary_requirements: string | null;
+  rsvp_message: string | null;
   responded_at: string | null;
 }
 
@@ -56,6 +59,18 @@ export interface EventRSVPSummary extends RSVPStats {
 export interface OverallRSVPSummary {
   totals: RSVPStats & { total_events: number };
   events: EventRSVPSummary[];
+}
+
+export interface RSVPSubmission {
+  status: string;
+  message: string;
+  dietary_requirements: string;
+  party_size?: number | null;
+  kids_count?: number | null;
+  food_preference?: string | null;
+  adults_count?: number | null;
+  children_count?: number | null;
+  meal_preferences?: Record<string, number>;
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -196,23 +211,25 @@ export const api = {
   submitRSVP: (
     eventId: string,
     inviteeId: string,
-    data: {
-      status: string;
-      message: string;
-      dietary_requirements: string;
-      party_size?: number | null;
-      kids_count?: number | null;
-      food_preference?: string | null;
-      adults_count?: number | null;
-      children_count?: number | null;
-      meal_preferences?: Record<string, number>;
-    }
+    data: RSVPSubmission
   ) =>
     fetch(`${API_URL}/public/events/${eventId}/rsvp/${inviteeId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }).then(r => r.ok ? r.json() : r.json().then((e: { detail: string }) => Promise.reject(new Error(e.detail)))),
+
+  submitOpenRSVP: (
+    eventId: string,
+    data: RSVPSubmission & { name: string }
+  ) =>
+    fetch(`${API_URL}/public/events/${eventId}/rsvp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).then(r => r.ok
+      ? r.json() as Promise<{ invitee_id: string; status: string }>
+      : r.json().then((e: { detail: string }) => Promise.reject(new Error(e.detail)))),
 
   // ── Messaging (auth required) ─────────────────────────────────────────
   getMessages: (eventId: string) =>
