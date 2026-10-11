@@ -37,6 +37,6 @@ Every exploit is now a regression test: `backend/tests/test_security_regressions
 5. **Other app sharing this project** (campaigns, products, cost_logs, scan_logs, user_scans, `booklets` bucket): anon can read/write/delete. Move it to its own project or lock it down.
 6. **Payments**: the card form collects card details that go nowhere; orders are never charged. Integrate a processor (Stripe Elements) before taking real orders — do not ship a card form that discards data.
 7. **Admin moderation**: owners can re-publish an event an admin archived (needs a `moderated` column to distinguish).
-8. **nginx/EC2**: add the same security headers + `client_max_body_size 60m` + `limit_req` at the proxy; rate limits in the app are per-process.
+8. **Shared rate limit**: code is in (`middleware/counter.py`, Redis via Upstash/Vercel KV, falls back to per-instance memory). Create the Redis database in Vercel (Storage → Marketplace → Upstash) and redeploy to switch it on. A Vercel Firewall backstop (`api-rate-limit-backstop`, 600 req/min/IP on `/api`) is already live. On nginx/EC2 also add the security headers + `client_max_body_size 60m` + `limit_req`.
 9. **Tailwind v3 → v4** migration clears the last 7 npm advisories (build-time only).
-10. **Load testing**: not done yet — run after deploy against a staging copy, not the live project.
+10. **Load testing**: not done yet. Build staging with `docs/staging-setup.md`, then follow its load-test plan; run `docs/e2e-test-checklist.md` first. Never load-test the live project.

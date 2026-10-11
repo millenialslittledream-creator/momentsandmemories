@@ -1,11 +1,9 @@
 import hmac
-import threading
-import time
-from collections import deque
 from fastapi import Depends, HTTPException, Header, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import database
 from config import settings
+from middleware import counter
 
 security = HTTPBearer(auto_error=False)
 
@@ -42,11 +40,10 @@ def get_current_user(
 
 _ADMIN_MAX_FAILURES = 10
 _ADMIN_WINDOW_SECONDS = 600
-_admin_failures: dict[str, deque] = {}
-_admin_lock = threading.Lock()
 
 
-def _client_ip(request: Request) -> str:
+def client_ip(request: Request) -> str:
+    """Rightmost X-Forwarded-For entry = the address our own proxy (nginx/Vercel) saw."""
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
         return forwarded.split(",")[-1].strip() or "unknown"
@@ -55,8 +52,7 @@ def _client_ip(request: Request) -> str:
 
 def reset_admin_lockouts() -> None:
     """Test helper."""
-    with _admin_lock:
-        _admin_failures.clear()
+    counter.reset_local()
 
 
 def require_admin(request: Request, x_admin_secret: str = Header(default="")) -> None:
@@ -68,22 +64,16 @@ def require_admin(request: Request, x_admin_secret: str = Header(default="")) ->
             detail="Admin access is not configured",
         )
 
-    ip = _client_ip(request)
-    now = time.monotonic()
-    with _admin_lock:
-        failures = _admin_failures.setdefault(ip, deque())
-        while failures and failures[0] <= now - _ADMIN_WINDOW_SECONDS:
-            failures.popleft()
-        if len(failures) >= _ADMIN_MAX_FAILURES:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Too many failed attempts. Try again later.",
-                headers={"Retry-After": str(_ADMIN_WINDOW_SECONDS)},
-            )
-        if not hmac.compare_digest(x_admin_secret.encode(), expected.encode()):
-            failures.append(now)
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Admin access required",
-            )
-        failures.clear()
+    lock_key = f"admin-fail:{client_ip(request)}"
+    if counter.peek(lock_key, _ADMIN_WINDOW_SECONDS) >= _ADMIN_MAX_FAILURES:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many failed attempts. Try again later.",
+            headers={"Retry-After": str(_ADMIN_WINDOW_SECONDS)},
+        )
+    if not hmac.compare_digest(x_admin_secret.encode(), expected.encode()):
+        counter.incr(lock_key, _ADMIN_WINDOW_SECONDS)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )

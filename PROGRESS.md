@@ -593,3 +593,13 @@ Product owner feedback: the 32 hardcoded `eviteTemplates.ts` designs (the ones a
 **Tests**: backend pytest 153/153 (28 new regression tests replay each exploit), vitest 23/23, tsc + eslint + production build clean.
 **Files changed**: backend/{main,config}.py, middleware/{auth,logging,ratelimit,security}.py, events, messaging, qr, notifications, shop, media (+validation.py), gallery, public, users, analytics, drafts; backend/tests/*; backend/migrations/024; requirements (backend + api); package-lock.json; vite.config.ts; vercel.json; src/components/GoogleAuthButton.tsx + SignIn/SignUp; docs.
 **Before deploying to prod (EC2 via GitLab main)**: set `ADMIN_SECRET` (long, random) and `TELNYX_*` on the server; set `VITE_GOOGLE_CLIENT_ID`; add Google authorized JS origins; rotate the GitLab token; see "Still open" in the audit doc. Load testing still to do (staging).
+
+---
+
+## [2026-10-11] - Shared rate limit, E2E checklist, staging guide
+
+**Status**: Completed locally (committed, not pushed). Production firewall rule already live (published via CLI).
+**What was done**: (1) `backend/middleware/counter.py`: shared hit counter on Upstash/Vercel KV Redis REST (httpx, no new dep) with automatic per-process fallback if unset/down; `ratelimit.py` and admin lockout now use it; `RATE_LIMITS_ENABLED=false` staging-only switch for load tests. (2) Vercel Firewall rule `api-rate-limit-backstop` (600 req/min/IP on /api) created + published with `vercel firewall`. (3) `docs/e2e-test-checklist.md` (12 sections incl. two-user security checks), `docs/staging-setup.md` (schema dump not migration replay because prod drifted; no-Git Vercel staging project; Redis; load-test plan).
+**Tests**: backend pytest 163/163 (+10: Redis request format, fail-open, 429 from shared counter, admin lockout shared, switch).
+**Facts found**: live FKs use auth.users (migrations 001-009 are stale); Realtime publishes only qr_contact_sessions (RSVP live-update is polling); prod has 3 buckets.
+**Next steps**: create Upstash Redis in Vercel + redeploy; push to main when ready; build staging; run checklist; then load test on staging only.
