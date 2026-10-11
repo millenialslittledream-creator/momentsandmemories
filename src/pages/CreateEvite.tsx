@@ -28,6 +28,40 @@ import { FONT_CATEGORIES, COLOR_SWATCHES } from '@/components/CanvasEditor/types
 type EventTypeFilter = EventType;
 type ModalPhase = 'upload' | 'canvas-editor' | 'editor' | 'signin' | 'guests' | 'preview' | 'payment' | 'sent' | null;
 
+// Drafts used to live in localStorage, which meant an old evite could appear
+// on a shared/anonymous browser. The server draft is now the source of truth.
+// sessionStorage is used only for the short OAuth handoff and is cleared as
+// soon as the authenticated user returns to this page.
+const LEGACY_DRAFT_KEY = 'mm_evite_draft';
+const AUTH_HANDOFF_KEY = 'mm_evite_auth_handoff';
+const DRAFT_META_KEY = '__mmDraft';
+
+interface DraftMetadata {
+  uploadedTemplate?: UploadedTemplate | null;
+  hasSubEvents?: boolean;
+  multipleInvitations?: boolean;
+  invitationSlots?: InvitationSlot[];
+  rsvpSettings?: RSVPSettings;
+  fieldOverrides?: Record<string, Partial<TemplateFieldLayout>>;
+  photoOverlay?: PhotoOverlay | null;
+  pendingPhase?: ModalPhase | 'share';
+}
+
+interface DraftRecord {
+  id?: string;
+  step: number;
+  event_type: string | null;
+  form_data: Record<string, unknown>;
+  selected_template: string | null;
+  guests: Array<{ id: string; name: string; email: string; phone: string }>;
+  delivery_preference: 'email' | 'phone' | 'both' | 'link';
+  updated_at?: string;
+}
+
+function isDraftMetadata(value: unknown): value is DraftMetadata {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
 // The entry flow now has four stages:
 //   'picker'        — "What are we celebrating today?" event grid (first thing users see)
 //   'loading'       — brief "Creating your perfect experience…" transition after a pick
@@ -178,7 +212,7 @@ function renderEditorField(
 export default function CreateEvite() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const pageRef = useRef<HTMLDivElement>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
   const editorBackdropRef = useRef<HTMLDivElement>(null);
@@ -196,7 +230,6 @@ export default function CreateEvite() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [uploadedTemplate, setUploadedTemplate] = useState<UploadedTemplate | null>(null);
   const [modalPhase, setModalPhase] = useState<ModalPhase>(null);
-  const resumedPendingPhaseRef = useRef(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [guests, setGuests] = useState<Guest[]>([createGuest()]);
   // Shareable link is the only live delivery option for now. Email and SMS are
@@ -228,11 +261,14 @@ export default function CreateEvite() {
   const [messageCopied, setMessageCopied] = useState(false);
 
   // ── Resume-in-progress prompt (H10) ──────────────────────────────────
-  // If the host left a half-finished evite behind (saved in localStorage),
+  // If the authenticated host left a half-finished evite behind on the server,
   // greet them on return with a "pick up where you left off?" popup instead
   // of silently dropping them on the event picker.
   const [showResume, setShowResume] = useState(false);
   const [resumeLabel, setResumeLabel] = useState('');
+  const [serverDraft, setServerDraft] = useState<DraftRecord | null>(null);
+  const [draftReady, setDraftReady] = useState(false);
+  const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Derived state ────────────────────────────────────────────────
   const selectedTemplate = useMemo(
@@ -288,70 +324,6 @@ export default function CreateEvite() {
   // Sub-events count is mirrored into formData so downstream components
   // (GuestPopup multi-event checkboxes) can read it.
   const subEventCount = parseInt(formData['sub_events_count'] || '0', 10) || 0;
-
-  // ── Local draft backup ───────────────────────────────────────────
-  // Resumes the flow after a sign-in redirect: restores form state and
-  // re-opens the modal at the saved phase if the user is now signed in.
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('mm_evite_draft');
-      if (!saved) return;
-      const parsed = JSON.parse(saved);
-      if (parsed.formData) setFormData(parsed.formData);
-      if (parsed.guests?.length) setGuests(parsed.guests);
-      setDeliveryPreference('link');
-      if (parsed.rsvpSettings) setRsvpSettings(normalizeRsvpSettings(parsed.rsvpSettings));
-      if (parsed.selectedTemplateId) setSelectedTemplateId(parsed.selectedTemplateId);
-      if (parsed.uploadedTemplate) setUploadedTemplate(parsed.uploadedTemplate);
-      if (parsed.hasSubEvents) setHasSubEvents(!!parsed.hasSubEvents);
-      if (parsed.pendingPhase && user) {
-        resumedPendingPhaseRef.current = true;
-        setModalPhase(parsed.pendingPhase === 'share' ? 'guests' : parsed.pendingPhase);
-        localStorage.setItem(
-          'mm_evite_draft',
-          JSON.stringify({ ...parsed, pendingPhase: null })
-        );
-      }
-    } catch {
-      /* ignore */
-    }
-  }, [user]);
-
-  // Don't overwrite a saved draft with our untouched initial state — only
-  // persist after the user starts interacting (formData has any keys,
-  // a template is selected, or guests beyond the empty seed exist).
-  useEffect(() => {
-    const hasUserContent =
-      Object.keys(formData).length > 0 ||
-      !!selectedTemplateId ||
-      !!uploadedTemplate ||
-      hasSubEvents ||
-      guests.some((g) => g.name.trim() || g.email.trim() || g.phone.trim());
-    if (!hasUserContent) return;
-    try {
-      const existing = localStorage.getItem('mm_evite_draft');
-      const parsed = existing ? JSON.parse(existing) : {};
-      const safeUploaded =
-        uploadedTemplate && !uploadedTemplate.url.startsWith('blob:')
-          ? uploadedTemplate
-          : null;
-      localStorage.setItem(
-        'mm_evite_draft',
-        JSON.stringify({
-          ...parsed,
-          formData,
-          guests,
-          deliveryPreference,
-          selectedTemplateId,
-          uploadedTemplate: safeUploaded,
-          hasSubEvents,
-          rsvpSettings,
-        })
-      );
-    } catch {
-      /* ignore */
-    }
-  }, [formData, guests, deliveryPreference, selectedTemplateId, uploadedTemplate, hasSubEvents, rsvpSettings]);
 
   // ── Customizable text fields for the active template ───────────────
   // Each entry's key matches the override key TemplateRenderer merges on
@@ -439,73 +411,175 @@ export default function CreateEvite() {
     });
   }, []);
 
-  // On arrival, offer to resume a saved-but-unfinished evite (H10). Skipped
-  // when we're mid sign-in-return (pendingPhase handles that separately).
-  useEffect(() => {
-    try {
-      if (resumedPendingPhaseRef.current) return;
-      const saved = localStorage.getItem('mm_evite_draft');
-      if (!saved) return;
-      const p = JSON.parse(saved);
-      if (p.pendingPhase) return;
-      const hasContent =
-        !!p.selectedTemplateId ||
-        !!p.uploadedTemplate ||
-        (p.formData && Object.keys(p.formData).length > 0);
-      if (!hasContent) return;
-      const et = p.selectedTemplateId
-        ? eviteTemplates.find((t) => t.id === p.selectedTemplateId)?.eventType
+  const draftStep = useMemo(() => {
+    if (modalPhase === 'editor') return 3;
+    if (modalPhase === 'guests') return 4;
+    if (modalPhase === 'preview') return 5;
+    if (modalPhase === 'payment') return 6;
+    if (flowStage === 'choose-design') return 1;
+    if (flowStage === 'gallery') return 2;
+    return 0;
+  }, [flowStage, modalPhase]);
+
+  const createDraftPayload = useCallback((pendingPhase: ModalPhase = null): DraftRecord => {
+    const safeUploaded =
+      uploadedTemplate &&
+      !uploadedTemplate.url.startsWith('blob:') &&
+      uploadedTemplate.url.length <= 750_000
+        ? uploadedTemplate
         : null;
-      setResumeLabel(et ? eventTypes.find((e) => e.id === et)?.label ?? '' : '');
-      setShowResume(true);
-    } catch {
-      /* ignore */
+    const safeInvitationSlots = invitationSlots.every((slot) => slot.url.length <= 750_000)
+      ? invitationSlots
+      : undefined;
+    const metadata: DraftMetadata = {
+      uploadedTemplate: safeUploaded,
+      hasSubEvents,
+      multipleInvitations,
+      invitationSlots: safeInvitationSlots,
+      rsvpSettings,
+      fieldOverrides,
+      photoOverlay,
+      pendingPhase,
+    };
+    return {
+      step: draftStep,
+      event_type: currentEventType ?? activeFilter,
+      form_data: { ...formData, [DRAFT_META_KEY]: metadata },
+      selected_template: selectedTemplateId,
+      guests: guests.map((guest) => ({
+        id: guest.id,
+        name: guest.name,
+        email: guest.email,
+        phone: guest.phone,
+      })),
+      delivery_preference: deliveryPreference,
+    };
+  }, [activeFilter, currentEventType, deliveryPreference, draftStep, fieldOverrides, formData, guests, hasSubEvents, invitationSlots, multipleInvitations, photoOverlay, rsvpSettings, selectedTemplateId, uploadedTemplate]);
+
+  const restoreDraft = useCallback((draft: DraftRecord, openEditor: boolean) => {
+    const rawFormData = draft.form_data ?? {};
+    const rawMetadata = rawFormData[DRAFT_META_KEY];
+    const metadata = isDraftMetadata(rawMetadata) ? rawMetadata : {};
+    const restoredFormData = Object.fromEntries(
+      Object.entries(rawFormData).filter(([key, value]) => key !== DRAFT_META_KEY && typeof value === 'string')
+    ) as Record<string, string>;
+
+    setFormData(restoredFormData);
+    if (draft.guests?.length) {
+      setGuests(draft.guests.map((guest) => ({
+        id: guest.id || crypto.randomUUID(),
+        name: guest.name || '',
+        email: guest.email || '',
+        phone: guest.phone || '',
+      })));
     }
-    // Runs once on mount.
-  }, []);
+    setDeliveryPreference(draft.delivery_preference || 'link');
+    setRsvpSettings(normalizeRsvpSettings(metadata.rsvpSettings));
+    setHasSubEvents(!!metadata.hasSubEvents);
+    setMultipleInvitations(!!metadata.multipleInvitations);
+    if (metadata.invitationSlots?.length) setInvitationSlots(metadata.invitationSlots);
+    setFieldOverrides(metadata.fieldOverrides ?? {});
+    setPhotoOverlay(metadata.photoOverlay ?? null);
+    if (draft.event_type && eventTypes.some((event) => event.id === draft.event_type)) {
+      setActiveFilter(draft.event_type as EventType);
+    }
+    if (draft.selected_template) {
+      setSelectedTemplateId(draft.selected_template);
+      setUploadedTemplate(null);
+    } else if (metadata.uploadedTemplate) {
+      setSelectedTemplateId(null);
+      setUploadedTemplate(metadata.uploadedTemplate);
+    }
+
+    if (openEditor) {
+      setFlowStage('gallery');
+      const pendingPhase = metadata.pendingPhase;
+      setModalPhase(pendingPhase === 'share' ? 'guests' : pendingPhase || (draft.selected_template || metadata.uploadedTemplate ? 'editor' : null));
+      animateModalIn();
+    }
+  }, [animateModalIn]);
+
+  // Anonymous visitors must never see a previous user's draft. Legacy local
+  // storage is cleared once and is not read for restoration anymore.
+  useEffect(() => {
+    if (authLoading) return;
+    let cancelled = false;
+    const loadAuthenticatedDraft = async () => {
+      if (!user) {
+        try { localStorage.removeItem(LEGACY_DRAFT_KEY); } catch { /* ignore */ }
+        setServerDraft(null);
+        setShowResume(false);
+        setDraftReady(true);
+        return;
+      }
+
+      setDraftReady(false);
+      try {
+        const handoffRaw = sessionStorage.getItem(AUTH_HANDOFF_KEY);
+        const remoteDraft = await api.getDraft();
+        if (cancelled) return;
+
+        if (handoffRaw) {
+          sessionStorage.removeItem(AUTH_HANDOFF_KEY);
+          const handoff = JSON.parse(handoffRaw) as DraftRecord;
+          restoreDraft(handoff, true);
+          await api.saveDraft(handoff);
+        } else if (remoteDraft) {
+          setServerDraft(remoteDraft as DraftRecord);
+          const eventType = remoteDraft.event_type;
+          setResumeLabel(eventType && eventTypes.some((event) => event.id === eventType)
+            ? eventTypes.find((event) => event.id === eventType)?.label ?? ''
+            : '');
+          setShowResume(true);
+        }
+      } catch (error) {
+        console.warn('Could not load server draft:', error);
+      } finally {
+        if (!cancelled) setDraftReady(true);
+      }
+    };
+
+    void loadAuthenticatedDraft();
+    return () => { cancelled = true; };
+  }, [authLoading, restoreDraft, user]);
+
+  // Autosave only after authentication and after the initial server lookup.
+  // This keeps the durable copy scoped to the signed-in host and avoids
+  // resurrecting anonymous browser data on a later visit.
+  useEffect(() => {
+    if (authLoading || !user || !draftReady) return;
+    const hasUserContent =
+      Object.keys(formData).length > 0 ||
+      !!selectedTemplateId ||
+      !!uploadedTemplate ||
+      hasSubEvents ||
+      guests.some((guest) => guest.name.trim() || guest.email.trim() || guest.phone.trim());
+    if (!hasUserContent) return;
+
+    if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+    draftSaveTimerRef.current = setTimeout(() => {
+      void api.saveDraft(createDraftPayload()).catch((error) => {
+        console.warn('Could not save server draft:', error);
+      });
+    }, 700);
+
+    return () => {
+      if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+    };
+  }, [authLoading, createDraftPayload, draftReady, formData, guests, hasSubEvents, selectedTemplateId, uploadedTemplate, user]);
 
   // "Continue editing" — re-apply the saved draft and drop the host straight
   // back into the editor for their in-progress design.
   const resumeDraft = useCallback(() => {
     setShowResume(false);
-    try {
-      const saved = localStorage.getItem('mm_evite_draft');
-      const p = saved ? JSON.parse(saved) : {};
-      if (p.formData) setFormData(p.formData);
-      if (p.guests?.length) setGuests(p.guests);
-      setDeliveryPreference('link');
-      if (p.rsvpSettings) setRsvpSettings(normalizeRsvpSettings(p.rsvpSettings));
-      if (p.hasSubEvents) setHasSubEvents(!!p.hasSubEvents);
-      if (p.selectedTemplateId) {
-        const t = eviteTemplates.find((x) => x.id === p.selectedTemplateId);
-        if (t) setActiveFilter(t.eventType);
-        setSelectedTemplateId(p.selectedTemplateId);
-        setUploadedTemplate(null);
-        setFlowStage('gallery');
-        setModalPhase('editor');
-        animateModalIn();
-      } else if (p.uploadedTemplate) {
-        setUploadedTemplate(p.uploadedTemplate);
-        setFlowStage('gallery');
-        setModalPhase('editor');
-        animateModalIn();
-      } else {
-        // Only form details were saved — take them to the gallery to re-pick a design.
-        setFlowStage('gallery');
-      }
-    } catch {
-      /* ignore */
-    }
-  }, [animateModalIn]);
+    if (serverDraft) restoreDraft(serverDraft, true);
+  }, [restoreDraft, serverDraft]);
 
   // "Start fresh" — throw the old draft away and begin from the event picker.
   const discardDraft = useCallback(() => {
     setShowResume(false);
-    try {
-      localStorage.removeItem('mm_evite_draft');
-    } catch {
-      /* ignore */
-    }
+    setServerDraft(null);
+    void api.deleteDraft();
     setFormData({});
     setSelectedTemplateId(null);
     setUploadedTemplate(null);
@@ -689,18 +763,13 @@ export default function CreateEvite() {
       setModalPhase('guests');
     } else {
       try {
-        const existing = localStorage.getItem('mm_evite_draft');
-        const parsed = existing ? JSON.parse(existing) : {};
-        localStorage.setItem(
-          'mm_evite_draft',
-          JSON.stringify({ ...parsed, pendingPhase: 'guests' })
-        );
+        sessionStorage.setItem(AUTH_HANDOFF_KEY, JSON.stringify(createDraftPayload('guests')));
       } catch {
         /* ignore */
       }
       setModalPhase('signin');
     }
-  }, [user, multipleInvitations, formData]);
+  }, [createDraftPayload, multipleInvitations, user, formData]);
 
   const backToEditor = useCallback(() => setModalPhase('editor'), []);
 
@@ -825,11 +894,8 @@ export default function CreateEvite() {
         await api.addInvitees(eventId, invitees);
       }
 
-      try {
-        localStorage.removeItem('mm_evite_draft');
-      } catch {
-        /* ignore */
-      }
+      await api.deleteDraft();
+      try { sessionStorage.removeItem(AUTH_HANDOFF_KEY); } catch { /* ignore */ }
     } catch (e) {
       console.warn('Evite send skipped (likely logged out or offline):', e);
     }
@@ -846,17 +912,12 @@ export default function CreateEvite() {
   // Sign-in modal action — store pending phase + redirect.
   const goToSignIn = useCallback(() => {
     try {
-      const existing = localStorage.getItem('mm_evite_draft');
-      const parsed = existing ? JSON.parse(existing) : {};
-      localStorage.setItem(
-        'mm_evite_draft',
-        JSON.stringify({ ...parsed, pendingPhase: 'guests' })
-      );
+      sessionStorage.setItem(AUTH_HANDOFF_KEY, JSON.stringify(createDraftPayload('guests')));
     } catch {
       /* ignore */
     }
     navigate(`/sign-in?redirect=${encodeURIComponent('/create')}`);
-  }, [navigate]);
+  }, [createDraftPayload, navigate]);
 
   // ── Sub-event helpers ────────────────────────────────────────────
   const addSubEvent = () => {

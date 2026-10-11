@@ -154,7 +154,7 @@ export const api = {
       id: string;
       step: number;
       event_type: string | null;
-      form_data: Record<string, string>;
+      form_data: Record<string, unknown>;
       selected_template: string | null;
       guests: Array<{ id: string; name: string; email: string; phone: string }>;
       delivery_preference: 'email' | 'phone' | 'both' | 'link';
@@ -164,7 +164,7 @@ export const api = {
   saveDraft: (data: {
     step: number;
     event_type: string | null;
-    form_data: Record<string, string>;
+    form_data: Record<string, unknown>;
     selected_template: string | null;
     guests: Array<{ id: string; name: string; email: string; phone: string }>;
     delivery_preference: string;

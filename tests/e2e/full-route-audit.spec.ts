@@ -287,22 +287,30 @@ test('shop product list responds to the mouse wheel', async ({ browser }) => {
 test('create flow keeps only shareable link active and reveals it after final send', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   await installTestSession(context);
-  await context.addInitScript(() => {
-    localStorage.setItem('mm_evite_draft', JSON.stringify({
-      selectedTemplateId: 'bday-c1',
-      formData: {
-        celebrantName: 'Asha', eventDate: '2027-03-12', eventTime: '18:00',
-        timezone: 'IST', venue: 'Garden Hall',
-      },
-      guests: [{ id: 'guest-seed', name: '', email: '', phone: '' }],
-      deliveryPreference: 'email',
-      pendingPhase: 'guests',
-    }));
-  });
   const page = await context.newPage();
   await installApiMocks(page);
+  await page.route('**/drafts/my', async (route) => {
+    if (route.request().method() === 'GET') {
+      return json(route, {
+        id: 'draft-audit',
+        step: 4,
+        event_type: 'birthday',
+        form_data: {
+          celebrantName: 'Asha', eventDate: '2027-03-12', eventTime: '18:00',
+          timezone: 'IST', venue: 'Garden Hall',
+          __mmDraft: { pendingPhase: 'guests', rsvpSettings: { enabled: true } },
+        },
+        selected_template: 'bday-c1',
+        guests: [{ id: 'guest-seed', name: '', email: '', phone: '' }],
+        delivery_preference: 'link',
+        updated_at: new Date().toISOString(),
+      });
+    }
+    return json(route, {});
+  });
   await page.goto('/create');
 
+  await page.getByRole('button', { name: /Continue editing/i }).click();
   await expect(page.getByText('Share your invitation')).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText('Delivery', { exact: true }).first()).toBeVisible();
   for (const label of ['Email', 'SMS', 'Email + SMS']) {
@@ -318,7 +326,7 @@ test('create flow keeps only shareable link active and reveals it after final se
 
   await expect(page.getByText('Your invitation is live')).toBeVisible();
   await expect(page.getByText(`${new URL(page.url()).origin}/event/event-created-audit`, { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Copy/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'content_copy Copy', exact: true })).toBeVisible();
   await context.close();
 });
 
