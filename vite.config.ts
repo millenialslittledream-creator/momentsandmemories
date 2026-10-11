@@ -4,9 +4,10 @@ import { defineConfig } from "vitest/config"
 import { inspectAttr } from 'kimi-plugin-inspect-react'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   base: '/',
-  plugins: [inspectAttr(), react()],
+  // The inspector tags DOM nodes with source locations: dev server only, never in production builds.
+  plugins: [...(command === 'serve' ? [inspectAttr()] : []), react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -19,4 +20,4 @@ export default defineConfig({
     css: false,
     exclude: ['**/node_modules/**', 'tests/e2e/**'],
   },
-});
+}));

@@ -561,3 +561,35 @@ Product owner feedback: the 32 hardcoded `eviteTemplates.ts` designs (the ones a
 **Verification**: `npx tsc -b` clean, `npx vitest run` 18/18 passing, backend pytest 106/106 passing (97 pre-existing + 9 new), production `npm run build` clean. Confirmed default (no-override) rendering is unchanged by reasoning through `bday-floral`, `wed-multi-event` (including its static `&` field and untouched `eventsList`/`EventsListLayout` path — deliberately out of scope), and `house-gruhapravesam` (prefix/lineHeight/scaled-coordinate template) — none of their formatting-relevant fields (`text`, `format`, `prefix`, `wrapAfterChars`) are ever touched by an override, only `fontFamily`/`color`/`x`/`y`.
 
 **Known scope boundary**: `EventsListLayout` (multi-event sub-event boxes) intentionally not made customizable, per explicit instruction. The Canvas Editor and its premade templates are untouched, also per instruction.
+
+---
+
+## [2026-10-05] - SMS provider migration: AWS End User Messaging → Telnyx
+
+**Status**: ✅ Code complete (local, not pushed). Account/number setup on Telnyx still needed — see below.
+**What was done**: Fast-forwarded this branch to `origin/main`, then replaced the `pinpoint-sms-voice-v2` (boto3) SMS path with Telnyx's REST API (`POST https://api.telnyx.com/v2/messages`, Bearer auth) via `httpx` (already a dependency). New `_send_sms()` + `SmsSendError` in `notifications/service.py` is used by both `send_notification` (single) and `_do_bulk_send` (bulk). Notification `channel` for SMS is now recorded as `telnyx` (was a stale `twilio`). Amazon SES email is unchanged (boto3 stays).
+**Config**: removed `aws_sms_*` + `sms_origination_number`; added `TELNYX_API_KEY`, `TELNYX_FROM_NUMBER`, `TELNYX_MESSAGING_PROFILE_ID` (optional) to `config.py` and `backend/.env.example`.
+**Files changed**: `backend/notifications/service.py`, `backend/notifications/router.py` (docstring), `backend/config.py`, `backend/.env.example`, `backend/tests/test_notifications.py`, `docs/follow-up-workflows-plan.md`.
+**Verification**: backend pytest 109/109 (SMS tests rewritten: request shape, Telnyx rejection → notification marked failed, bulk skips recipients without phone, one failure doesn't stop the batch).
+**Next steps**: (1) Create Telnyx account, buy/port a US number, create a Messaging Profile, complete 10DLC or toll-free verification; (2) set the 3 `TELNYX_*` env vars on the EC2 backend / Vercel (`vercel.env`); (3) retire the AWS IAM user `momentsandmemories-backend` (`sms-voice:*` policy) and the pending AWS toll-free registration `+18556299508` once Telnyx is live; (4) live-test with a real number.
+
+---
+
+## [2026-10-11] - Security audit (phase 1) + live DB hardening + Google sign-in popup
+
+**Status**: Phase 1 done (audit + DB + Google button). Backend code fixes and load testing still pending.
+**Audit**: 29 PoC checks against real backend code on an in-memory fake DB (never the live project) — all confirmed. Key items: guest-list/messaging IDOR (`/events/{id}/invitees`, `/messaging/...`), SMS/email relay abuse (`/notifications/*`), empty `ADMIN_SECRET` bypass, legacy `/auth/*` leaking OTP + reset token, negative-quantity shop orders, unrestricted uploads, no rate limiting, vulnerable deps (npm 21 high, pip: starlette/python-multipart/jinja2/python-jose).
+**Live DB (applied via Supabase MCP as `security_hardening_rls_grants_functions`, file `backend/migrations/024_security_hardening.sql`)**: RLS enabled on `users` + `logs` (were open to the public anon key; `users` holds password_hash/otp/reset_token); dropped `USING(true)` policies on event_invitees/event_messages/qr_contact_sessions + storage list policy; revoked anon/authenticated table grants on this app's tables; revoked RPC execute + pinned search_path on definer functions; `user-uploads` bucket now 50MB + image/video MIME allow-list. Verified: anon has no privileges, service_role intact. NOT touched (other app in same project): campaigns, products, cost_logs, scan_logs, user_scans, `booklets` bucket (anon can upload/delete).
+**Google**: new `src/components/GoogleAuthButton.tsx` (Google Identity Services + `signInWithIdToken`, falls back to OAuth redirect). Used in SignIn/SignUp. Needs `VITE_GOOGLE_CLIENT_ID` + Google Cloud "Authorized JavaScript origins" to take effect.
+**Files changed**: backend/migrations/024_security_hardening.sql, src/components/GoogleAuthButton.tsx, src/pages/SignIn.tsx, src/pages/SignUp.tsx, .env.example, PROGRESS.md (+ earlier Telnyx SMS migration, uncommitted).
+**Next steps**: (1) backend fixes: ownership checks, notification relay limits, admin secret hardening, remove/lock legacy /auth, shop validation, upload validation, rate limiting, security headers, CORS; (2) upgrade vulnerable deps; (3) load test the hardened code; (4) set Supabase dashboard items (leaked-password protection, custom SMTP/rate limits); (5) rotate GitLab token embedded in git remote.
+
+---
+
+## [2026-10-11] - Security audit phase 2: all backend/frontend fixes applied
+
+**Status**: Completed (committed on branch `claude/sms-provider-telnyx-migration-7c8cd1`, pushed to GitHub `origin`; NOT merged to main / not deployed).
+**What was done**: Fixed every finding in `docs/security-audit-2026-10.md`: ownership checks (invitees, messaging, QR), notification relay lockdown (caps, rate limits, E.164 + country allow-list, escaping), admin secret hardening, legacy `/auth` removed, shop quantity/stock integrity, upload validation by magic bytes, rate limiting + security headers + CORS/docs hardening, PII out of logs. Deps upgraded (Python: 0 known vulns; npm 29 → 7, build-time only). Live DB: migration 024 + `restore_authenticated_select_for_realtime` (Realtime on event_invitees / qr_contact_sessions needs owner-scoped SELECT).
+**Tests**: backend pytest 153/153 (28 new regression tests replay each exploit), vitest 23/23, tsc + eslint + production build clean.
+**Files changed**: backend/{main,config}.py, middleware/{auth,logging,ratelimit,security}.py, events, messaging, qr, notifications, shop, media (+validation.py), gallery, public, users, analytics, drafts; backend/tests/*; backend/migrations/024; requirements (backend + api); package-lock.json; vite.config.ts; vercel.json; src/components/GoogleAuthButton.tsx + SignIn/SignUp; docs.
+**Before deploying to prod (EC2 via GitLab main)**: set `ADMIN_SECRET` (long, random) and `TELNYX_*` on the server; set `VITE_GOOGLE_CLIENT_ID`; add Google authorized JS origins; rotate the GitLab token; see "Still open" in the audit doc. Load testing still to do (staging).

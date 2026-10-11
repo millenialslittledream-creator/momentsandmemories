@@ -3,8 +3,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import PageTransition from "@/components/PageTransition";
-import GoogleIcon from "@/components/GoogleIcon";
-import { getSafeRedirectPath, rememberOAuthRedirect } from "@/lib/authRedirect";
+import GoogleAuthButton from "@/components/GoogleAuthButton";
+import { getSafeRedirectPath } from "@/lib/authRedirect";
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -78,26 +78,6 @@ const SignUp = () => {
     }
   };
 
-  const handleGoogle = async () => {
-    setLoading(true);
-    try {
-      rememberOAuthRedirect(redirectTo);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}${redirectTo}`,
-        },
-      });
-      if (error) {
-        toast.error(error.message);
-        setLoading(false);
-      }
-    } catch {
-      toast.error("Failed to sign up with Google");
-      setLoading(false);
-    }
-  };
-
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(f => ({ ...f, [field]: e.target.value }));
 
@@ -156,15 +136,7 @@ const SignUp = () => {
                 <span className="text-[10px] font-bold uppercase tracking-widest">OR</span>
                 <div className="h-[1px] bg-[#1a2418] flex-grow" />
               </div>
-              <button
-                type="button"
-                onClick={handleGoogle}
-                disabled={loading}
-                className="w-full py-3 px-4 rounded-lg auth-input flex items-center justify-center gap-3 hover:bg-white/60 transition-all transform active:scale-[0.99] group disabled:opacity-60"
-              >
-                <GoogleIcon />
-                <span className="font-agatho text-lg text-[#1a2418]/80 group-hover:text-[#1a2418]">Continue with Google</span>
-              </button>
+              <GoogleAuthButton redirectTo={redirectTo} disabled={loading} />
             </div>
           </form>
 

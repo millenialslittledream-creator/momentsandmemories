@@ -3,8 +3,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import PageTransition from "@/components/PageTransition";
-import GoogleIcon from "@/components/GoogleIcon";
-import { getSafeRedirectPath, rememberOAuthRedirect } from "@/lib/authRedirect";
+import GoogleAuthButton from "@/components/GoogleAuthButton";
+import { getSafeRedirectPath } from "@/lib/authRedirect";
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -54,28 +54,6 @@ const SignIn = () => {
     }
   };
 
-  const handleGoogle = async () => {
-    setLoading(true);
-    try {
-      rememberOAuthRedirect(redirectTo);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        // Honour the ?redirect= param so OAuth users land back where they left
-        // off (e.g. /create to resume the evite flow) instead of the homepage.
-        options: {
-          redirectTo: `${window.location.origin}${redirectTo}`,
-        },
-      });
-      if (error) {
-        toast.error(error.message);
-        setLoading(false);
-      }
-    } catch {
-      toast.error("Failed to sign in with Google");
-      setLoading(false);
-    }
-  };
-
   return (
     <PageTransition>
       <div className="page-bokeh-bg product-light-shell text-[#1a2418] font-display min-h-screen w-full overflow-hidden flex items-center justify-center relative py-10">
@@ -121,15 +99,11 @@ const SignIn = () => {
               <div className="flex-grow border-t border-black/10" />
             </div>
 
-            <button
-              type="button"
-              onClick={handleGoogle}
+            <GoogleAuthButton
+              redirectTo={redirectTo}
               disabled={loading}
-              className="w-full py-4 bg-white/40 border border-black/10 rounded-lg flex items-center justify-center gap-3 hover:bg-white/60 transition-all active:scale-[0.99] disabled:opacity-60"
-            >
-              <GoogleIcon />
-              <span className="font-agatho text-lg text-[#1a2418]">Continue with Google</span>
-            </button>
+              fallbackClassName="w-full py-4 bg-white/40 border border-black/10 rounded-lg flex items-center justify-center gap-3 hover:bg-white/60 transition-all active:scale-[0.99] disabled:opacity-60"
+            />
           </form>
 
           <div className="mt-8 pt-6 border-t border-black/5 w-full text-center">
