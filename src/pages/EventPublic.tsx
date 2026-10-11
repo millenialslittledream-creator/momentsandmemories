@@ -49,12 +49,24 @@ export default function EventPublic() {
   }, [eventId]);
 
   // A direct event link can inherit the browser's previous scroll restoration
-  // position. Always start a newly opened invitation at its artwork hero.
+  // position. Keep the route at the artwork hero while the async event data
+  // and its image settle, then release restoration when the route changes.
   useEffect(() => {
-    window.scrollTo(0, 0);
-    const frame = requestAnimationFrame(() => window.scrollTo(0, 0));
-    return () => cancelAnimationFrame(frame);
-  }, [eventId]);
+    if (!eventId) return;
+    const previousRestoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+    let cancelled = false;
+    const forceTop = () => {
+      if (!cancelled) window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    };
+    forceTop();
+    const timers = [0, 80, 250, 600, 1200].map((delay) => window.setTimeout(forceTop, delay));
+    return () => {
+      cancelled = true;
+      timers.forEach((timer) => window.clearTimeout(timer));
+      window.history.scrollRestoration = previousRestoration;
+    };
+  }, [eventId, event?.id]);
 
   // The stock template (with its positioned layout) used to re-render the
   // designed invitation. Null for uploaded / canvas designs, which fall back
@@ -99,6 +111,8 @@ export default function EventPublic() {
   const aspect = template?.layout
     ? `${template.layout.naturalWidth} / ${template.layout.naturalHeight}`
     : '9 / 16';
+  const [aspectWidth, aspectHeight] = aspect.split('/').map((value) => Number(value.trim()));
+  const aspectRatioValue = aspectWidth > 0 && aspectHeight > 0 ? aspectWidth / aspectHeight : 9 / 16;
 
   const renderInvitation = () => {
     if (hasTemplateDesign) {
@@ -112,7 +126,7 @@ export default function EventPublic() {
       );
     }
     if (coverImageUrl) {
-      return <img src={coverImageUrl} alt={event.title} loading="eager" decoding="async" className="w-full h-full object-cover" />;
+      return <img src={coverImageUrl} alt={event.title} loading="eager" decoding="async" className="w-full h-full object-contain" />;
     }
     return null;
   };
@@ -246,8 +260,11 @@ export default function EventPublic() {
           </button>
           <div
             data-preserve-theme
-            className="relative max-h-[90vh] w-[min(92vw,520px)] overflow-hidden rounded-sm bg-[#0d1512] shadow-2xl"
-            style={{ aspectRatio: aspect }}
+            className="relative max-h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)] overflow-hidden rounded-sm bg-[#0d1512] shadow-2xl"
+            style={{
+              aspectRatio: aspect,
+              width: `min(92vw, calc((100vh - 2rem) * ${aspectRatioValue}))`,
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             {renderInvitation()}

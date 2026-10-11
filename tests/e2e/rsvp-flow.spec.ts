@@ -184,11 +184,22 @@ test('public invitation is the first view and opens as a full preview', async ({
 
   await page.goto(`/event/${previewEventId}`);
   await expect(page.getByTestId('public-invitation')).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.reload();
+  await expect(page.getByTestId('public-invitation')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   await expect(page.getByRole('button', { name: /Scroll down to RSVP/ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Share Event' })).toHaveCount(0);
 
   await page.getByTestId('public-invitation').click();
   await expect(page.getByTestId('invitation-lightbox')).toBeVisible();
+  const preview = page.getByTestId('invitation-lightbox').locator('[data-preserve-theme]').first();
+  const previewBox = await preview.boundingBox();
+  const viewport = page.viewportSize();
+  expect(previewBox).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(previewBox!.y).toBeGreaterThanOrEqual(0);
+  expect(previewBox!.y + previewBox!.height).toBeLessThanOrEqual(viewport!.height);
   await page.getByRole('button', { name: 'Close invitation preview' }).click();
   await expect(page.getByTestId('invitation-lightbox')).toHaveCount(0);
 });
