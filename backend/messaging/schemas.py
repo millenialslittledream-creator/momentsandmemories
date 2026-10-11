@@ -1,10 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 
 class SendMessageRequest(BaseModel):
-    body: str
-    sender_name: Optional[str] = ""
+    body: str = Field(max_length=2000)
+    sender_name: Optional[str] = Field(default="", max_length=100)
 
 
 class MessageResponse(BaseModel):

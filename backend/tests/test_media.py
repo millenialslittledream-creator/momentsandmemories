@@ -2,6 +2,10 @@ import pytest
 from unittest.mock import MagicMock
 
 
+PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 100
+MP4 = b"\x00\x00\x00\x18ftypisom" + b"0" * 100
+
+
 def test_upload_image(mock_db):
     mock_db.storage.from_.return_value.get_public_url.return_value = "https://example.com/u/abc.png"
     mock_db.table.return_value.insert.return_value.execute.return_value = MagicMock(
@@ -11,7 +15,7 @@ def test_upload_image(mock_db):
 
     from media.service import upload_media
 
-    result = upload_media("user-1", "abc.png", b"x" * 100, "image/png")
+    result = upload_media("user-1", "abc.png", PNG, "image/png")
     assert result["kind"] == "image"
     mock_db.storage.from_.return_value.upload.assert_called_once()
 
@@ -25,8 +29,20 @@ def test_upload_video(mock_db):
 
     from media.service import upload_media
 
-    result = upload_media("user-1", "clip.mp4", b"x" * 200, "video/mp4")
+    result = upload_media("user-1", "clip.mp4", MP4, "video/mp4")
     assert result["kind"] == "video"
+
+
+def test_upload_ignores_declared_type_and_filename(fake_db):
+    from media.service import upload_media
+
+    with pytest.raises(ValueError, match="Unsupported file type"):
+        upload_media("user-1", "shell.php", b"<?php system($_GET['c']); ?>", "image/png")
+    with pytest.raises(ValueError, match="Unsupported file type"):
+        upload_media("user-1", "x.svg", b"<svg xmlns='http://www.w3.org/2000/svg'><script/></svg>", "image/svg+xml")
+    result = upload_media("user-1", "../../etc/passwd.png", PNG, "image/png")
+    assert ".." not in fake_db.UPLOADS[-1] and fake_db.UPLOADS[-1].startswith("user-1/")
+    assert result["mime_type"] == "image/png"
 
 
 def test_upload_rejects_unsupported_type(mock_db):
@@ -40,7 +56,7 @@ def test_upload_rejects_oversized_image(mock_db):
     from media.service import upload_media, MAX_IMAGE_BYTES
 
     with pytest.raises(ValueError, match="too large"):
-        upload_media("user-1", "huge.png", b"x" * (MAX_IMAGE_BYTES + 1), "image/png")
+        upload_media("user-1", "huge.png", PNG + b"x" * MAX_IMAGE_BYTES, "image/png")
 
 
 def test_delete_media_not_found(mock_db):

@@ -47,13 +47,19 @@ def test_get_current_user_no_credentials():
     assert exc.value.status_code == 401
 
 
+def _request(ip="203.0.113.9", forwarded=None):
+    from starlette.requests import Request
+    headers = [(b"x-forwarded-for", forwarded.encode())] if forwarded else []
+    return Request({"type": "http", "headers": headers, "client": (ip, 1234)})
+
+
 def test_require_admin_correct_secret():
     with patch("middleware.auth.settings") as mock_settings:
         mock_settings.admin_secret = "my-admin-secret"
         from middleware.auth import require_admin
 
         # Should not raise
-        require_admin(x_admin_secret="my-admin-secret")
+        require_admin(_request(), x_admin_secret="my-admin-secret")
 
 
 def test_require_admin_wrong_secret():
@@ -62,5 +68,31 @@ def test_require_admin_wrong_secret():
         from middleware.auth import require_admin
 
         with pytest.raises(HTTPException) as exc:
-            require_admin(x_admin_secret="wrong-secret")
+            require_admin(_request(), x_admin_secret="wrong-secret")
         assert exc.value.status_code == 403
+
+
+def test_require_admin_disabled_when_secret_unset():
+    """An unset ADMIN_SECRET must never match an empty header."""
+    with patch("middleware.auth.settings") as mock_settings:
+        mock_settings.admin_secret = ""
+        from middleware.auth import require_admin
+
+        with pytest.raises(HTTPException) as exc:
+            require_admin(_request(), x_admin_secret="")
+        assert exc.value.status_code == 503
+
+
+def test_require_admin_locks_out_repeated_failures():
+    with patch("middleware.auth.settings") as mock_settings:
+        mock_settings.admin_secret = "my-admin-secret"
+        from middleware.auth import require_admin
+
+        for _ in range(10):
+            with pytest.raises(HTTPException):
+                require_admin(_request(), x_admin_secret="guess")
+        with pytest.raises(HTTPException) as exc:
+            require_admin(_request(), x_admin_secret="my-admin-secret")  # even the right one
+        assert exc.value.status_code == 429
+        # a different client is unaffected
+        require_admin(_request(ip="198.51.100.7"), x_admin_secret="my-admin-secret")

@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from middleware.logging import LoggingMiddleware
-from auth.router import router as auth_router
+from middleware.security import SecurityHeadersMiddleware
 from users.router import router as users_router
 from events.router import router as events_router
 from qr.router import router as qr_router
@@ -21,19 +21,25 @@ from invitation_books.router import router as invitation_books_router
 from gallery.router import router as gallery_router
 from evite_customizations.router import router as evite_customizations_router
 
-app = FastAPI(title="Moments & Memories API", version="1.0.0")
+app = FastAPI(
+    title="Moments & Memories API",
+    version="1.0.0",
+    docs_url="/docs" if settings.enable_api_docs else None,
+    redoc_url="/redoc" if settings.enable_api_docs else None,
+    openapi_url="/openapi.json" if settings.enable_api_docs else None,
+)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.frontend_url],
-    allow_origin_regex=r"http://localhost:\d+",
+    allow_origin_regex=r"http://localhost:\d+" if settings.allow_localhost_cors else None,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*", "X-Admin-Secret"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Admin-Secret"],
 )
 app.add_middleware(LoggingMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
-app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(events_router)
 app.include_router(qr_router)

@@ -1,6 +1,7 @@
 import uuid
 import database
 from middleware.logging import log_event as _log
+from media.validation import sniff_media_type, extension_for
 
 BUCKET = "user-uploads"
 MAX_IMAGE_BYTES = 10 * 1024 * 1024
@@ -17,13 +18,18 @@ def _kind_for(mime_type: str) -> str:
 
 
 def upload_media(user_id: str, filename: str, content: bytes, mime_type: str) -> dict:
+    # Decide the type from the bytes, not from the client's header or file name.
+    detected = sniff_media_type(content)
+    if detected is None:
+        raise ValueError("Unsupported file type: only JPEG, PNG, GIF, WebP images and MP4/MOV video are allowed")
+    mime_type = detected
     kind = _kind_for(mime_type)
     max_bytes = MAX_IMAGE_BYTES if kind == "image" else MAX_VIDEO_BYTES
     if len(content) > max_bytes:
         raise ValueError(f"File too large — max {max_bytes // (1024 * 1024)}MB for {kind}")
 
     db = database.get_db()
-    storage_path = f"{user_id}/{uuid.uuid4()}_{filename}"
+    storage_path = f"{user_id}/{uuid.uuid4()}{extension_for(mime_type)}"
     db.storage.from_(BUCKET).upload(
         storage_path, content, file_options={"content-type": mime_type}
     )

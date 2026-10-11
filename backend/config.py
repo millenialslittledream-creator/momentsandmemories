@@ -17,11 +17,15 @@ class Settings(BaseSettings):
     aws_secret_access_key: str = ""
     aws_region: str = "ap-southeast-2"
     ses_from_email: str = ""
-    # AWS End User Messaging SMS (bulk SMS, US)
-    aws_sms_access_key_id: str = ""
-    aws_sms_secret_access_key: str = ""
-    aws_sms_region: str = "ap-southeast-2"
-    sms_origination_number: str = ""
+    # Telnyx (SMS) — https://portal.telnyx.com
+    telnyx_api_key: str = ""
+    telnyx_from_number: str = ""          # E.164 number or alphanumeric sender ID
+    telnyx_messaging_profile_id: str = ""  # optional; required if from-number isn't tied to a profile
+
+    # Hardening switches (safe defaults for production)
+    allow_localhost_cors: bool = False   # dev only: accept any http://localhost:<port> origin
+    enable_api_docs: bool = False        # dev only: expose /docs, /redoc, /openapi.json
+    sms_allowed_prefixes: str = "+1"     # comma-separated E.164 prefixes SMS may be sent to (blocks SMS pumping)
 
     class Config:
         env_file = ".env"

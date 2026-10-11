@@ -15,6 +15,8 @@ def get_profile(user_id: str) -> dict:
 def update_profile(user_id: str, updates: dict) -> dict:
     db = database.get_db()
     filtered = {k: v for k, v in updates.items() if v is not None}
+    if not filtered:
+        return get_profile(user_id)
     result = db.table("users").update(filtered).eq("id", user_id).execute()
     log_event("users", "user.profile_updated", user_id=user_id)
     return result.data[0]

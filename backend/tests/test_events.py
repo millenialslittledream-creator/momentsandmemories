@@ -67,39 +67,50 @@ def test_delete_event_not_owner(mock_db):
         delete_event("user-123", "event-999")
 
 
-def test_add_invitees(mock_db):
-    mock_db.table.return_value.insert.return_value.execute.return_value = MagicMock(
-        data=[
-            {"id": "inv-1", "event_id": "event-123", "email": "guest@test.com", "name": "Guest"},
-        ]
-    )
+def _own_event(fake_db, user_id="user-1"):
+    fake_db.STORE["events"] = [{"id": "event-123", "user_id": user_id, "title": "T", "status": "draft"}]
 
+
+def test_add_invitees(fake_db):
+    _own_event(fake_db)
     from events.service import add_invitees
     from events.schemas import InviteeIn
 
-    result = add_invitees("event-123", [InviteeIn(email="guest@test.com", name="Guest")])
+    result = add_invitees("user-1", "event-123", [InviteeIn(email="guest@test.com", name="Guest")])
     assert len(result) == 1
     assert result[0]["email"] == "guest@test.com"
 
 
-def test_list_invitees(mock_db):
-    mock_db.table.return_value.select.return_value.eq.return_value.execute.return_value = MagicMock(
-        data=[{"id": "inv-1"}, {"id": "inv-2"}]
-    )
-
+def test_list_invitees(fake_db):
+    _own_event(fake_db)
+    fake_db.STORE["event_invitees"] = [
+        {"id": "inv-1", "event_id": "event-123"}, {"id": "inv-2", "event_id": "event-123"},
+    ]
     from events.service import list_invitees
-    result = list_invitees("event-123")
-    assert len(result) == 2
+    assert len(list_invitees("user-1", "event-123")) == 2
 
 
-def test_remove_invitee(mock_db):
-    mock_db.table.return_value.delete.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-        data=[]
-    )
-
+def test_remove_invitee(fake_db):
+    _own_event(fake_db)
+    fake_db.STORE["event_invitees"] = [{"id": "inv-1", "event_id": "event-123"}]
     from events.service import remove_invitee
-    result = remove_invitee("event-123", "inv-1")
-    assert result["deleted"] is True
+    assert remove_invitee("user-1", "event-123", "inv-1")["deleted"] is True
+    assert fake_db.STORE["event_invitees"] == []
+
+
+def test_invitee_operations_require_event_ownership(fake_db):
+    _own_event(fake_db, user_id="owner")
+    fake_db.STORE["event_invitees"] = [{"id": "inv-1", "event_id": "event-123"}]
+    from events.service import add_invitees, list_invitees, remove_invitee
+    from events.schemas import InviteeIn
+
+    with pytest.raises(ValueError):
+        list_invitees("someone-else", "event-123")
+    with pytest.raises(ValueError):
+        add_invitees("someone-else", "event-123", [InviteeIn(name="x")])
+    with pytest.raises(ValueError):
+        remove_invitee("someone-else", "event-123", "inv-1")
+    assert len(fake_db.STORE["event_invitees"]) == 1
 
 
 def test_rsvp_stats_count_people_and_each_meal_quantity():

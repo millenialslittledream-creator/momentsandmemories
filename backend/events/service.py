@@ -48,6 +48,8 @@ def update_event(user_id: str, event_id: str, data: UpdateEventRequest) -> dict:
     db = database.get_db()
     get_event(user_id, event_id)  # ownership check
     updates = {k: v for k, v in data.model_dump().items() if v is not None}
+    if "status" in updates and updates["status"] not in VALID_EVENT_STATUSES:
+        raise ValueError(f"Invalid status: {updates['status']!r}")
     updates["updated_at"] = datetime.now(timezone.utc).isoformat()
     result = db.table("events").update(updates).eq("id", event_id).execute()
     _log("events", "event.updated", user_id=user_id, metadata={"event_id": event_id})
@@ -62,7 +64,8 @@ def delete_event(user_id: str, event_id: str) -> dict:
     return {"deleted": True}
 
 
-def add_invitees(event_id: str, invitees: list) -> list:
+def add_invitees(user_id: str, event_id: str, invitees: list) -> list:
+    get_event(user_id, event_id)  # ownership check — raises if not the caller's event
     db = database.get_db()
     rows = [{k: v for k, v in inv.model_dump().items() if v is not None} for inv in invitees]
     for row in rows:
@@ -72,12 +75,14 @@ def add_invitees(event_id: str, invitees: list) -> list:
     return result.data
 
 
-def list_invitees(event_id: str) -> list:
+def list_invitees(user_id: str, event_id: str) -> list:
+    get_event(user_id, event_id)  # ownership check
     db = database.get_db()
     return db.table("event_invitees").select("*").eq("event_id", event_id).execute().data
 
 
-def remove_invitee(event_id: str, invitee_id: str) -> dict:
+def remove_invitee(user_id: str, event_id: str, invitee_id: str) -> dict:
+    get_event(user_id, event_id)  # ownership check
     db = database.get_db()
     db.table("event_invitees").delete().eq("id", invitee_id).eq("event_id", event_id).execute()
     _log("events", "invitee.removed", metadata={"invitee_id": invitee_id})

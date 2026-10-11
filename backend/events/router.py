@@ -1,4 +1,5 @@
-from typing import List
+from typing import Annotated, List
+from pydantic import Field
 from fastapi import APIRouter, Depends, HTTPException, Query
 from middleware.auth import get_current_user
 from events.schemas import CreateEventRequest, UpdateEventRequest, InviteeIn
@@ -9,7 +10,10 @@ router = APIRouter(prefix="/events", tags=["events"])
 
 @router.post("", status_code=201)
 def create_event(data: CreateEventRequest, current_user: dict = Depends(get_current_user)):
-    return service.create_event(current_user["sub"], data)
+    try:
+        return service.create_event(current_user["sub"], data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("")
@@ -39,7 +43,7 @@ def update_event(event_id: str, data: UpdateEventRequest, current_user: dict = D
     try:
         return service.update_event(current_user["sub"], event_id, data)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=400 if "Invalid status" in str(e) else 404, detail=str(e))
 
 
 @router.delete("/{event_id}")
@@ -51,18 +55,27 @@ def delete_event(event_id: str, current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/{event_id}/invitees", status_code=201)
-def add_invitees(event_id: str, invitees: List[InviteeIn], current_user: dict = Depends(get_current_user)):
-    return service.add_invitees(event_id, invitees)
+def add_invitees(event_id: str, invitees: Annotated[List[InviteeIn], Field(max_length=500)], current_user: dict = Depends(get_current_user)):
+    try:
+        return service.add_invitees(current_user["sub"], event_id, invitees)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get("/{event_id}/invitees")
 def list_invitees(event_id: str, current_user: dict = Depends(get_current_user)):
-    return service.list_invitees(event_id)
+    try:
+        return service.list_invitees(current_user["sub"], event_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.delete("/{event_id}/invitees/{invitee_id}")
 def remove_invitee(event_id: str, invitee_id: str, current_user: dict = Depends(get_current_user)):
-    return service.remove_invitee(event_id, invitee_id)
+    try:
+        return service.remove_invitee(current_user["sub"], event_id, invitee_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get("/{event_id}/rsvp-stats")

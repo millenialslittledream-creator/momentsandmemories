@@ -6,12 +6,28 @@ from starlette.requests import Request
 from database import get_db
 
 
+# Cap concurrent log writers: one unbounded thread per request lets a request flood
+# exhaust threads/sockets. Excess log lines are dropped instead of piling up.
+_log_slots = threading.BoundedSemaphore(32)
+
+
 def _write_log(**kwargs) -> None:
     try:
         db = get_db()
         db.table("logs").insert(kwargs).execute()
     except Exception:
         pass
+    finally:
+        _log_slots.release()
+
+
+def _spawn_log(**kwargs) -> None:
+    if not _log_slots.acquire(blocking=False):
+        return
+    try:
+        threading.Thread(target=_write_log, daemon=True, kwargs=kwargs).start()
+    except Exception:
+        _log_slots.release()
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
@@ -23,7 +39,10 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
         duration_ms = int((time.time() - start) * 1000)
 
-        threading.Thread(target=_write_log, daemon=True, kwargs={
+        if request.url.path.endswith("/health"):
+            return response
+
+        _spawn_log(**{
             "level": "info",
             "module": "middleware",
             "action": f"request.{request.method.lower()}",
@@ -35,7 +54,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 "status_code": response.status_code,
                 "duration_ms": duration_ms,
             },
-        }).start()
+        })
 
         return response
 
@@ -48,10 +67,10 @@ def log_event(
     metadata: dict | None = None,
 ) -> None:
     """Fire-and-forget log — never blocks the caller."""
-    threading.Thread(target=_write_log, daemon=True, kwargs={
-        "level": level,
-        "module": module,
-        "action": action,
-        "user_id": user_id,
-        "metadata": metadata or {},
-    }).start()
+    _spawn_log(
+        level=level,
+        module=module,
+        action=action,
+        user_id=user_id,
+        metadata=metadata or {},
+    )

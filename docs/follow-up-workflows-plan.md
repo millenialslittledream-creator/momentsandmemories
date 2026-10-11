@@ -13,7 +13,7 @@
 ## Current state (grounded in the code)
 
 - **Invitees + RSVP** exist: `event_invitees` table, RSVP pages (`/rsvp/:eventId/:inviteeId`), and RSVP stats on the dashboard (`api.getEventRSVPStats`).
-- **Sending** exists: `backend/notifications/service.py` — `send_notification` (single) and `bulk_send` / `_do_bulk_send` (bulk) via **Amazon SES** (email) and **Amazon Pinpoint SMS** (`pinpoint-sms-voice-v2`). WhatsApp is a deep link.
+- **Sending** exists: `backend/notifications/service.py` — `send_notification` (single) and `bulk_send` / `_do_bulk_send` (bulk) via **Amazon SES** (email) and **Telnyx** (SMS, REST via httpx). WhatsApp is a deep link.
 - **Photo capture** exists: guests upload via `/gallery/:eventId` (`GuestGalleryUpload`), and `api.getPublicBook` returns book pages. Public event page is `/event/:eventId`.
 - **No scheduler** anywhere in `backend/` — all sends are on-demand (request-triggered). This is the main new capability the reminder features need.
 - **No reminder-rules table**, no "thank-you" flow, no photo-book share/send flow.

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 
@@ -12,6 +12,6 @@ class UserProfile(BaseModel):
 
 
 class UpdateProfileRequest(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    avatar_url: Optional[str] = None
+    first_name: Optional[str] = Field(default=None, max_length=100)
+    last_name: Optional[str] = Field(default=None, max_length=100)
+    avatar_url: Optional[str] = Field(default=None, max_length=500, pattern=r"^https://")

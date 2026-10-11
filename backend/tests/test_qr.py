@@ -61,12 +61,28 @@ def test_submit_contacts_session_not_found(mock_db):
         submit_contacts("badtoken", [])
 
 
-def test_get_session_status(mock_db):
-    mock_db.table.return_value.select.return_value.eq.return_value.execute.return_value = MagicMock(
-        data=[{"session_token": "abc123", "status": "completed", "contacts_json": [{"name": "John"}]}]
-    )
-
+def test_get_session_status(fake_db):
+    fake_db.STORE["qr_contact_sessions"] = [
+        {"session_token": "abc123", "user_id": "u1", "status": "completed", "contacts_json": [{"name": "John"}]}
+    ]
     from qr.service import get_session_status
-    result = get_session_status("abc123")
+    result = get_session_status("u1", "abc123")
     assert result["status"] == "completed"
     assert len(result["contacts_json"]) == 1
+    assert "user_id" not in result
+
+
+def test_get_session_status_is_owner_only(fake_db):
+    fake_db.STORE["qr_contact_sessions"] = [
+        {"session_token": "abc123", "user_id": "u1", "status": "completed", "contacts_json": [{"name": "John"}]}
+    ]
+    from qr.service import get_session_status
+    with pytest.raises(ValueError):
+        get_session_status("someone-else", "abc123")
+
+
+def test_create_qr_session_rejects_foreign_event(fake_db):
+    fake_db.STORE["events"] = [{"id": "e1", "user_id": "owner"}]
+    from qr.service import create_qr_session
+    with pytest.raises(ValueError):
+        create_qr_session("intruder", "e1")

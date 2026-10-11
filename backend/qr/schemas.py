@@ -1,15 +1,15 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 
 
 class ContactIn(BaseModel):
-    name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
+    name: Optional[str] = Field(default=None, max_length=200)
+    email: Optional[str] = Field(default=None, max_length=320)
+    phone: Optional[str] = Field(default=None, max_length=64)
 
 
 class ContactsSubmitRequest(BaseModel):
-    contacts: List[ContactIn]
+    contacts: List[ContactIn] = Field(max_length=500)
 
 
 class QRSessionResponse(BaseModel):

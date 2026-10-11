@@ -1,13 +1,13 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Literal, Optional, List
 
 
 class SendNotificationRequest(BaseModel):
-    user_id: Optional[str] = None
+    user_id: Optional[str] = None  # ignored by the API: the caller's own id is always used
     type: Literal["email", "sms", "whatsapp"]
-    title: str
-    body: str
-    recipient: str  # email address or phone number
+    title: str = Field(max_length=200)
+    body: str = Field(max_length=2000)
+    recipient: str = Field(max_length=320)  # email address or phone number
 
 
 class WhatsAppShareResponse(BaseModel):
@@ -17,18 +17,18 @@ class WhatsAppShareResponse(BaseModel):
 # ── Bulk messaging ────────────────────────────────────────────────────────────
 
 class BulkRecipient(BaseModel):
-    name: str = ""
-    email: Optional[str] = None
-    phone: Optional[str] = None
+    name: str = Field(default="", max_length=200)
+    email: Optional[str] = Field(default=None, max_length=320)
+    phone: Optional[str] = Field(default=None, max_length=32)
 
 
 class BulkSendRequest(BaseModel):
     # Either supply event_id (auto-fetches all invitees) OR a manual recipients list
     event_id: Optional[str] = None
-    recipients: Optional[List[BulkRecipient]] = None
+    recipients: Optional[List[BulkRecipient]] = Field(default=None, max_length=200)
     channel: Literal["email", "sms"]
-    subject: str           # email subject line or SMS prefix
-    body: str              # supports {name} placeholder for personalisation
+    subject: str = Field(max_length=200)   # email subject line or SMS prefix
+    body: str = Field(max_length=2000)     # supports {name} placeholder for personalisation
 
 
 class BulkSendResponse(BaseModel):

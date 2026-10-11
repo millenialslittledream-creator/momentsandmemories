@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from uuid import UUID
 from public.schemas import RSVPRequest
 from public import service
 from gallery import service as gallery_service
+from middleware.ratelimit import ip_limit
 
-router = APIRouter(prefix="/public", tags=["public"])
+router = APIRouter(prefix="/public", tags=["public"], dependencies=[Depends(ip_limit("public", 240, 60))])
 
 
 def _validated_uuid(value: str, resource: str) -> str:
@@ -58,15 +59,15 @@ def list_gallery_photos(event_id: str):
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.post("/events/{event_id}/gallery")
+@router.post("/events/{event_id}/gallery", dependencies=[Depends(ip_limit("gallery-upload", 10, 60))])
 async def upload_gallery_photo(
     event_id: str,
     file: UploadFile = File(...),
-    uploaded_by_name: str = Form(None),
+    uploaded_by_name: str = Form(None, max_length=100),
 ):
     event_id = _validated_uuid(event_id, "Event")
     try:
-        content = await file.read()
+        content = await file.read(gallery_service.MAX_IMAGE_BYTES + 1)
         return gallery_service.upload_guest_photo(event_id, uploaded_by_name, file.filename, content, file.content_type)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -84,7 +85,7 @@ def get_rsvp_page(event_id: str, invitee_id: str):
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.post("/events/{event_id}/rsvp/{invitee_id}")
+@router.post("/events/{event_id}/rsvp/{invitee_id}", dependencies=[Depends(ip_limit("rsvp", 30, 60))])
 def submit_rsvp(event_id: str, invitee_id: str, data: RSVPRequest):
     event_id = _validated_uuid(event_id, "Event")
     invitee_id = _validated_uuid(invitee_id, "Invitee")

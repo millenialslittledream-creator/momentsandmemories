@@ -1,9 +1,11 @@
 import uuid
 import database
 from middleware.logging import log_event as _log
+from media.validation import sniff_media_type, extension_for, IMAGE_TYPES
 
 BUCKET = "user-uploads"
 MAX_IMAGE_BYTES = 10 * 1024 * 1024
+MAX_PHOTOS_PER_EVENT = 300
 
 
 def _assert_event_published(db, event_id: str) -> None:
@@ -22,12 +24,19 @@ def upload_guest_photo(event_id: str, uploaded_by_name: str | None, filename: st
     db = database.get_db()
     _assert_event_published(db, event_id)
 
-    if not mime_type or not mime_type.startswith("image/"):
-        raise ValueError("Only image files can be shared to the gallery")
+    detected = sniff_media_type(content)
+    if detected not in IMAGE_TYPES:
+        raise ValueError("Only JPEG, PNG, GIF or WebP images can be shared to the gallery")
+    mime_type = detected
     if len(content) > MAX_IMAGE_BYTES:
         raise ValueError(f"File too large — max {MAX_IMAGE_BYTES // (1024 * 1024)}MB")
 
-    storage_path = f"gallery/{event_id}/{uuid.uuid4()}_{filename}"
+    existing = db.table("event_gallery_photos").select("id", count="exact").eq("event_id", event_id).execute()
+    if (existing.count or 0) >= MAX_PHOTOS_PER_EVENT:
+        raise ValueError("This gallery is full")
+
+    uploaded_by_name = (uploaded_by_name or "").strip()[:100] or None
+    storage_path = f"gallery/{event_id}/{uuid.uuid4()}{extension_for(mime_type)}"
     db.storage.from_(BUCKET).upload(storage_path, content, file_options={"content-type": mime_type})
     public_url = db.storage.from_(BUCKET).get_public_url(storage_path)
 

@@ -21,6 +21,10 @@ def _make_qr(url: str) -> str:
 
 def create_qr_session(user_id: str, event_id: str | None = None) -> dict:
     db = database.get_db()
+    if event_id:
+        owned = db.table("events").select("id").eq("id", event_id).eq("user_id", user_id).execute()
+        if not owned.data:
+            raise ValueError("Event not found")
 
     # Lazy cleanup: purge stale sessions for this user before creating a new one
     db.table("qr_contact_sessions").delete().eq("user_id", user_id).lt(
@@ -43,16 +47,20 @@ def create_qr_session(user_id: str, event_id: str | None = None) -> dict:
     import_url = f"{base}/api/qr/import/{token}"
     qr_b64 = _make_qr(import_url)
 
-    _log("qr", "qr.session_started", user_id=user_id, metadata={"token": token})
+    _log("qr", "qr.session_started", user_id=user_id, metadata={"event_id": event_id})
     return {"session_token": token, "qr_code_base64": qr_b64, "expires_in_seconds": 900}
 
 
-def get_session_status(token: str) -> dict:
+def get_session_status(user_id: str, token: str) -> dict:
+    """Owner-only: the session must belong to the caller. Never exposes user_id."""
     db = database.get_db()
-    result = db.table("qr_contact_sessions").select("*").eq("session_token", token).execute()
+    result = (
+        db.table("qr_contact_sessions").select("*").eq("session_token", token).eq("user_id", user_id).execute()
+    )
     if not result.data:
         raise ValueError("Session not found")
-    return result.data[0]
+    session = result.data[0]
+    return {k: session.get(k) for k in ("session_token", "event_id", "status", "contacts_json", "expires_at", "completed_at")}
 
 
 def submit_contacts(token: str, contacts: list) -> dict:
@@ -80,7 +88,7 @@ def submit_contacts(token: str, contacts: list) -> dict:
         "completed_at": datetime.now(timezone.utc).isoformat(),
     }).eq("session_token", token).execute()
 
-    _log("qr", "qr.contacts_received", metadata={"token": token, "count": len(contacts)})
+    _log("qr", "qr.contacts_received", metadata={"count": len(contacts)})
     return {"status": "completed", "count": len(contacts)}
 
 
@@ -135,9 +143,15 @@ def _parse_vcard(text: str) -> list[dict]:
     return contacts
 
 
+MAX_VCF_BYTES = 1024 * 1024
+MAX_VCF_CONTACTS = 500
+
+
 def submit_vcf(token: str, vcf_bytes: bytes) -> dict:
+    if len(vcf_bytes) > MAX_VCF_BYTES:
+        raise ValueError("vCard file is too large (max 1 MB)")
     text = vcf_bytes.decode("utf-8", errors="replace")
-    contacts = _parse_vcard(text)
+    contacts = _parse_vcard(text)[:MAX_VCF_CONTACTS]
     if not contacts:
         raise ValueError("No contacts found in vCard file")
     return submit_contacts(token, contacts)

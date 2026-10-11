@@ -13,37 +13,12 @@ def test_list_active_items(mock_db):
     assert result[0]["name"] == "Gift Box"
 
 
-def test_create_order(mock_db):
-    items_mock = MagicMock()
-    orders_mock = MagicMock()
-    order_items_mock = MagicMock()
-    shop_items_update_mock = MagicMock()
+def _stock_item(fake_db, stock=10, price=29.99):
+    fake_db.STORE["shop_items"] = [{"id": "item-1", "name": "Gift Box", "price": price, "stock": stock, "is_active": True}]
 
-    items_mock.select.return_value.eq.return_value.in_.return_value.execute.return_value = MagicMock(
-        data=[{"id": "item-1", "name": "Gift Box", "price": 29.99, "stock": 10, "is_active": True}]
-    )
-    orders_mock.insert.return_value.execute.return_value = MagicMock(
-        data=[{"id": "order-123", "status": "pending", "total_amount": 32.39}]
-    )
-    order_items_mock.insert.return_value.execute.return_value = MagicMock(data=[{}])
-    shop_items_update_mock.update.return_value.eq.return_value.execute.return_value = MagicMock(data=[{}])
 
-    call_count = {"shop_items": 0}
-
-    def table_router(name):
-        if name == "shop_items":
-            call_count["shop_items"] += 1
-            if call_count["shop_items"] == 1:
-                return items_mock
-            return shop_items_update_mock
-        if name == "orders":
-            return orders_mock
-        if name == "order_items":
-            return order_items_mock
-        return MagicMock()
-
-    mock_db.table.side_effect = table_router
-
+def test_create_order(fake_db):
+    _stock_item(fake_db)
     from shop.service import create_order
     from shop.schemas import CreateOrderRequest, OrderItemIn
 
@@ -51,9 +26,51 @@ def test_create_order(mock_db):
         items=[OrderItemIn(shop_item_id="item-1", quantity=1)],
         shipping_address={"street": "123 Main St", "city": "NYC"},
     ))
-    assert result["id"] == "order-123"
-    orders_mock.insert.assert_called_once()
-    order_items_mock.insert.assert_called_once()
+    assert result["status"] == "pending"
+    assert result["total_amount"] == 32.39
+    assert fake_db.STORE["shop_items"][0]["stock"] == 9
+    assert len(fake_db.STORE["order_items"]) == 1
+
+
+def test_order_rejects_zero_and_negative_quantities():
+    from shop.schemas import OrderItemIn
+    from pydantic import ValidationError
+    for bad in (0, -1, -10, 101):
+        with pytest.raises(ValidationError):
+            OrderItemIn(shop_item_id="item-1", quantity=bad)
+
+
+def test_duplicate_lines_are_merged_and_cannot_oversell(fake_db):
+    _stock_item(fake_db, stock=5)
+    from shop.service import create_order
+    from shop.schemas import CreateOrderRequest, OrderItemIn
+
+    with pytest.raises(ValueError, match="out of stock"):
+        create_order("u", CreateOrderRequest(items=[
+            OrderItemIn(shop_item_id="item-1", quantity=3), OrderItemIn(shop_item_id="item-1", quantity=3)]))
+    assert fake_db.STORE["shop_items"][0]["stock"] == 5      # nothing reserved
+    assert fake_db.STORE.get("orders", []) == []             # no orphan order
+
+
+def test_failed_order_releases_reserved_stock(fake_db):
+    _stock_item(fake_db, stock=5)
+    from shop import service
+    from shop.schemas import CreateOrderRequest, OrderItemIn
+    from unittest.mock import patch
+
+    real_get_db = service.database.get_db()
+    original_table = real_get_db.table
+
+    def table(name):
+        if name == "order_items":
+            raise RuntimeError("db down")
+        return original_table(name)
+
+    with patch.object(real_get_db, "table", side_effect=table):
+        with pytest.raises(RuntimeError):
+            service.create_order("u", CreateOrderRequest(items=[OrderItemIn(shop_item_id="item-1", quantity=2)]))
+    assert fake_db.STORE["shop_items"][0]["stock"] == 5      # stock given back
+    assert fake_db.STORE.get("orders", []) == []             # order row removed
 
 
 def test_create_order_out_of_stock(mock_db):

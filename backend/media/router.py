@@ -1,17 +1,18 @@
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from middleware.auth import get_current_user
 from media import service
+from middleware.ratelimit import user_limit
 
 router = APIRouter(prefix="/media", tags=["media"])
 
 
-@router.post("/upload")
+@router.post("/upload", dependencies=[Depends(user_limit("media-upload", 30, 60))])
 async def upload(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),
 ):
     try:
-        content = await file.read()
+        content = await file.read(service.MAX_VIDEO_BYTES + 1)
         return service.upload_media(current_user["sub"], file.filename, content, file.content_type)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -1,13 +1,13 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 
 
 class CreateEventRequest(BaseModel):
-    title: str
-    description: Optional[str] = None
-    event_date: str
-    event_time: Optional[str] = None
-    location: Optional[str] = None
+    title: str = Field(max_length=300)
+    description: Optional[str] = Field(default=None, max_length=10000)
+    event_date: str = Field(max_length=64)
+    event_time: Optional[str] = Field(default=None, max_length=64)
+    location: Optional[str] = Field(default=None, max_length=500)
     template_id: Optional[str] = None
     cover_image_url: Optional[str] = None
     # Publish state ('draft' | 'published' | 'archived'). The create flow
@@ -22,11 +22,11 @@ class CreateEventRequest(BaseModel):
 
 
 class UpdateEventRequest(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    event_date: Optional[str] = None
-    event_time: Optional[str] = None
-    location: Optional[str] = None
+    title: Optional[str] = Field(default=None, max_length=300)
+    description: Optional[str] = Field(default=None, max_length=10000)
+    event_date: Optional[str] = Field(default=None, max_length=64)
+    event_time: Optional[str] = Field(default=None, max_length=64)
+    location: Optional[str] = Field(default=None, max_length=500)
     status: Optional[str] = None
     template_id: Optional[str] = None
     cover_image_url: Optional[str] = None
@@ -36,7 +36,7 @@ class UpdateEventRequest(BaseModel):
 
 
 class InviteeIn(BaseModel):
-    name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    source: str = "manual"
+    name: Optional[str] = Field(default=None, max_length=200)
+    email: Optional[str] = Field(default=None, max_length=320)
+    phone: Optional[str] = Field(default=None, max_length=32)
+    source: str = Field(default="manual", max_length=32)
