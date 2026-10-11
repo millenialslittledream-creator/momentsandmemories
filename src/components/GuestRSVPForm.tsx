@@ -7,6 +7,7 @@ export interface RSVPInvitee {
   id: string;
   name: string;
   email: string | null;
+  phone: string | null;
   rsvp_status: string;
   rsvp_message: string | null;
   dietary_requirements: string | null;
@@ -87,6 +88,7 @@ export default function GuestRSVPForm({ eventId, event, invitee = null, requireN
     : null;
 
   const [name, setName] = useState(invitee?.name ?? '');
+  const [phone, setPhone] = useState(invitee?.phone ?? '');
   const [nameConfirmed, setNameConfirmed] = useState(!requireName);
   const [currentInviteeId, setCurrentInviteeId] = useState(invitee?.id ?? '');
   const [status, setStatus] = useState<RSVPStatus>(existingStatus);
@@ -105,6 +107,8 @@ export default function GuestRSVPForm({ eventId, event, invitee = null, requireN
   const totalAttendees = adults + (config.collectKidsCount ? children : 0);
   const mealTotal = Object.values(meals).reduce((sum, value) => sum + value, 0);
   const mealsValid = !config.collectFoodPreference || mealTotal === totalAttendees;
+  const phoneValid = phone.replace(/\D/g, '').length >= 7 && phone.replace(/\D/g, '').length <= 15;
+  const contactValid = Boolean(name.trim()) && phoneValid;
   const canSubmit = Boolean(status) && !(status === 'accepted' && !mealsValid);
   const rsvpOpen = Boolean(event.rsvp_enabled && config.enabled);
   const responseChoices = [
@@ -125,7 +129,7 @@ export default function GuestRSVPForm({ eventId, event, invitee = null, requireN
   };
 
   const handleSubmit = async () => {
-    if (!status || !name.trim() || (status === 'accepted' && !mealsValid)) return;
+    if (!status || !name.trim() || (requireName && !phoneValid) || (status === 'accepted' && !mealsValid)) return;
     setSubmitting(true);
     setSubmitError('');
     const payload = {
@@ -140,7 +144,7 @@ export default function GuestRSVPForm({ eventId, event, invitee = null, requireN
       if (currentInviteeId) {
         await api.submitRSVP(eventId, currentInviteeId, payload);
       } else {
-        const result = await api.submitOpenRSVP(eventId, { ...payload, name: name.trim() });
+        const result = await api.submitOpenRSVP(eventId, { ...payload, name: name.trim(), phone: phone.trim() });
         setCurrentInviteeId(result.invitee_id);
       }
       setDone(true);
@@ -178,8 +182,8 @@ export default function GuestRSVPForm({ eventId, event, invitee = null, requireN
       <section aria-labelledby="guest-name-heading" data-testid="share-link-name-step">
         <div className="mb-5 text-center">
           <p className="font-display text-[9px] uppercase tracking-[0.26em] text-[#5f7256]">Step 1 of 2</p>
-          <h2 id="guest-name-heading" className="mt-1 font-serif-exp text-2xl italic text-[#2a3328]">First, tell us your name</h2>
-          <p className="mt-2 text-sm text-[#44533e]/75">The host will use this name to identify your response.</p>
+          <h2 id="guest-name-heading" className="mt-1 font-serif-exp text-2xl italic text-[#2a3328]">First, your contact details</h2>
+          <p className="mt-2 text-sm text-[#44533e]/75">The host will use these details to identify your response.</p>
         </div>
         <label htmlFor="share-rsvp-name" className="mb-2 block text-sm font-semibold text-[#2a3328]">Guest name <span className="text-red-700">*</span></label>
         <input
@@ -189,13 +193,27 @@ export default function GuestRSVPForm({ eventId, event, invitee = null, requireN
           maxLength={100}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && name.trim()) setNameConfirmed(true);
-          }}
           placeholder="Enter your full name"
           className="w-full rounded-lg border border-[#5f7256]/35 bg-white/85 px-4 py-3 text-sm text-[#2a3328] outline-none placeholder:text-[#44533e]/45 focus:border-[#405138] focus:ring-2 focus:ring-[#5f7256]/15"
         />
-        <button type="button" disabled={!name.trim()} onClick={() => setNameConfirmed(true)} className={`mt-4 w-full rounded-full border py-3.5 font-display text-[10px] uppercase tracking-[0.25em] transition ${name.trim() ? 'border-[#20251f] bg-[#20251f] text-white hover:bg-[#3d4a35]' : 'cursor-not-allowed border-[#5f7256]/35 bg-white/60 text-[#596653]'}`}>
+        <label htmlFor="share-rsvp-phone" className="mb-2 mt-4 block text-sm font-semibold text-[#2a3328]">Phone number <span className="text-red-700">*</span></label>
+        <input
+          id="share-rsvp-phone"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          maxLength={32}
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && contactValid) setNameConfirmed(true);
+          }}
+          placeholder="Enter your phone number"
+          aria-describedby="share-rsvp-phone-hint"
+          className="w-full rounded-lg border border-[#5f7256]/35 bg-white/85 px-4 py-3 text-sm text-[#2a3328] outline-none placeholder:text-[#44533e]/45 focus:border-[#405138] focus:ring-2 focus:ring-[#5f7256]/15"
+        />
+        <p id="share-rsvp-phone-hint" className="mt-1 text-[11px] text-[#44533e]/65">Include the country code if you are outside the host's country.</p>
+        <button type="button" disabled={!contactValid} onClick={() => setNameConfirmed(true)} className={`mt-4 w-full rounded-full border py-3.5 font-display text-[10px] uppercase tracking-[0.25em] transition ${contactValid ? 'border-[#20251f] bg-[#20251f] text-white hover:bg-[#3d4a35]' : 'cursor-not-allowed border-[#5f7256]/35 bg-white/60 text-[#596653]'}`}>
           Continue to RSVP →
         </button>
       </section>
@@ -224,7 +242,7 @@ export default function GuestRSVPForm({ eventId, event, invitee = null, requireN
   return (
     <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(); }} data-testid="rsvp-form">
       <div className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-[#738269]/20 bg-[#eef2e9]/80 px-4 py-3">
-        <p className="font-display text-[9px] uppercase tracking-[0.16em] text-[#44533e]/75">Responding as <strong className="text-[#2a3328]">{name}</strong></p>
+        <p className="font-display text-[9px] uppercase tracking-[0.16em] text-[#44533e]/75">Responding as <strong className="text-[#2a3328]">{name}</strong>{requireName && <span> · {phone}</span>}</p>
         {requireName && !currentInviteeId && <button type="button" onClick={() => setNameConfirmed(false)} className="font-display text-[8px] uppercase tracking-[0.15em] text-[#405138] underline underline-offset-4">Edit</button>}
       </div>
 

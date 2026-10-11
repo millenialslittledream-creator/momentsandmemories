@@ -277,7 +277,7 @@ export default function Shop() {
           {/* Two-column: filter sidebar + product grid */}
           <div className="flex-1 min-h-0 flex gap-6 pt-4 overflow-hidden">
             {/* ── Filter sidebar ── */}
-            <aside className="hidden md:block w-52 flex-shrink-0 overflow-y-auto scrollbar-subtle pr-1">
+            <aside data-lenis-prevent className="hidden md:block w-52 flex-shrink-0 overflow-y-auto scrollbar-subtle pr-1">
               {/* Category */}
               <div className="mb-6">
                 <p className="font-display text-[9px] tracking-[0.24em] uppercase text-[#5f7256] mb-2.5">Category</p>
@@ -344,7 +344,7 @@ export default function Shop() {
             </aside>
 
             {/* ── Product grid ── */}
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle">
+            <div data-lenis-prevent data-testid="shop-product-scroll" className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle">
               <div
                 ref={galleryRef}
                 className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 pb-6 content-start"

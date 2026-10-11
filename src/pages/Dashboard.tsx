@@ -333,10 +333,10 @@ export default function Dashboard() {
 
         <OverallRSVPAnalytics refreshToken={analyticsRefreshToken} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 lg:gap-12 items-start">
+        <div className="grid min-w-0 grid-cols-1 lg:grid-cols-[minmax(0,3fr)_minmax(18rem,2fr)] gap-8 lg:gap-12 items-start">
 
           {/* ── Left column — dashboard content ── */}
-          <div>
+          <div className="min-w-0">
             {/* Stats bar */}
             <div className="grid grid-cols-3 gap-px bg-[#3d4a35]/10 mb-10 border border-[#3d4a35]/12">
               {[
@@ -501,7 +501,7 @@ export default function Dashboard() {
 
                     {/* Expanded panels */}
                     {expandedEventId === event.id && event.status === 'published' && (
-                      <div className="border border-t-0 border-[#3d4a35]/10 bg-white/40 px-4 md:px-5 pb-4">
+                      <div className="min-w-0 max-w-full overflow-hidden border border-t-0 border-[#3d4a35]/10 bg-white/40 px-4 md:px-5 pb-4">
                         {/* Tab switcher */}
                         <div className="flex gap-0 border-b border-[#5f7256]/20 mb-1 pt-3">
                           {(['analytics', 'messages'] as const).map(t => (
@@ -533,7 +533,7 @@ export default function Dashboard() {
           </div>
 
           {/* ── Right column — Gift advertisement panel ── */}
-          <div className="lg:sticky lg:top-28">
+          <div data-testid="dashboard-gifts-panel" className="min-w-0 lg:sticky lg:top-28">
             <div className="border border-[#3d4a35]/12 bg-white/70 overflow-hidden shadow-sm">
               {/* Panel header */}
               <div className="px-5 py-3.5 border-b border-[#3d4a35]/10 bg-[#5f7256]/[0.06] flex items-center justify-between">

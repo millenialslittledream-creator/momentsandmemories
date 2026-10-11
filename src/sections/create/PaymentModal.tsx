@@ -11,7 +11,8 @@ interface PaymentModalProps {
   invitationCount: number;
   onBack: () => void;
   onClose?: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
+  submitError?: string;
 }
 
 // Pricing-style font: SF Pro / Inter with tabular numerals — what most e-commerce uses.
@@ -32,6 +33,7 @@ export default function PaymentModal({
   onBack,
   onClose,
   onConfirm,
+  submitError,
 }: PaymentModalProps) {
   const backdropRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -119,7 +121,7 @@ export default function PaymentModal({
         </button>
         {/* Header */}
         <div className="flex-shrink-0 px-6 md:px-10 pt-4 pb-4 border-b border-white/[0.06] bg-[#0e1712]">
-          <FlowStepper current={7} tone="light" className="max-w-2xl mx-auto mb-3" />
+          <FlowStepper current={6} tone="light" className="max-w-2xl mx-auto mb-3" />
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="font-serif-exp text-xl md:text-2xl text-[#e4eee1] leading-tight">
@@ -466,7 +468,7 @@ export default function PaymentModal({
               ) : isFree ? (
                 <>
                   <span className="material-icons text-sm">send</span>
-                  Send Invitations — Free
+                  Send Invitation — Free
                 </>
               ) : (
                 <>
@@ -477,6 +479,11 @@ export default function PaymentModal({
                 </>
               )}
             </button>
+            {submitError && (
+              <p role="alert" className="font-display text-[10px] text-red-300/90 text-center leading-relaxed">
+                {submitError}
+              </p>
+            )}
             <p className="font-display text-[8px] text-[#b2c3b1]/40 text-center leading-relaxed">
               By completing your purchase, you agree to our Terms of Service and Privacy Policy.
             </p>

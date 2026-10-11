@@ -66,6 +66,12 @@ export default function GuestPopup({
     guestsRef.current = guests;
   }, [guests]);
 
+  // Old drafts may still contain an email/SMS preference from before those
+  // channels were paused. Always fall back to the one currently supported path.
+  useEffect(() => {
+    if (deliveryPreference !== 'link') onDeliveryPreferenceChange('link');
+  }, [deliveryPreference, onDeliveryPreferenceChange]);
+
   // The active contact-collection sub-popup. null = closed.
   const [activeMethod, setActiveMethod] = useState<ContactMethod | null>(null);
   const [qrSession, setQrSession] = useState<{ token: string; qr_code_base64: string } | null>(null);
@@ -282,10 +288,10 @@ export default function GuestPopup({
 
   const importedCount = guests.filter((g) => g.name.trim()).length;
 
-  const deliveryOptions: { value: DeliveryPref; label: string; icon: string; description: string }[] = [
-    { value: 'email', label: 'Email', icon: 'email', description: 'Send invites via email' },
-    { value: 'phone', label: 'SMS', icon: 'sms', description: 'Send invites via text' },
-    { value: 'both', label: 'Email + SMS', icon: 'mark_email_read', description: 'Use both for best reach' },
+  const deliveryOptions: { value: DeliveryPref; label: string; icon: string; description: string; comingSoon?: boolean }[] = [
+    { value: 'email', label: 'Email', icon: 'email', description: 'Direct email delivery', comingSoon: true },
+    { value: 'phone', label: 'SMS', icon: 'sms', description: 'Direct text delivery', comingSoon: true },
+    { value: 'both', label: 'Email + SMS', icon: 'mark_email_read', description: 'Combined delivery', comingSoon: true },
     { value: 'link', label: 'Shareable Link', icon: 'link', description: 'Get a link to copy & share yourself' },
   ];
 
@@ -475,7 +481,7 @@ export default function GuestPopup({
 
         {/* Header */}
         <div className="flex-shrink-0 px-6 md:px-10 pt-2.5 pb-3 border-b border-white/[0.06]">
-          <FlowStepper current={5} tone="light" className="max-w-2xl mx-auto mb-2" />
+          <FlowStepper current={4} tone="light" className="max-w-2xl mx-auto mb-2" />
           <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight">
             {showAddGuests ? (
               <>Who's on the <span className="text-[#9cb092] font-agatho italic">guest list?</span></>
@@ -486,7 +492,7 @@ export default function GuestPopup({
           <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/55 mt-1.5">
             {showAddGuests
               ? "Pick how you'd like to deliver — and how to add your guests."
-              : 'Copy your link on the next step — or switch to Email / SMS to invite guests directly.'}
+              : 'Use a shareable link for now. Email and SMS delivery are coming soon.'}
           </p>
         </div>
 
@@ -502,9 +508,14 @@ export default function GuestPopup({
               {deliveryOptions.map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() => onDeliveryPreferenceChange(opt.value)}
+                  type="button"
+                  disabled={opt.comingSoon}
+                  aria-disabled={opt.comingSoon}
+                  onClick={() => !opt.comingSoon && onDeliveryPreferenceChange(opt.value)}
                   className={`group text-left p-4 border transition-all duration-200 ${
-                    deliveryPreference === opt.value
+                    opt.comingSoon
+                      ? 'border-white/[0.07] bg-white/[0.015] opacity-55 cursor-not-allowed'
+                      : deliveryPreference === opt.value
                       ? 'border-[#9cb092] bg-[#9cb092]/10 shadow-sm shadow-[#9cb092]/10'
                       : 'border-white/10 bg-white/[0.03] hover:border-[#9cb092]/40'
                   }`}
@@ -516,9 +527,16 @@ export default function GuestPopup({
                   >
                     {opt.icon}
                   </span>
-                  <p className="font-display text-[10px] tracking-[0.18em] uppercase text-[#e4eee1] mb-0.5">
-                    {opt.label}
-                  </p>
+                  <div className="mb-0.5 flex flex-wrap items-center gap-2">
+                    <p className="font-display text-[10px] tracking-[0.18em] uppercase text-[#e4eee1]">
+                      {opt.label}
+                    </p>
+                    {opt.comingSoon && (
+                      <span className="border border-[#c4a882]/35 bg-[#c4a882]/10 px-1.5 py-0.5 font-display text-[7px] tracking-[0.14em] uppercase text-[#c4a882]">
+                        Coming soon
+                      </span>
+                    )}
+                  </div>
                   <p className="font-display text-[9px] text-[#b2c3b1]/55 leading-relaxed">
                     {opt.description}
                   </p>
@@ -580,8 +598,8 @@ export default function GuestPopup({
             <div className="border-t border-white/[0.06] pt-4 flex items-start gap-2.5">
               <span className="material-icons text-[#9cb092] text-base mt-0.5">link</span>
               <p className="font-display text-[10px] text-[#b2c3b1]/60 leading-relaxed">
-                We'll generate a unique link on the next step — copy it and share it with your
-                guests however you like. No guest list needed.
+                We'll generate your unique link after you review and send the invitation. No
+                guest list is needed.
               </p>
             </div>
           )}

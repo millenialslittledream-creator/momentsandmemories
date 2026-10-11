@@ -145,6 +145,7 @@ def test_share_link_rsvp_creates_named_guest_and_updates_all_analytics(client, f
 
     response = client.post(f"/public/events/{event['id']}/rsvp", json={
         "name": "  Maya   Shah  ",
+        "phone": "+91 98765 43210",
         "status": "accepted",
         "message": "Looking forward to it",
         "dietary_requirements": "One meal must be nut-free",
@@ -157,6 +158,7 @@ def test_share_link_rsvp_creates_named_guest_and_updates_all_analytics(client, f
 
     stored = next(row for row in fake_db.STORE["event_invitees"] if row["id"] == invitee_id)
     assert stored["name"] == "Maya Shah"
+    assert stored["phone"] == "+91 98765 43210"
     assert stored["source"] == "share_link"
     assert stored["party_size"] == 3
 
@@ -166,6 +168,7 @@ def test_share_link_rsvp_creates_named_guest_and_updates_all_analytics(client, f
     assert event_stats["food_preferences"] == {"Vegetarian": 2, "Kids Meal": 1}
     guest = event_stats["guests"][0]
     assert guest["name"] == "Maya Shah"
+    assert guest["phone"] == "+91 98765 43210"
     assert guest["adults_count"] == 2
     assert guest["rsvp_message"] == "Looking forward to it"
     assert guest["dietary_requirements"] == "One meal must be nut-free"
@@ -183,7 +186,7 @@ def test_share_link_rsvp_requires_a_non_blank_name(client, fake_db):
         "title": "Named Guests Only", "event_date": "2027-02-12", "status": "published",
     }).json()
     response = client.post(f"/public/events/{event['id']}/rsvp", json={
-        "name": "   ", "status": "declined",
+        "name": "   ", "phone": "+91 98765 43210", "status": "declined",
     })
     assert response.status_code == 400
     assert fake_db.STORE.get("event_invitees", []) == []

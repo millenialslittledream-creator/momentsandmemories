@@ -26,7 +26,7 @@ import type { TemplateFieldLayout } from '@/data/eviteTemplates';
 import { FONT_CATEGORIES, COLOR_SWATCHES } from '@/components/CanvasEditor/types';
 
 type EventTypeFilter = EventType;
-type ModalPhase = 'upload' | 'canvas-editor' | 'editor' | 'signin' | 'share' | 'guests' | 'preview' | 'payment' | 'sent' | null;
+type ModalPhase = 'upload' | 'canvas-editor' | 'editor' | 'signin' | 'guests' | 'preview' | 'payment' | 'sent' | null;
 
 // The entry flow now has four stages:
 //   'picker'        — "What are we celebrating today?" event grid (first thing users see)
@@ -196,11 +196,11 @@ export default function CreateEvite() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [uploadedTemplate, setUploadedTemplate] = useState<UploadedTemplate | null>(null);
   const [modalPhase, setModalPhase] = useState<ModalPhase>(null);
+  const resumedPendingPhaseRef = useRef(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [guests, setGuests] = useState<Guest[]>([createGuest()]);
-  // Default to the shareable link: the previous step already hands the host a
-  // live link, so the guest step opens with "no guest list needed" and only
-  // asks for guest names if the host opts into email / SMS delivery.
+  // Shareable link is the only live delivery option for now. Email and SMS are
+  // visible as coming-soon choices in the delivery step.
   const [deliveryPreference, setDeliveryPreference] = useState<'email' | 'phone' | 'both' | 'link'>('link');
   const [rsvpSettings, setRsvpSettings] = useState<RSVPSettings>(DEFAULT_RSVP_SETTINGS);
   const [hasSubEvents, setHasSubEvents] = useState(false);
@@ -220,7 +220,7 @@ export default function CreateEvite() {
   const [selectedOverrideKey, setSelectedOverrideKey] = useState<string | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
 
-  // ── Publish / share (the evite goes live at the Share step) ──────────
+  // ── Publish / share (the evite goes live only after final confirmation) ──
   const [publishedEventId, setPublishedEventId] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState('');
@@ -298,13 +298,14 @@ export default function CreateEvite() {
       const parsed = JSON.parse(saved);
       if (parsed.formData) setFormData(parsed.formData);
       if (parsed.guests?.length) setGuests(parsed.guests);
-      if (parsed.deliveryPreference) setDeliveryPreference(parsed.deliveryPreference);
+      setDeliveryPreference('link');
       if (parsed.rsvpSettings) setRsvpSettings(normalizeRsvpSettings(parsed.rsvpSettings));
       if (parsed.selectedTemplateId) setSelectedTemplateId(parsed.selectedTemplateId);
       if (parsed.uploadedTemplate) setUploadedTemplate(parsed.uploadedTemplate);
       if (parsed.hasSubEvents) setHasSubEvents(!!parsed.hasSubEvents);
       if (parsed.pendingPhase && user) {
-        setModalPhase(parsed.pendingPhase);
+        resumedPendingPhaseRef.current = true;
+        setModalPhase(parsed.pendingPhase === 'share' ? 'guests' : parsed.pendingPhase);
         localStorage.setItem(
           'mm_evite_draft',
           JSON.stringify({ ...parsed, pendingPhase: null })
@@ -441,6 +442,7 @@ export default function CreateEvite() {
   // when we're mid sign-in-return (pendingPhase handles that separately).
   useEffect(() => {
     try {
+      if (resumedPendingPhaseRef.current) return;
       const saved = localStorage.getItem('mm_evite_draft');
       if (!saved) return;
       const p = JSON.parse(saved);
@@ -470,7 +472,7 @@ export default function CreateEvite() {
       const p = saved ? JSON.parse(saved) : {};
       if (p.formData) setFormData(p.formData);
       if (p.guests?.length) setGuests(p.guests);
-      if (p.deliveryPreference) setDeliveryPreference(p.deliveryPreference);
+      setDeliveryPreference('link');
       if (p.rsvpSettings) setRsvpSettings(normalizeRsvpSettings(p.rsvpSettings));
       if (p.hasSubEvents) setHasSubEvents(!!p.hasSubEvents);
       if (p.selectedTemplateId) {
@@ -669,7 +671,7 @@ export default function CreateEvite() {
   }, [isEditorValid, rightPanelTab]);
 
   // After event details are captured we ask the user to sign in (so we can save
-  // their design + guest list). Already-signed-in users skip straight to guests.
+  // their design). Already-signed-in users skip straight to delivery.
   //
   // Multi-invite flow: the host enters event details ONCE on a single editor
   // screen. The slot arrows let them preview each uploaded invitation, but
@@ -683,14 +685,14 @@ export default function CreateEvite() {
       );
     }
     if (user) {
-      setModalPhase('share');
+      setModalPhase('guests');
     } else {
       try {
         const existing = localStorage.getItem('mm_evite_draft');
         const parsed = existing ? JSON.parse(existing) : {};
         localStorage.setItem(
           'mm_evite_draft',
-          JSON.stringify({ ...parsed, pendingPhase: 'share' })
+          JSON.stringify({ ...parsed, pendingPhase: 'guests' })
         );
       } catch {
         /* ignore */
@@ -717,8 +719,7 @@ export default function CreateEvite() {
   const backToGuests = useCallback(() => setModalPhase('guests'), []);
   const backToPreview = useCallback(() => setModalPhase('preview'), []);
 
-  // ── Publish the evite so its public link works immediately ───────────
-  // Called on entering the Share step (and as a fallback at payment).
+  // ── Publish the evite after the host confirms the final send ─────────
   // Upserts: creates a published event the first time, updates it on
   // re-entry (e.g. the host went Back, tweaked the design, and returned).
   // Returns the event id, or null on failure.
@@ -808,9 +809,9 @@ export default function CreateEvite() {
 
   const handlePaymentConfirm = useCallback(async () => {
     try {
-      // The evite was already created + published at the Share step; reuse it.
-      // Fallback to publishing now if we somehow arrived here without an id.
       const eventId = publishedEventId ?? (await publishEvite());
+      if (!eventId) return;
+      setPublishedEventId(eventId);
 
       const filledGuests = guests.filter((g) => g.name.trim());
       if (eventId && filledGuests.length > 0) {
@@ -848,7 +849,7 @@ export default function CreateEvite() {
       const parsed = existing ? JSON.parse(existing) : {};
       localStorage.setItem(
         'mm_evite_draft',
-        JSON.stringify({ ...parsed, pendingPhase: 'share' })
+        JSON.stringify({ ...parsed, pendingPhase: 'guests' })
       );
     } catch {
       /* ignore */
@@ -993,16 +994,6 @@ export default function CreateEvite() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [modalPhase, closeAnyModal]);
-
-  // Publish the evite the moment the host reaches the Share step so its link
-  // works right away. Also covers resuming here after a sign-in redirect. The
-  // guard prevents duplicate publishes; failures surface a Retry button below.
-  useEffect(() => {
-    if (modalPhase === 'share' && !publishedEventId && !publishing) {
-      publishEvite();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalPhase, publishedEventId]);
 
   // ── Image fade-in when swapping templates ────────────────────────
   useEffect(() => {
@@ -2737,11 +2728,8 @@ export default function CreateEvite() {
         </div>
       )}
 
-      {/* ════════════════════════════════════════════════════════════
-          SHARE STEP (Step 4) — the evite is published here, so its link
-          works immediately. Copy / share it, or continue to invite guests.
-          ════════════════════════════════════════════════════════════ */}
-      {modalPhase === 'share' && (selectedTemplate || uploadedTemplate) && (() => {
+      {/* The shareable link is revealed only after the final send succeeds. */}
+      {modalPhase === 'sent' && (selectedTemplate || uploadedTemplate) && (() => {
         const shareUrl = publishedEventId ? `${window.location.origin}/event/${publishedEventId}` : '';
         const shareTitle =
           eventTitle ||
@@ -2781,10 +2769,10 @@ export default function CreateEvite() {
         const shareMsg = `${shareBody}\n${shareUrl}`;
         const waHref = `https://wa.me/?text=${encodeURIComponent(shareMsg)}`;
         const mailHref = `mailto:?subject=${encodeURIComponent(`You're invited: ${shareTitle}`)}&body=${encodeURIComponent(shareMsg)}`;
-        // Copy the full invite message (with the link) so guests get all the details.
+        // Keep the primary copy action literal: copy exactly the visible link.
         const copyLink = () => {
           if (!shareUrl) return;
-          navigator.clipboard.writeText(shareMsg);
+          navigator.clipboard.writeText(shareUrl);
           setLinkCopied(true);
           setTimeout(() => setLinkCopied(false), 2000);
         };
@@ -2814,12 +2802,11 @@ export default function CreateEvite() {
 
               {/* Header */}
               <div className="flex-shrink-0 px-6 md:px-10 pt-2.5 pb-3 border-b border-white/[0.06]">
-                <FlowStepper current={4} tone="light" className="max-w-2xl mx-auto mb-2" />
                 <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight">
                   Your invitation is <span className="text-[#9cb092] font-agatho italic">live</span>
                 </h2>
                 <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/55 mt-1.5">
-                  Copy the link and share it anywhere — or invite guests directly.
+                  Your shareable link is ready. Copy it and send it anywhere.
                 </p>
               </div>
 
@@ -2858,7 +2845,7 @@ export default function CreateEvite() {
                         </p>
                       </div>
 
-                      {/* Link + copy — Copy grabs the full message above (link included) */}
+                      {/* Link + copy */}
                       <div className="flex items-stretch gap-2 mb-2">
                         <div className="flex-1 flex items-center gap-2 px-3 h-12 bg-white/[0.05] border border-white/15 overflow-hidden">
                           <span className="material-icons text-[#9cb092]/70 text-base flex-shrink-0">link</span>
@@ -2877,7 +2864,7 @@ export default function CreateEvite() {
                         </button>
                       </div>
                       <p className="font-display text-[9px] text-[#b2c3b1]/45 mb-6">
-                        Copy grabs the full message above, with your link included.
+                        This copies your shareable link.
                       </p>
 
                       {/* Share options */}
@@ -2900,8 +2887,7 @@ export default function CreateEvite() {
                       </div>
 
                       <p className="font-display text-[9px] text-[#b2c3b1]/45 leading-relaxed mt-6 text-center">
-                        Anyone with this link can view your invitation and RSVP by entering their name. Add
-                        guests on the next step only if you also want individual email or SMS delivery.
+                        Anyone with this link can view your invitation and RSVP by entering their name.
                       </p>
                     </>
                   )}
@@ -2911,23 +2897,18 @@ export default function CreateEvite() {
               {/* Footer */}
               <div className="flex-shrink-0 flex items-center justify-between gap-3 px-6 md:px-10 py-2.5 border-t border-white/[0.06] bg-[#0e1712]">
                 <button
-                  onClick={backToEditor}
+                  onClick={resetFlow}
                   className="py-2.5 px-5 border border-white/15 text-[#b2c3b1] font-display text-[10px] tracking-[0.2em] uppercase hover:border-[#9cb092]/40 hover:text-[#9cb092] transition-all flex items-center gap-2"
                 >
                   <span className="material-icons text-sm">arrow_back</span>
-                  Back
+                  Back to Home
                 </button>
                 <button
-                  onClick={() => setModalPhase('guests')}
-                  disabled={!publishedEventId}
-                  className={`py-2.5 px-8 font-display text-[11px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center gap-2 ${
-                    publishedEventId
-                      ? 'bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]'
-                      : 'bg-white/5 text-white/20 cursor-not-allowed border border-white/10'
-                  }`}
+                  onClick={() => window.open(shareUrl, '_blank', 'noopener,noreferrer')}
+                  className="py-2.5 px-8 font-display text-[11px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center gap-2 bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]"
                 >
-                  Invite guests
-                  <span className="material-icons text-sm">arrow_forward</span>
+                  Open Invitation
+                  <span className="material-icons text-sm">open_in_new</span>
                 </button>
               </div>
             </div>
@@ -2944,7 +2925,7 @@ export default function CreateEvite() {
           onGuestsChange={setGuests}
           deliveryPreference={deliveryPreference}
           onDeliveryPreferenceChange={setDeliveryPreference}
-          onBack={() => setModalPhase('share')}
+          onBack={backToEditor}
           onClose={closeToHome}
           onProceed={proceedToPreview}
           formData={formData}
@@ -3005,40 +2986,10 @@ export default function CreateEvite() {
           onBack={backToPreview}
           onClose={closeToHome}
           onConfirm={handlePaymentConfirm}
+          submitError={publishError}
         />
       )}
 
-      {/* ════════════════════════════════════════════════════════════
-          THANK YOU MODAL
-          ════════════════════════════════════════════════════════════ */}
-      {modalPhase === 'sent' && (
-        <div
-          className="hero-bokeh-bg product-light-shell fixed inset-0 z-[60] flex items-center justify-center p-4"
-        >
-          <div className="product-light-shell flex flex-col items-center text-center max-w-md border shadow-2xl px-8 py-10 md:px-12 md:py-12">
-            <div className="w-20 h-20 rounded-full bg-[#9cb092]/20 border border-[#9cb092]/40 flex items-center justify-center mb-8">
-              <span className="material-icons text-[#9cb092] text-4xl">check</span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-serif-exp mb-4 text-[#e4eee1]">
-              Thank <span className="text-[#9cb092] font-agatho">You</span>
-            </h1>
-            <p className="text-sm font-display tracking-[0.15em] text-[#b2c3b1] max-w-md mb-3">
-              Your evite has been created and sent successfully.
-            </p>
-            <p className="text-xs font-display tracking-[0.2em] text-[#b2c3b1]/50 uppercase mb-12">
-              Your guests are going to love it
-            </p>
-            <div className="w-[1px] h-12 bg-[#9cb092]/30 mb-8" />
-            <button
-              onClick={resetFlow}
-              className="px-10 py-3 bg-[#3d4a35] text-white hover:bg-[#4d5a44] shadow-lg font-display text-[10px] tracking-[0.2em] uppercase flex items-center gap-2 transition-all"
-            >
-              <span className="material-icons text-sm">home</span>
-              Back to Home
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

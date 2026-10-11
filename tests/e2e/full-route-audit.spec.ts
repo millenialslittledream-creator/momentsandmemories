@@ -135,7 +135,10 @@ async function installApiMocks(page: Page) {
       return json(route, { totals: { ...stats, total_events: 1 }, events: [{ ...stats, event_id: eventId, event_title: event.title, event_date: event.event_date, status: 'published' }] });
     }
     if (path.endsWith(`/messaging/events/${eventId}/messages`)) return json(route, []);
-    if (path.endsWith('/events')) return json(route, [event]);
+    if (path.endsWith('/events')) {
+      if (request.method() === 'POST') return json(route, { id: 'event-created-audit' });
+      return json(route, [event]);
+    }
     if (path.endsWith('/drafts/my')) return json(route, null);
     if (path.endsWith('/event-websites')) return json(route, []);
     if (path.endsWith('/invitation-books')) return json(route, []);
@@ -229,13 +232,27 @@ test('protected dashboard nested surfaces render with test-only authentication',
   const page = await context.newPage();
   await installApiMocks(page);
   await page.goto('/dashboard');
-  await expect(page.getByRole('heading', { name: 'Overall RSVP Analytics' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Overall RSVP Analytics' })).toBeVisible({ timeout: 20_000 });
 
   await page.getByRole('button', { name: /RSVPs/ }).click();
   await expect(page.getByText('Attendance Summary')).toBeVisible();
   await expect(page.getByRole('columnheader', { name: 'Adults' })).toBeVisible();
   await expect(page.getByRole('columnheader', { name: 'Dietary notes' })).toBeVisible();
   await expect(page.getByRole('columnheader', { name: 'Message' })).toBeVisible();
+  const expandedLayout = await page.evaluate(() => ({
+    pageOverflow: document.documentElement.scrollWidth - window.innerWidth,
+    viewportWidth: window.innerWidth,
+  }));
+  expect(expandedLayout.pageOverflow).toBeLessThanOrEqual(8);
+  const giftsBox = await page.getByTestId('dashboard-gifts-panel').boundingBox();
+  expect(giftsBox).not.toBeNull();
+  expect(giftsBox!.x + giftsBox!.width).toBeLessThanOrEqual(expandedLayout.viewportWidth + 1);
+  const responseTable = page.getByRole('columnheader', { name: 'Dietary notes' }).locator('xpath=ancestor::table/parent::div');
+  const tableOverflow = await responseTable.evaluate((node) => ({
+    clientWidth: node.clientWidth,
+    scrollWidth: node.scrollWidth,
+  }));
+  expect(tableOverflow.scrollWidth).toBeGreaterThan(tableOverflow.clientWidth);
   await page.screenshot({ path: 'test-results/release-route-audit/desktop/dashboard-event-analytics.png', fullPage: true });
 
   await page.getByRole('button', { name: 'Messages' }).click();
@@ -245,6 +262,63 @@ test('protected dashboard nested surfaces render with test-only authentication',
   await page.getByRole('button', { name: /Add Guests/ }).click();
   await expect(page.getByText('Add Guests').first()).toBeVisible();
   await page.screenshot({ path: 'test-results/release-route-audit/desktop/dashboard-add-guests.png' });
+  await context.close();
+});
+
+test('shop product list responds to the mouse wheel', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 700 } });
+  const page = await context.newPage();
+  await installApiMocks(page);
+  await page.goto('/shop');
+  const productScroll = page.getByTestId('shop-product-scroll');
+  await expect(productScroll).toBeVisible();
+  const before = await productScroll.evaluate((node) => ({
+    top: node.scrollTop,
+    clientHeight: node.clientHeight,
+    scrollHeight: node.scrollHeight,
+  }));
+  expect(before.scrollHeight).toBeGreaterThan(before.clientHeight);
+  await productScroll.hover();
+  await page.mouse.wheel(0, 900);
+  await expect.poll(() => productScroll.evaluate((node) => node.scrollTop)).toBeGreaterThan(before.top);
+  await context.close();
+});
+
+test('create flow keeps only shareable link active and reveals it after final send', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await installTestSession(context);
+  await context.addInitScript(() => {
+    localStorage.setItem('mm_evite_draft', JSON.stringify({
+      selectedTemplateId: 'bday-c1',
+      formData: {
+        celebrantName: 'Asha', eventDate: '2027-03-12', eventTime: '18:00',
+        timezone: 'IST', venue: 'Garden Hall',
+      },
+      guests: [{ id: 'guest-seed', name: '', email: '', phone: '' }],
+      deliveryPreference: 'email',
+      pendingPhase: 'guests',
+    }));
+  });
+  const page = await context.newPage();
+  await installApiMocks(page);
+  await page.goto('/create');
+
+  await expect(page.getByText('Share your invitation')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('Delivery', { exact: true }).first()).toBeVisible();
+  for (const label of ['Email', 'SMS', 'Email + SMS']) {
+    const option = page.locator('button').filter({ hasText: label }).filter({ hasText: 'Coming soon' }).first();
+    await expect(option).toBeDisabled();
+  }
+  await expect(page.getByRole('button', { name: /Shareable Link/ })).toBeEnabled();
+  await page.getByRole('button', { name: /Continue to Preview/ }).click();
+  await expect(page.getByRole('heading', { name: 'Preview & Send' })).toBeVisible();
+  await page.getByRole('button', { name: /^Continue/ }).click();
+  await expect(page.getByRole('button', { name: /Send Invitation — Free/ })).toBeVisible();
+  await page.getByRole('button', { name: /Send Invitation — Free/ }).click();
+
+  await expect(page.getByText('Your invitation is live')).toBeVisible();
+  await expect(page.getByText(`${new URL(page.url()).origin}/event/event-created-audit`, { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Copy/ })).toBeVisible();
   await context.close();
 });
 

@@ -63,7 +63,11 @@ function App() {
 
   return (
     <AuthProvider>
-      <ReactLenis root ref={lenisRef} options={{ lerp: 0.07, wheelMultiplier: 0.9 }}>
+      <ReactLenis
+        root
+        ref={lenisRef}
+        options={{ lerp: 0.07, wheelMultiplier: 0.9, allowNestedScroll: true }}
+      >
         <Router>
           <ScrollToTop />
           <Suspense fallback={<div className="page-bokeh-bg product-light-shell flex items-center justify-center h-screen" />}>
