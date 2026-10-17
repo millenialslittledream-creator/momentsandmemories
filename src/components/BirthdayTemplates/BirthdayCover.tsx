@@ -173,7 +173,7 @@ export default function BirthdayCover({
               animationDelay: '.22s',
               color: theme.gold,
               fontFamily: `'${theme.headingFont}', serif`,
-              fontSize: 'clamp(3.5rem,18vw,5.5rem)',
+              fontSize: 'clamp(3.5rem,18cqi,5.5rem)',
               lineHeight: 0.9,
             }}>
             {content.age}
@@ -186,7 +186,7 @@ export default function BirthdayCover({
             animationDelay: '.33s',
             color: theme.surface,
             fontFamily: `'${theme.scriptFont}', cursive`,
-            fontSize: 'clamp(2.2rem,12vw,3.6rem)',
+            fontSize: 'clamp(2.2rem,12cqi,3.6rem)',
             lineHeight: 0.95,
           }}>
           {content.honoree}

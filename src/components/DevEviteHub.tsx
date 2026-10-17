@@ -88,9 +88,18 @@ function DesignCard({ card, accentColor, delay, onSelect, swatches }: {
       className="group text-left flex flex-col overflow-hidden border border-white/[0.08] hover:border-white/20 transition-all duration-300 bg-white/[0.02] hover:bg-white/[0.04]"
       style={{ opacity: 0 }}>
       <div data-preserve-theme className="relative aspect-[9/16] overflow-hidden flex flex-col items-center justify-center text-center px-4 gap-3" style={card.preview}>
-        <span className="text-3xl leading-none" style={{ animation: 'ev-none' }}>{card.ornament}</span>
+        <span className="text-3xl leading-none" style={{ animation: 'ev-none', textShadow: '0 2px 9px rgba(0,0,0,.72)' }}>{card.ornament}</span>
         <p className="leading-tight px-2 group-hover:scale-105 transition-transform duration-500"
-          style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(1rem, 4vw, 1.5rem)', color: '#ece5d8', fontWeight: 300 }}>
+          style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: 'clamp(1rem, 4vw, 1.5rem)',
+            color: '#fffaf0',
+            fontWeight: 500,
+            textShadow: '0 2px 9px rgba(0,0,0,.82)',
+            background: 'rgba(13,21,18,.42)',
+            padding: '0.35rem 0.75rem',
+            backdropFilter: 'blur(2px)',
+          }}>
           {card.name}
         </p>
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'rgba(13,21,18,0.72)', backdropFilter: 'blur(2px)' }}>

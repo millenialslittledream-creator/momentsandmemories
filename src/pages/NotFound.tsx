@@ -6,7 +6,7 @@ export default function NotFound() {
 
   return (
     <div className="page-bokeh-bg product-light-shell min-h-screen text-[#2a3328]">
-      <Navigation />
+      <Navigation forceLight />
       <main className="min-h-screen flex items-center justify-center px-6 pt-20">
         <div className="max-w-lg text-center">
           <p className="font-display text-[10px] tracking-[0.35em] uppercase text-[#5f7256] mb-4">

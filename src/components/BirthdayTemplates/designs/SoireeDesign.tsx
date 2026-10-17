@@ -68,7 +68,7 @@ export default function SoireeDesign({ theme, content, autoOpen = false }: Birth
                 style={{
                   color: theme.surface,
                   fontFamily: `'${theme.scriptFont}', cursive`,
-                  fontSize: 'clamp(3.2rem,16vw,5rem)',
+                  fontSize: 'clamp(3.2rem,16cqi,5rem)',
                   lineHeight: 0.9,
                   textShadow: `0 2px 24px ${theme.pageBg}cc`,
                 }}>

@@ -27,7 +27,7 @@ export default function PartyChampagne({ theme, content, autoOpen = false }: Des
           <Starfield color={theme.gold} count={18} />
           <Reveal variant="scale">
             <p className="text-[10px] uppercase tracking-[0.5em] mb-3" style={{ color: theme.gold }}>Here's to the bride</p>
-            <h1 className="relative inline-block overflow-hidden" style={{ color: theme.surface, fontFamily: `'${theme.headingFont}', serif`, fontSize: 'clamp(3rem,16vw,5rem)', lineHeight: 0.9 }}>
+            <h1 className="relative inline-block overflow-hidden" style={{ color: theme.surface, fontFamily: `'${theme.headingFont}', serif`, fontSize: 'clamp(3rem,16cqi,5rem)', lineHeight: 0.9 }}>
               {content.brideName}
               <span className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(120deg, transparent 30%, ${theme.gold}55 50%, transparent 70%)`, animation: 'ev-shine 4.5s ease-in-out infinite' }} />
             </h1>

@@ -101,7 +101,7 @@ export default function TheatreCover({
         <p style={{
           color: theme.surface,
           fontFamily:`'${theme.scriptFont}', cursive`,
-          fontSize:'clamp(2.4rem,13vw,3.8rem)',
+          fontSize:'clamp(2.4rem,13cqi,3.8rem)',
           lineHeight: 0.9,
           opacity: opening ? 1 : 0,
           transform: opening ? 'translateY(0)' : 'translateY(12px)',
@@ -115,7 +115,7 @@ export default function TheatreCover({
         <p style={{
           color: theme.surface,
           fontFamily:`'${theme.scriptFont}', cursive`,
-          fontSize:'clamp(2.4rem,13vw,3.8rem)',
+          fontSize:'clamp(2.4rem,13cqi,3.8rem)',
           lineHeight: 0.9,
           opacity: opening ? 1 : 0,
           transform: opening ? 'translateY(0)' : 'translateY(12px)',

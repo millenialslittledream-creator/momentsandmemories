@@ -28,7 +28,7 @@ export default function PartyLastFling({ theme, content, autoOpen = false }: Des
           <Confetti colors={[theme.gold, theme.accentSoft, theme.accent]} count={18} />
           <Reveal variant="scale">
             <p className="text-[10px] uppercase tracking-[0.4em] mb-3" style={{ color: theme.gold }}>The bride-to-be</p>
-            <h1 style={{ color: theme.surface, fontFamily: `'${theme.scriptFont}', cursive`, fontSize: 'clamp(3.4rem,18vw,5.6rem)', lineHeight: 0.85 }}>{content.brideName}</h1>
+            <h1 style={{ color: theme.surface, fontFamily: `'${theme.scriptFont}', cursive`, fontSize: 'clamp(3.4rem,18cqi,5.6rem)', lineHeight: 0.85 }}>{content.brideName}</h1>
             <p className="mt-4 inline-block px-5 py-1.5 text-[11px] uppercase tracking-[0.3em]" style={{ border: `1px solid ${theme.gold}`, color: theme.gold }}>{content.dateLabel}</p>
           </Reveal>
           <Reveal delay={120}>

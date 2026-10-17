@@ -34,7 +34,7 @@ export default function RevealBigReveal({ theme, content, autoOpen = false }: De
           {vote && <Confetti colors={vote === 'boy' ? ['#ffffff', BLUE] : ['#ffffff', PINK]} count={22} />}
           <Reveal variant="scale">
             <p className="text-[10px] uppercase tracking-[0.4em] mb-3" style={{ color: theme.muted }}>The wait is almost over</p>
-            <h1 style={{ fontFamily: `'${theme.headingFont}', serif`, fontSize: 'clamp(2.6rem,13vw,4rem)', lineHeight: 0.92, color: theme.accent }}>
+            <h1 style={{ fontFamily: `'${theme.headingFont}', serif`, fontSize: 'clamp(2.6rem,13cqi,4rem)', lineHeight: 0.92, color: theme.accent }}>
               <span style={{ color: BLUE }}>He</span> <span className="opacity-50">or</span> <span style={{ color: PINK }}>She?</span>
             </h1>
             <p className="mt-4 mx-auto max-w-[260px] text-[12.5px] leading-relaxed italic" style={{ color: theme.muted }}>{content.intro}</p>

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import GuestRSVPForm, { type RSVPEventInfo, type RSVPInvitee } from '@/components/GuestRSVPForm';
 import { api } from '@/lib/api';
+import { eviteTemplates } from '@/data/eviteTemplates';
+import { getInvitationSentence, inferEventType } from '@/utils/eventInvitation';
 
 interface EventInfo extends RSVPEventInfo {
   title: string;
@@ -9,6 +11,8 @@ interface EventInfo extends RSVPEventInfo {
   event_time: string | null;
   location: string | null;
   cover_image_url: string | null;
+  template_id?: string | null;
+  form_data?: Record<string, unknown> | null;
 }
 
 export default function RSVPPage() {
@@ -41,6 +45,14 @@ export default function RSVPPage() {
   const dateStr = new Date(`${event.event_date}T00:00:00`).toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
+  const invitationSentence = getInvitationSentence(
+    inferEventType(
+      event.form_data ?? {},
+      eviteTemplates.find((template) => template.id === event.template_id)?.eventType,
+    ),
+    event.form_data ?? {},
+    event.title,
+  );
 
   return (
     <div className="page-bokeh-bg product-light-shell min-h-screen px-4 py-10 sm:px-6 sm:py-16">
@@ -49,7 +61,7 @@ export default function RSVPPage() {
         <div className="px-5 py-8 sm:px-10 sm:py-10">
           <header className="mb-8 text-center">
             <p className="mb-3 font-display text-[10px] uppercase tracking-[0.35em] text-[#405138]">Moments &amp; Memories</p>
-            <h1 className="mb-3 font-serif-exp text-3xl italic leading-tight text-[#2a3328] sm:text-4xl">{event.title}</h1>
+            <h1 className="mb-3 font-serif-exp text-3xl italic leading-tight text-[#2a3328] sm:text-4xl">{invitationSentence}</h1>
             <div className="mx-auto mb-3 h-px w-10 bg-[#5f7256]/50" />
             <p className="font-display text-[10px] uppercase tracking-[0.14em] text-[#44533e]/80">{dateStr}</p>
             {event.location && <p className="mt-1 text-xs text-[#44533e]/75">{event.location}</p>}

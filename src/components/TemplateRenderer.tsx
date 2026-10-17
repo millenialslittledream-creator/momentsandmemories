@@ -358,6 +358,7 @@ export default function TemplateRenderer({
       return (
         <div
           key={`${key}-${idx}`}
+          data-template-field={overrideKey}
           className={interactive ? 'evite-editable' : undefined}
           style={style}
           onPointerDown={

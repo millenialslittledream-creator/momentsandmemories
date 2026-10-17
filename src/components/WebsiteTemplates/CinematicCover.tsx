@@ -178,7 +178,7 @@ export default function CinematicCover({
             animationDelay: '.28s',
             color: theme.surface,
             fontFamily: `'${theme.scriptFont}', cursive`,
-            fontSize: 'clamp(2.6rem,15vw,4.2rem)',
+            fontSize: 'clamp(2.6rem,15cqi,4.2rem)',
             lineHeight: 0.95,
           }}>
           {content.brideName}
@@ -194,7 +194,7 @@ export default function CinematicCover({
             animationDelay: '.48s',
             color: theme.surface,
             fontFamily: `'${theme.scriptFont}', cursive`,
-            fontSize: 'clamp(2.6rem,15vw,4.2rem)',
+            fontSize: 'clamp(2.6rem,15cqi,4.2rem)',
             lineHeight: 0.95,
           }}>
           {content.groomName}

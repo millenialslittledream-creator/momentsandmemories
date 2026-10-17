@@ -147,7 +147,7 @@ export default function BalloonCover({
           {content.age && (
             <p style={{
               fontFamily:`'${theme.headingFont}', serif`,
-              fontSize:'clamp(4rem,22vw,7rem)',
+              fontSize:'clamp(4rem,22cqi,7rem)',
               fontWeight:700, lineHeight:1,
               color: theme.gold,
               textShadow:`0 4px 32px ${theme.gold}60`,
@@ -155,7 +155,7 @@ export default function BalloonCover({
           )}
           <p style={{
             fontFamily:`'${theme.scriptFont}', cursive`,
-            fontSize:'clamp(2rem,11vw,3.2rem)', lineHeight:0.9,
+            fontSize:'clamp(2rem,11cqi,3.2rem)', lineHeight:0.9,
             color:theme.surface, marginTop:4,
           }}>{content.honoree}</p>
         </div>

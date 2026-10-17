@@ -23,6 +23,8 @@ test('guest allocates meals for every attendee and can update the RSVP', async (
           event_time: '18:00',
           location: 'Garden Hall',
           cover_image_url: null,
+          template_id: 'wed-c1',
+          form_data: { brideName: 'Asha', groomName: 'Ravi' },
           rsvp_enabled: true,
           rsvp_config: {
             enabled: true,
@@ -52,7 +54,7 @@ test('guest allocates meals for every attendee and can update the RSVP', async (
   });
 
   await page.goto(`/rsvp/${eventId}/${inviteeId}`);
-  await expect(page.getByRole('heading', { name: 'Asha & Ravi' })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole('heading', { name: "You are invited to Asha and Ravi's wedding." })).toBeVisible({ timeout: 20_000 });
   await page.getByText('Yes, I’ll be there!').click();
   await expect(page.getByText('Under 10 years')).toBeVisible();
 
@@ -184,6 +186,7 @@ test('public invitation is the first view and opens as a full preview', async ({
 
   await page.goto(`/event/${previewEventId}`);
   await expect(page.getByTestId('public-invitation')).toBeVisible();
+  await page.screenshot({ path: 'test-results/release-route-audit/desktop/public-event-invitation.png' });
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await page.reload();
   await expect(page.getByTestId('public-invitation')).toBeVisible();
@@ -193,6 +196,7 @@ test('public invitation is the first view and opens as a full preview', async ({
 
   await page.getByTestId('public-invitation').click();
   await expect(page.getByTestId('invitation-lightbox')).toBeVisible();
+  await page.screenshot({ path: 'test-results/release-route-audit/desktop/public-event-invitation-lightbox.png' });
   const preview = page.getByTestId('invitation-lightbox').locator('[data-preserve-theme]').first();
   const previewBox = await preview.boundingBox();
   const viewport = page.viewportSize();
@@ -202,4 +206,55 @@ test('public invitation is the first view and opens as a full preview', async ({
   expect(previewBox!.y + previewBox!.height).toBeLessThanOrEqual(viewport!.height);
   await page.getByRole('button', { name: 'Close invitation preview' }).click();
   await expect(page.getByTestId('invitation-lightbox')).toHaveCount(0);
+});
+
+test('Lotus Palace restores its invitation copy and readable key details', async ({ page }) => {
+  const weddingEventId = '44444444-4444-4444-8444-444444444444';
+  await page.route(`**/public/events/${weddingEventId}/book`, (route) => route.fulfill({ status: 404, contentType: 'application/json', body: '{}' }));
+  await page.route(`**/public/events/${weddingEventId}`, (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      id: weddingEventId,
+      title: 'Lavanya & Jeevan',
+      description: null,
+      event_date: '2027-02-14',
+      event_time: '18:30',
+      location: 'The Grand Palace, Jaipur, Rajasthan',
+      cover_image_url: null,
+      rsvp_enabled: true,
+      invitee_count: 0,
+      template_id: 'wed-c1',
+      form_data: {
+        brideName: 'Lavanya',
+        groomName: 'Jeevan',
+        eventDate: '2027-02-14',
+        eventTime: '18:30',
+        venue: 'The Grand Palace, Jaipur, Rajasthan',
+      },
+      customization: null,
+      rsvp_config: { enabled: true, responseOptions: { yes: true, no: true, maybe: false }, collectGuestCount: true, collectKidsCount: false, collectFoodPreference: false, collectAdditionalInfo: true, childAgeCutoff: 12 },
+    }),
+  }));
+
+  await page.goto(`/event/${weddingEventId}`);
+  await expect(page.getByTestId('invitation-heading')).toHaveText(
+    "You are invited to Lavanya and Jeevan's wedding.",
+  );
+  const invitation = page.getByTestId('public-invitation');
+  await expect(invitation.getByText('INVITE YOU TO CELEBRATE', { exact: false })).toBeVisible();
+  await expect(invitation.locator('[data-template-field="brideName"]')).toHaveText('Lavanya');
+  await expect(invitation.locator('[data-template-field="groomName"]')).toHaveText('Jeevan');
+  await expect(invitation.locator('[data-template-field="venue"]')).toContainText('The Grand Palace');
+
+  const sizes = await invitation.evaluate((node) => ({
+    bride: parseFloat(getComputedStyle(node.querySelector('[data-template-field="brideName"]')!).fontSize),
+    date: parseFloat(getComputedStyle(node.querySelector('[data-template-field="eventDate"]')!).fontSize),
+    venue: parseFloat(getComputedStyle(node.querySelector('[data-template-field="venue"]')!).fontSize),
+  }));
+  expect(sizes.bride).toBeGreaterThan(25);
+  expect(sizes.date).toBeGreaterThan(7);
+  expect(sizes.venue).toBeGreaterThan(8);
+
+  await page.screenshot({ path: 'test-results/release-route-audit/desktop/lotus-palace-public.png', fullPage: true });
 });

@@ -135,13 +135,13 @@ export default function EnvelopeCover({
             <p style={{ color:theme.muted, fontFamily:`'${theme.labelFont}', sans-serif`, fontSize:8, letterSpacing:'0.44em', textTransform:'uppercase', marginBottom:12 }}>
               You Are Cordially Invited
             </p>
-            <p style={{ color:theme.accent, fontFamily:`'${theme.scriptFont}', cursive`, fontSize:'clamp(1.8rem,9vw,2.8rem)', lineHeight:0.9 }}>
+            <p style={{ color:theme.accent, fontFamily:`'${theme.scriptFont}', cursive`, fontSize:'clamp(1.8rem,9cqi,2.8rem)', lineHeight:0.9 }}>
               {content.brideName}
             </p>
             <p style={{ color:theme.gold, fontFamily:`'${theme.headingFont}', serif`, margin:'6px 0', fontSize:'1.1rem', fontWeight:300 }}>
               &amp;
             </p>
-            <p style={{ color:theme.accent, fontFamily:`'${theme.scriptFont}', cursive`, fontSize:'clamp(1.8rem,9vw,2.8rem)', lineHeight:0.9 }}>
+            <p style={{ color:theme.accent, fontFamily:`'${theme.scriptFont}', cursive`, fontSize:'clamp(1.8rem,9cqi,2.8rem)', lineHeight:0.9 }}>
               {content.groomName}
             </p>
             <div style={{ width:40, height:1, background:`${theme.gold}70`, margin:'12px auto' }}/>

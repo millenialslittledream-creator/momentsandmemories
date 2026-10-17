@@ -48,7 +48,7 @@ export default function BashDesign({ theme, content, autoOpen = false }: Birthda
               aria-hidden
               className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
               style={{
-                fontSize: 'clamp(10rem,50vw,16rem)',
+                fontSize: 'clamp(10rem,50cqi,16rem)',
                 fontFamily: `'${theme.headingFont}', serif`,
                 fontWeight: 700,
                 color: `${theme.accent}09`,
@@ -65,7 +65,7 @@ export default function BashDesign({ theme, content, autoOpen = false }: Birthda
                 style={{
                   color: theme.accent,
                   fontFamily: `'${theme.scriptFont}', cursive`,
-                  fontSize: 'clamp(3rem,15vw,4.8rem)',
+                  fontSize: 'clamp(3rem,15cqi,4.8rem)',
                   lineHeight: 0.92,
                 }}>
                 {content.honoree}

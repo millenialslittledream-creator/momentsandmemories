@@ -29,7 +29,7 @@ export default function HouseHearth({ theme, content, autoOpen = false }: Design
             <div className="text-center py-8 px-4" style={{ border: `1px solid ${theme.gold}38` }}>
               <Reveal>
                 <p className="text-[9px] uppercase tracking-[0.4em] mb-4" style={{ color: theme.muted }}>Home is where you are</p>
-                <h1 style={{ ...head, fontFamily: `'${theme.scriptFont}', cursive`, fontSize: 'clamp(2.6rem,14vw,4.4rem)', lineHeight: 0.9 }}>{content.brideName}</h1>
+                <h1 style={{ ...head, fontFamily: `'${theme.scriptFont}', cursive`, fontSize: 'clamp(2.6rem,14cqi,4.4rem)', lineHeight: 0.9 }}>{content.brideName}</h1>
                 <Divider ornament={theme.ornament} color={theme.gold} />
                 <p className="mx-auto max-w-[240px] text-[12px] leading-loose italic" style={{ color: theme.muted }}>{content.intro}</p>
                 <p className="mt-5 text-[13px] tracking-[0.14em]" style={head}>{content.dateLabel}</p>

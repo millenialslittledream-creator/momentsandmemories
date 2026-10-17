@@ -59,7 +59,7 @@ export default function PublicPremiumSite() {
       className="fixed inset-0 flex items-center justify-center overflow-hidden"
       style={{ background: 'radial-gradient(circle at 50% 30%, #16201f, #0c1013)' }}
     >
-      <div className="relative" style={{ aspectRatio: '390 / 844', height: 844, maxHeight: '100%', maxWidth: '100%' }}>
+      <div data-testid="template-phone-frame" className="relative" style={{ aspectRatio: '390 / 844', height: 844, maxHeight: '100%', maxWidth: '100%', containerType: 'inline-size' }}>
         <div className="absolute inset-0 overflow-hidden shadow-2xl">
           <Suspense fallback={<div className="w-full h-full bg-[#0c1013]" />}>
             <Component theme={theme} content={site.content} autoOpen />

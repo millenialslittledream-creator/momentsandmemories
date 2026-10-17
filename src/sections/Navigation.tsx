@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { label: 'About Us', id: '', path: '/about' },
 ];
 
-export default function Navigation() {
+export default function Navigation({ forceLight = false }: { forceLight?: boolean }) {
   const navRef = useRef<HTMLElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpenPath, setMenuOpenPath] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export default function Navigation() {
 
   // Pages with a light hero at the top: the nav sits on a light surface, so it
   // needs dark text and the landing logo (same treatment as the home page).
-  const isLightTop =
+  const isLightTop = forceLight ||
     location.pathname === '/' ||
     location.pathname === '/about' ||
     location.pathname === '/shop' ||

@@ -64,13 +64,13 @@ export default function TimelessDesign({ theme, content, autoOpen = false }: Des
 
               <Reveal delay={60}>
                 {lbl('Together with their families')}
-                <h1 style={{ ...script, fontSize: 'clamp(2.8rem,14vw,4.6rem)', lineHeight: 0.92 }}>
+                <h1 style={{ ...script, fontSize: 'clamp(2.8rem,14cqi,4.6rem)', lineHeight: 0.92 }}>
                   {content.brideName}
                 </h1>
                 <div className="my-0.5 text-xl" style={{ color: theme.gold, fontFamily: `'${theme.headingFont}', serif` }}>
                   &amp;
                 </div>
-                <h1 style={{ ...script, fontSize: 'clamp(2.8rem,14vw,4.6rem)', lineHeight: 0.92 }}>
+                <h1 style={{ ...script, fontSize: 'clamp(2.8rem,14cqi,4.6rem)', lineHeight: 0.92 }}>
                   {content.groomName}
                 </h1>
                 <Divider ornament={theme.ornament} color={theme.gold} />

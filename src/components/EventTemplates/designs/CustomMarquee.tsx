@@ -27,7 +27,7 @@ export default function CustomMarquee({ theme, content, autoOpen = false }: Desi
             <div className="flex items-center justify-between text-[9px] uppercase tracking-[0.28em] pb-4" style={{ color: theme.muted }}>
               <span>The Invitation</span><span>{content.dateLabel}</span>
             </div>
-            <h1 className="uppercase" style={{ color: theme.accent, fontFamily: `'${theme.headingFont}', serif`, fontSize: 'clamp(2.8rem,16vw,5rem)', lineHeight: 0.84, letterSpacing: '-0.02em' }}>{content.brideName}</h1>
+            <h1 className="uppercase" style={{ color: theme.accent, fontFamily: `'${theme.headingFont}', serif`, fontSize: 'clamp(2.8rem,16cqi,5rem)', lineHeight: 0.84, letterSpacing: '-0.02em' }}>{content.brideName}</h1>
             <p className="mt-5 max-w-[320px] text-[13px] leading-relaxed" style={{ color: theme.ink }}>{content.intro}</p>
           </Reveal>
           <Reveal delay={120}>

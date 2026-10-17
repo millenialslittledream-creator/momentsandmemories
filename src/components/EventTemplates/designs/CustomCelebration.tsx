@@ -31,7 +31,13 @@ export default function CustomCelebration({ theme, content, autoOpen = false }: 
               </Reveal>
               <Reveal delay={60}>
                 <p className="text-[9px] uppercase tracking-[0.4em] mb-3" style={{ color: theme.muted }}>Please join us for</p>
-                <h1 style={{ ...head, fontFamily: `'${theme.scriptFont}', cursive`, fontSize: 'clamp(2.6rem,13vw,4.4rem)', lineHeight: 0.9 }}>{content.brideName}</h1>
+                <h1 style={{
+                  ...head,
+                  fontFamily: `'${theme.scriptFont}', cursive`,
+                  fontSize: content.brideName.length > 13 ? '2.5rem' : 'clamp(2.6rem,13cqi,4.4rem)',
+                  lineHeight: 0.9,
+                  overflowWrap: 'anywhere',
+                }}>{content.brideName}</h1>
                 <Divider ornament={theme.ornament} color={theme.gold} />
                 <p className="mx-auto max-w-[240px] text-[12px] leading-loose italic" style={{ color: theme.muted }}>{content.intro}</p>
                 <p className="mt-5 text-[13px] tracking-[0.14em]" style={head}>{content.dateLabel}</p>

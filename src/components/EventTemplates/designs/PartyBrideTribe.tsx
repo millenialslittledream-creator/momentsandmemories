@@ -27,7 +27,7 @@ export default function PartyBrideTribe({ theme, content, autoOpen = false }: De
         <section className="px-6 pt-12 pb-12 text-center" style={{ background: `linear-gradient(180deg, ${theme.accentSoft} 0%, ${theme.surface} 100%)` }}>
           <Reveal>
             <p className="text-[10px] uppercase tracking-[0.42em] mb-3" style={{ color: theme.muted }}>Celebrating our girl</p>
-            <h1 style={{ ...head, fontFamily: `'${theme.scriptFont}', cursive`, fontSize: 'clamp(3rem,16vw,4.8rem)', lineHeight: 0.9 }}>{content.brideName}</h1>
+            <h1 style={{ ...head, fontFamily: `'${theme.scriptFont}', cursive`, fontSize: 'clamp(3rem,16cqi,4.8rem)', lineHeight: 0.9 }}>{content.brideName}</h1>
             <Divider ornament={theme.ornament} color={theme.gold} />
           </Reveal>
           <Reveal delay={120}>

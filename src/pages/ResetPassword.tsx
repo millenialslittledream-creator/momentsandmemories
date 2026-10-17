@@ -48,8 +48,8 @@ const ResetPassword = () => {
 
   return (
     <PageTransition>
-      <div className="page-bokeh-bg product-light-shell text-[#1a2418] font-display min-h-screen flex flex-col overflow-hidden relative selection:bg-primary/20">
-        <nav className="fixed top-0 left-0 w-full z-50 p-8 flex justify-between items-start pointer-events-none">
+      <div className="auth-reset-shell page-bokeh-bg product-light-shell text-[#1a2418] font-display min-h-screen flex flex-col overflow-hidden relative selection:bg-primary/20">
+        <nav className="auth-reset-nav fixed top-0 left-0 w-full z-50 p-8 flex justify-between items-start pointer-events-none">
           <Link to="/sign-in" className="pointer-events-auto cursor-pointer group flex items-center gap-3">
             <svg className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -64,11 +64,11 @@ const ResetPassword = () => {
         <div className="absolute top-[-10%] left-[-5%] w-[40vw] h-[40vw] auth-stone-floater rounded-full mix-blend-multiply bg-stone-matte" />
         <div className="absolute bottom-[-10%] right-[-5%] w-[30vw] h-[30vw] auth-stone-floater rounded-full bg-[#B0BBA8] mix-blend-multiply" style={{ animationDelay: "1s" }} />
 
-        <main className="flex-grow flex items-center justify-center relative z-10 w-full h-screen px-4">
-          <div className="w-full max-w-md mx-auto p-6">
-            <div className="auth-glass-vertical rounded-2xl p-8 md:p-12 relative overflow-hidden">
-              <div className="mb-10 text-center relative z-10">
-                <div className="w-16 h-16 bg-white/50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm backdrop-blur-sm">
+        <main className="auth-reset-main flex-grow flex items-center justify-center relative z-10 w-full h-screen px-4">
+          <div className="auth-reset-container w-full max-w-md mx-auto p-6">
+            <div className="auth-reset-panel auth-glass-vertical rounded-2xl p-8 md:p-12 relative overflow-hidden">
+              <div className="auth-reset-heading mb-10 text-center relative z-10">
+                <div className="auth-reset-icon w-16 h-16 bg-white/50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm backdrop-blur-sm">
                   <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                   </svg>
@@ -77,7 +77,7 @@ const ResetPassword = () => {
                 <p className="text-sm text-[#1a2418]/50 tracking-wide">Secure your account</p>
               </div>
 
-              <form className="space-y-6 relative z-10" onSubmit={e => { e.preventDefault(); handleSubmit(); }}>
+              <form className="auth-reset-form space-y-6 relative z-10" onSubmit={e => { e.preventDefault(); handleSubmit(); }}>
                 <div className="space-y-2 group">
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#1a2418]/50 group-focus-within:text-primary transition-colors">New Password</label>
                   <div className="relative">
@@ -115,7 +115,7 @@ const ResetPassword = () => {
                   </div>
                 </div>
 
-                <div className="auth-checklist rounded-lg p-4 space-y-2 mt-4">
+                <div className="auth-reset-checklist auth-checklist rounded-lg p-4 space-y-2 mt-4">
                   <p className="text-[10px] uppercase text-[#1a2418]/50 font-bold tracking-wider mb-2">Security Requirements</p>
                   {[
                     { label: "At least 10 characters", valid: checks.length },
@@ -140,7 +140,7 @@ const ResetPassword = () => {
                 <button
                   type="submit"
                   disabled={loading || !allValid}
-                  className="w-full auth-btn-primary text-white font-bold py-4 px-6 rounded-lg tracking-widest text-sm uppercase mt-6 flex items-center justify-center gap-2 group disabled:opacity-60"
+                  className="auth-reset-submit w-full auth-btn-primary text-white font-bold py-4 px-6 rounded-lg tracking-widest text-sm uppercase mt-6 flex items-center justify-center gap-2 group disabled:opacity-60"
                 >
                   {loading ? "Updating..." : "Update Password"}
                   {!loading && (
@@ -154,7 +154,7 @@ const ResetPassword = () => {
               <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
             </div>
 
-            <p className="text-center text-xs text-[#1a2418]/40 mt-8 font-mono">SECURE ENCRYPTED CONNECTION</p>
+            <p className="auth-reset-security text-center text-xs text-[#1a2418]/40 mt-8 font-mono">SECURE ENCRYPTED CONNECTION</p>
           </div>
         </main>
       </div>

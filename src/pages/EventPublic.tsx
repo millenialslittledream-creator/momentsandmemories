@@ -6,6 +6,7 @@ import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRender
 import { eviteTemplates, type TemplateFieldLayout } from '@/data/eviteTemplates';
 import GuestRSVPForm from '@/components/GuestRSVPForm';
 import type { RSVPConfig } from '@/lib/api';
+import { getInvitationSentence, inferEventType } from '@/utils/eventInvitation';
 
 interface PublicEvent {
   id: string;
@@ -75,6 +76,9 @@ export default function EventPublic() {
     () => (event?.template_id ? eviteTemplates.find((t) => t.id === event.template_id) ?? null : null),
     [event]
   );
+  const eventFormData = event?.form_data ?? {};
+  const eventType = inferEventType(eventFormData, template?.eventType);
+  const invitationSentence = getInvitationSentence(eventType, eventFormData, event?.title ?? 'this celebration');
 
   const scrollToRsvp = () => {
     rsvpSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -174,11 +178,8 @@ export default function EventPublic() {
         )}
 
         <div className={hasDesign ? 'text-center' : ''}>
-          <p className="font-display text-[10px] tracking-[0.35em] uppercase text-[#9cb092] mb-3">
-            You&apos;re invited
-          </p>
-          <h1 className="font-serif-exp text-2xl md:text-4xl text-[#e4eee1] italic leading-tight mb-5">
-            {event.title}
+          <h1 data-testid="invitation-heading" className="font-serif-exp text-2xl md:text-4xl text-[#e4eee1] italic leading-tight mb-5">
+            {invitationSentence}
           </h1>
 
           <div className={`w-12 h-px bg-[#9cb092]/40 mb-6 ${hasDesign ? 'mx-auto' : ''}`} />

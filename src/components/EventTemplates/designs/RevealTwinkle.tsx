@@ -28,7 +28,7 @@ export default function RevealTwinkle({ theme, content, autoOpen = false }: Desi
           <Starfield color={theme.surface} count={26} />
           <Reveal variant="scale">
             <p className="text-[10px] uppercase tracking-[0.42em] mb-3" style={{ color: theme.gold }}>Our little star arrives</p>
-            <h1 style={{ color: theme.surface, fontFamily: `'${theme.scriptFont}', cursive`, fontSize: 'clamp(3rem,16vw,5rem)', lineHeight: 0.88 }}>{content.brideName}</h1>
+            <h1 style={{ color: theme.surface, fontFamily: `'${theme.scriptFont}', cursive`, fontSize: 'clamp(3rem,16cqi,5rem)', lineHeight: 0.88 }}>{content.brideName}</h1>
             <Divider ornament={theme.ornament} color={theme.gold} />
             <p className="mx-auto max-w-[260px] text-[12.5px] leading-loose italic" style={{ color: `${theme.surface}cc` }}>{content.intro}</p>
           </Reveal>

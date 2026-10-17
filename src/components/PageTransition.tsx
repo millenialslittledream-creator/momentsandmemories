@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import type { ReactNode } from "react";
 
 const pageVariants = {
@@ -27,16 +27,20 @@ const pageVariants = {
   },
 };
 
-const PageTransition = ({ children }: { children: ReactNode }) => (
-  <motion.div
-    variants={pageVariants}
-    initial="initial"
-    animate="animate"
-    exit="exit"
-    className="w-full"
-  >
-    {children}
-  </motion.div>
-);
+const PageTransition = ({ children }: { children: ReactNode }) => {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.div
+      data-page-transition
+      variants={pageVariants}
+      initial={reduceMotion ? "animate" : "initial"}
+      animate="animate"
+      exit={reduceMotion ? "animate" : "exit"}
+      className="w-full"
+    >
+      {children}
+    </motion.div>
+  );
+};
 
 export default PageTransition;

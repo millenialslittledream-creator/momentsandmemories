@@ -27,7 +27,7 @@ export default function CustomSoiree({ theme, content, autoOpen = false }: Desig
         <section className="px-6 pt-12 pb-12 text-center" style={{ background: theme.surfaceAlt }}>
           <Reveal>
             <p className="text-[10px] uppercase tracking-[0.42em] mb-3" style={{ color: theme.muted }}>Together we celebrate</p>
-            <h1 style={{ ...head, fontFamily: `'${theme.scriptFont}', cursive`, fontSize: 'clamp(2.8rem,15vw,4.6rem)', lineHeight: 0.9 }}>{content.brideName}</h1>
+            <h1 style={{ ...head, fontFamily: `'${theme.scriptFont}', cursive`, fontSize: 'clamp(2.8rem,15cqi,4.6rem)', lineHeight: 0.9 }}>{content.brideName}</h1>
             <Divider ornament={theme.ornament} color={theme.gold} />
           </Reveal>
           <Reveal delay={120}>

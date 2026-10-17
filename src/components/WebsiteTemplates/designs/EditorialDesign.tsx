@@ -75,7 +75,7 @@ export default function EditorialDesign({ theme: baseTheme, content, autoOpen = 
                 style={{
                   color: theme.accent,
                   fontFamily: `'${theme.headingFont}', serif`,
-                  fontSize: 'clamp(2.8rem,14vw,4rem)',
+                  fontSize: 'clamp(2.8rem,14cqi,4rem)',
                 }}>
                 {content.brideName}
               </h1>
@@ -93,7 +93,7 @@ export default function EditorialDesign({ theme: baseTheme, content, autoOpen = 
                 style={{
                   color: theme.accent,
                   fontFamily: `'${theme.headingFont}', serif`,
-                  fontSize: 'clamp(2.8rem,14vw,4rem)',
+                  fontSize: 'clamp(2.8rem,14cqi,4rem)',
                 }}>
                 {content.groomName}
               </h1>

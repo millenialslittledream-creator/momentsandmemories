@@ -47,7 +47,7 @@ export default function MilestoneDesign({ theme, content, autoOpen = false }: Bi
               aria-hidden
               className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden"
               style={{
-                fontSize: 'clamp(14rem,80vw,24rem)',
+                fontSize: 'clamp(14rem,80cqi,24rem)',
                 fontFamily: `'${theme.headingFont}', serif`,
                 fontWeight: 900,
                 color: `${theme.accent}07`,
@@ -75,7 +75,7 @@ export default function MilestoneDesign({ theme, content, autoOpen = false }: Bi
                   style={{
                     color: theme.accent,
                     fontFamily: `'${theme.scriptFont}', cursive`,
-                    fontSize: 'clamp(3.5rem,18vw,5.6rem)',
+                    fontSize: 'clamp(3.5rem,18cqi,5.6rem)',
                     lineHeight: 0.88,
                   }}>
                   {content.honoree}

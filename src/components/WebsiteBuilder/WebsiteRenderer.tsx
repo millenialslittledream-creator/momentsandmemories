@@ -19,6 +19,37 @@ const BORDER_CLASS: Record<string, string> = {
   double: 'border-b-4 border-double border-[#e7e1d2]',
 };
 
+function readableAccent(accent: string, background: string) {
+  const parse = (value: string) => {
+    const match = value.trim().match(/^#([\da-f]{6})$/i);
+    if (!match) return null;
+    return [0, 2, 4].map((offset) => Number.parseInt(match[1].slice(offset, offset + 2), 16));
+  };
+  const luminance = (rgb: number[]) => {
+    const channels = rgb.map((value) => {
+      const channel = value / 255;
+      return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+  };
+  const accentRgb = parse(accent);
+  const backgroundRgb = parse(background);
+  if (!accentRgb || !backgroundRgb) return accent;
+  const backgroundLuminance = luminance(backgroundRgb);
+  const contrast = (rgb: number[]) => {
+    const value = luminance(rgb);
+    return (Math.max(value, backgroundLuminance) + 0.05) / (Math.min(value, backgroundLuminance) + 0.05);
+  };
+  if (contrast(accentRgb) >= 3.5) return accent;
+  for (let factor = 0.9; factor >= 0.25; factor -= 0.05) {
+    const candidate = accentRgb.map((value) => Math.round(value * factor));
+    if (contrast(candidate) >= 3.5) {
+      return `#${candidate.map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+    }
+  }
+  return '#3d4a35';
+}
+
 function useRevealOnScroll() {
   const ref = useRef<HTMLElement | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -67,6 +98,7 @@ export default function WebsiteRenderer({ sections, theme, eventTitle, eventDate
   const [galleryPhotos, setGalleryPhotos] = useState<GalleryPhoto[]>([]);
   const hasGallerySection = sections.some((s) => s.type === 'gallery');
   const resolved = resolveTheme(theme);
+  const headingAccent = readableAccent(resolved.accentColor, resolved.backgroundColor);
   const borderClass = BORDER_CLASS[resolved.borderStyle] ?? BORDER_CLASS.hairline;
 
   useEffect(() => {
@@ -103,7 +135,7 @@ export default function WebsiteRenderer({ sections, theme, eventTitle, eventDate
               )}
               <h1
                 className="text-4xl md:text-5xl italic"
-                style={{ color: resolved.accentColor, fontFamily: 'var(--heading-font)' }}
+                style={{ color: headingAccent, fontFamily: 'var(--heading-font)' }}
               >
                 {section.content.heading || eventTitle || "Let's Celebrate"}
               </h1>
@@ -120,7 +152,7 @@ export default function WebsiteRenderer({ sections, theme, eventTitle, eventDate
 
           {section.type === 'our_story' && (
             <div className="max-w-2xl mx-auto">
-              <h2 className="text-2xl italic mb-4" style={{ color: resolved.accentColor, fontFamily: 'var(--heading-font)' }}>
+              <h2 className="text-2xl italic mb-4" style={{ color: headingAccent, fontFamily: 'var(--heading-font)' }}>
                 {section.content.heading}
               </h2>
               <p className="whitespace-pre-line leading-relaxed text-[#46433a]">{section.content.body}</p>
@@ -136,7 +168,7 @@ export default function WebsiteRenderer({ sections, theme, eventTitle, eventDate
 
           {section.type === 'schedule' && (
             <div className="max-w-xl mx-auto">
-              <h2 className="text-2xl italic mb-6 text-center" style={{ color: resolved.accentColor, fontFamily: 'var(--heading-font)' }}>
+              <h2 className="text-2xl italic mb-6 text-center" style={{ color: headingAccent, fontFamily: 'var(--heading-font)' }}>
                 {section.content.heading}
               </h2>
               <div className="space-y-4">
@@ -158,7 +190,7 @@ export default function WebsiteRenderer({ sections, theme, eventTitle, eventDate
 
           {section.type === 'gallery' && (
             <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-2xl italic mb-6" style={{ color: resolved.accentColor, fontFamily: 'var(--heading-font)' }}>
+              <h2 className="text-2xl italic mb-6" style={{ color: headingAccent, fontFamily: 'var(--heading-font)' }}>
                 {section.content.heading}
               </h2>
               {galleryPhotos.length > 0 ? (
@@ -173,7 +205,7 @@ export default function WebsiteRenderer({ sections, theme, eventTitle, eventDate
 
           {section.type === 'rsvp' && (
             <div className="max-w-xl mx-auto text-center">
-              <h2 className="text-2xl italic mb-4" style={{ color: resolved.accentColor, fontFamily: 'var(--heading-font)' }}>
+              <h2 className="text-2xl italic mb-4" style={{ color: headingAccent, fontFamily: 'var(--heading-font)' }}>
                 {section.content.heading}
               </h2>
               <p className="text-sm text-[#46433a]">{section.content.body}</p>
@@ -182,7 +214,7 @@ export default function WebsiteRenderer({ sections, theme, eventTitle, eventDate
 
           {section.type === 'map' && (
             <div className="max-w-xl mx-auto text-center">
-              <h2 className="text-2xl italic mb-4" style={{ color: resolved.accentColor, fontFamily: 'var(--heading-font)' }}>
+              <h2 className="text-2xl italic mb-4" style={{ color: headingAccent, fontFamily: 'var(--heading-font)' }}>
                 {section.content.heading}
               </h2>
               <p className="text-sm text-[#46433a] mb-4">{section.content.address}</p>
@@ -199,7 +231,7 @@ export default function WebsiteRenderer({ sections, theme, eventTitle, eventDate
 
           {section.type === 'faq' && (
             <div className="max-w-xl mx-auto">
-              <h2 className="text-2xl italic mb-6 text-center" style={{ color: resolved.accentColor, fontFamily: 'var(--heading-font)' }}>
+              <h2 className="text-2xl italic mb-6 text-center" style={{ color: headingAccent, fontFamily: 'var(--heading-font)' }}>
                 {section.content.heading}
               </h2>
               <div className="space-y-4">
@@ -216,7 +248,7 @@ export default function WebsiteRenderer({ sections, theme, eventTitle, eventDate
           {section.type === 'custom_text' && (
             <div className="max-w-xl mx-auto">
               {section.content.heading && (
-                <h2 className="text-2xl italic mb-4" style={{ color: resolved.accentColor, fontFamily: 'var(--heading-font)' }}>
+                <h2 className="text-2xl italic mb-4" style={{ color: headingAccent, fontFamily: 'var(--heading-font)' }}>
                   {section.content.heading}
                 </h2>
               )}

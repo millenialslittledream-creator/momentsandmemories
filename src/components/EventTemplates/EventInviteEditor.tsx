@@ -119,7 +119,7 @@ export default function EventInviteEditor({
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-y-auto lg:overflow-hidden">
         {/* LEFT — live preview in a device frame */}
         <div className="w-full h-[460px] flex-none lg:h-auto lg:flex-1 min-w-0 flex flex-col items-center justify-center p-3 sm:p-6 overflow-hidden">
-          <div data-preserve-theme className="relative" style={{ aspectRatio: '390 / 844', height: 844, maxHeight: '100%', maxWidth: '100%' }}>
+          <div data-testid="template-phone-frame" data-preserve-theme className="relative" style={{ aspectRatio: '390 / 844', height: 844, maxHeight: '100%', maxWidth: '100%', containerType: 'inline-size' }}>
             <div className="absolute inset-0 rounded-[44px] overflow-hidden shadow-2xl" style={{ border: '10px solid #1b2227' }}>
               <Design theme={theme} content={content} autoOpen={false} key={designId} />
             </div>

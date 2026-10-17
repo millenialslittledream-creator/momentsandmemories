@@ -77,7 +77,7 @@ export default function GrandDesign({ theme, content, autoOpen = false }: Design
               <h1 style={{
                 color: theme.surface,
                 fontFamily: `'${theme.scriptFont}', cursive`,
-                fontSize: 'clamp(3rem,16vw,5.2rem)',
+                fontSize: 'clamp(3rem,16cqi,5.2rem)',
                 lineHeight: 0.92,
               }}>
                 {content.brideName}
@@ -88,7 +88,7 @@ export default function GrandDesign({ theme, content, autoOpen = false }: Design
               <h1 style={{
                 color: theme.surface,
                 fontFamily: `'${theme.scriptFont}', cursive`,
-                fontSize: 'clamp(3rem,16vw,5.2rem)',
+                fontSize: 'clamp(3rem,16cqi,5.2rem)',
                 lineHeight: 0.92,
               }}>
                 {content.groomName}

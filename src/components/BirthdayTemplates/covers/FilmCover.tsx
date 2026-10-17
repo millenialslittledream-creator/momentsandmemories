@@ -118,7 +118,7 @@ export default function FilmCover({
           {content.age ? (
             <p style={{
               fontFamily:'serif',
-              fontSize:'clamp(3.5rem,18vw,5rem)',
+              fontSize:'clamp(3.5rem,18cqi,5rem)',
               fontWeight:900, lineHeight:1,
               color: theme.gold,
               textShadow:`0 0 24px ${theme.gold}66`,
@@ -129,7 +129,7 @@ export default function FilmCover({
           ) : (
             <p style={{
               fontFamily:`'${theme.scriptFont}', cursive`,
-              fontSize:'clamp(2rem,10vw,3rem)', lineHeight:1,
+              fontSize:'clamp(2rem,10cqi,3rem)', lineHeight:1,
               color:theme.gold,
             }}>{content.monogram}</p>
           )}
@@ -138,7 +138,7 @@ export default function FilmCover({
         {/* Honoree name */}
         <p style={{
           fontFamily:`'${theme.scriptFont}', cursive`,
-          fontSize:'clamp(1.6rem,9vw,2.4rem)', lineHeight:0.9,
+          fontSize:'clamp(1.6rem,9cqi,2.4rem)', lineHeight:0.9,
           color:`${theme.surface}ee`,
         }}>{content.honoree}</p>
 

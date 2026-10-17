@@ -43,7 +43,7 @@ export default function RevealBowOrBowtie({ theme, content, autoOpen = false }: 
             </div>
           </Reveal>
           <Reveal delay={120}>
-            <h1 className="mt-8" style={{ ...head, fontSize: 'clamp(2.4rem,12vw,3.6rem)', lineHeight: 0.95 }}>{content.storyTitle}</h1>
+            <h1 className="mt-8" style={{ ...head, fontSize: 'clamp(2.4rem,12cqi,3.6rem)', lineHeight: 0.95 }}>{content.storyTitle}</h1>
             <p className="mt-3 mx-auto max-w-[260px] text-[12.5px] leading-relaxed italic" style={{ color: theme.muted }}>{content.intro}</p>
             <div className="mt-7 mx-auto max-w-[240px]" style={{ overflow: 'hidden', boxShadow: `0 16px 40px ${theme.accent}2e` }}>
               <img src={content.heroImageUrl} alt="" className="w-full aspect-[4/3] object-cover" />

@@ -29,7 +29,7 @@ export default function HouseNewNest({ theme, content, autoOpen = false }: Desig
           <StringLights color={theme.gold} count={14} />
           <Reveal>
             <p className="text-[10px] uppercase tracking-[0.42em] mb-3 mt-4" style={{ color: theme.muted }}>Please join us to warm our new home</p>
-            <h1 style={{ ...head, fontFamily: `'${theme.scriptFont}', cursive`, fontSize: 'clamp(2.8rem,15vw,4.6rem)', lineHeight: 0.9 }}>{content.brideName}</h1>
+            <h1 style={{ ...head, fontFamily: `'${theme.scriptFont}', cursive`, fontSize: 'clamp(2.8rem,15cqi,4.6rem)', lineHeight: 0.9 }}>{content.brideName}</h1>
             <Divider ornament={theme.ornament} color={theme.gold} />
           </Reveal>
           <Reveal delay={120}>

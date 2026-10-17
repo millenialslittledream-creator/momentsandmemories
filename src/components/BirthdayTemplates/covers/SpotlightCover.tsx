@@ -103,7 +103,7 @@ export default function SpotlightCover({
             {content.age && (
               <p style={{
                 fontFamily:`'${theme.headingFont}', serif`,
-                fontSize:'clamp(2.2rem,12vw,3.4rem)',
+                fontSize:'clamp(2.2rem,12cqi,3.4rem)',
                 fontWeight:700, lineHeight:0.9,
                 color:theme.gold,
                 textShadow:`0 0 30px ${theme.gold}aa, 0 0 60px ${theme.gold}44`,
@@ -111,7 +111,7 @@ export default function SpotlightCover({
             )}
             <p style={{
               fontFamily:`'${theme.scriptFont}', cursive`,
-              fontSize:'clamp(1.4rem,8vw,2rem)', lineHeight:0.9,
+              fontSize:'clamp(1.4rem,8cqi,2rem)', lineHeight:0.9,
               color:theme.surface,
               marginTop: 4,
               textShadow:`0 0 20px ${theme.surface}66`,

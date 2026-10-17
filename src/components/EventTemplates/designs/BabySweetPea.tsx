@@ -28,7 +28,7 @@ export default function BabySweetPea({ theme, content, autoOpen = false }: Desig
           <div className="relative px-6 pb-9 w-full">
             <Reveal>
               <p className="text-[10px] uppercase tracking-[0.5em] mb-2" style={{ color: theme.surface }}>The sweetest little</p>
-              <h1 className="uppercase" style={{ color: theme.surface, fontFamily: `'${theme.headingFont}', serif`, fontSize: 'clamp(2.6rem,15vw,4.4rem)', lineHeight: 0.86, letterSpacing: '-0.01em' }}>{content.brideName}</h1>
+              <h1 className="uppercase" style={{ color: theme.surface, fontFamily: `'${theme.headingFont}', serif`, fontSize: 'clamp(2.6rem,15cqi,4.4rem)', lineHeight: 0.86, letterSpacing: '-0.01em' }}>{content.brideName}</h1>
               <div className="mt-4 h-px w-24" style={{ background: theme.gold }} />
               <p className="mt-4 max-w-[280px] text-[12.5px] leading-relaxed" style={{ color: `${theme.surface}dd` }}>{content.intro}</p>
               <p className="mt-4 text-[11px] uppercase tracking-[0.3em]" style={{ color: theme.gold }}>{content.dateLabel}</p>

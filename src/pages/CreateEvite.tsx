@@ -23,6 +23,7 @@ import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRender
 import CanvasEditor from '@/components/CanvasEditor';
 import { type CanvasTemplate } from '@/data/canvasTemplates';
 import type { TemplateFieldLayout } from '@/data/eviteTemplates';
+import { getEventDisplayTitle } from '@/utils/eventInvitation';
 import { FONT_CATEGORIES, COLOR_SWATCHES } from '@/components/CanvasEditor/types';
 
 type EventTypeFilter = EventType;
@@ -823,14 +824,7 @@ export default function CreateEvite() {
       }
 
       const payload: Record<string, unknown> = {
-        title:
-          formData.eventName ||
-          formData.celebrantName ||
-          formData.brideName ||
-          formData.motherName ||
-          formData.parentNames ||
-          formData.hostName ||
-          'My Event',
+        title: getEventDisplayTitle(currentEventType, formData),
         description: formData.customMessage || null,
         event_date: formData.eventDate || new Date().toISOString().split('T')[0],
         event_time: formData.eventTime || null,
@@ -875,7 +869,7 @@ export default function CreateEvite() {
     } finally {
       setPublishing(false);
     }
-  }, [uploadedTemplate, selectedTemplate, selectedTemplateId, formData, rsvpSettings, fieldOverrides, photoOverlay, publishedEventId]);
+  }, [uploadedTemplate, selectedTemplate, selectedTemplateId, formData, rsvpSettings, fieldOverrides, photoOverlay, publishedEventId, currentEventType]);
 
   const handlePaymentConfirm = useCallback(async () => {
     try {
@@ -1152,16 +1146,6 @@ export default function CreateEvite() {
     ? eventTypes.find((e) => e.id === currentEventType)
     : null;
 
-  const displayName =
-    formData.celebrantName ||
-    formData.eventName ||
-    formData.brideName ||
-    formData.motherName ||
-    formData.parentNames ||
-    formData.homeownerName ||
-    formData.hostName ||
-    '';
-
   const displayDate = formData.eventDate
     ? new Date(formData.eventDate + 'T00:00:00').toLocaleDateString('en-US', {
         weekday: 'long',
@@ -1171,14 +1155,7 @@ export default function CreateEvite() {
       })
     : '';
 
-  const eventTitle =
-    eventInfo?.label === 'Wedding'
-      ? `${formData.brideName || 'Bride'} & ${formData.groomName || 'Groom'}`
-      : currentEventType === 'custom'
-      ? formData.eventName || displayName || 'Your Event'
-      : displayName
-      ? `${displayName}'s ${eventInfo?.label ?? ''}`
-      : eventInfo?.label ?? 'Your Event';
+  const eventTitle = getEventDisplayTitle(currentEventType, formData, eventInfo?.label ?? 'Your Event');
 
   // ── Render ───────────────────────────────────────────────────────
   return (

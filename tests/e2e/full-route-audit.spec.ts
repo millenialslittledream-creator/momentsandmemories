@@ -175,13 +175,30 @@ const routes = [
   ['not-found', '/definitely-not-a-page', 'Page not found'],
 ] as const;
 
+const intentionallySingleScreenRoutes = new Set([
+  'create',
+  'create-design',
+  'sign-in',
+  'sign-up',
+  'forgot-password',
+  'reset-password',
+  'verify-email',
+  'admin-gate',
+  'website-builder',
+  'not-found',
+]);
+
 for (const device of [
   { name: 'desktop', width: 1440, height: 1000 },
+  { name: 'laptop-short', width: 1280, height: 580 },
   { name: 'mobile', width: 390, height: 844 },
 ]) {
   test(`every registered route renders cleanly on ${device.name}`, async ({ browser }) => {
     test.setTimeout(300_000);
-    const context = await browser.newContext({ viewport: { width: device.width, height: device.height } });
+    const context = await browser.newContext({
+      viewport: { width: device.width, height: device.height },
+      reducedMotion: 'reduce',
+    });
     await installTestSession(context);
     const baselinePage = await context.newPage();
     await baselinePage.goto('/');
@@ -201,16 +218,53 @@ for (const device of [
       await installApiMocks(page);
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('body')).toContainText(expectedText, { timeout: 20_000 });
-      await page.waitForTimeout(300);
+      // Wait for PageTransition's real completion rather than a fixed delay;
+      // parallel screenshot runs can stretch the nominal 500 ms animation.
+      const pageTransition = page.locator('[data-page-transition]').first();
+      if (await pageTransition.count()) {
+        await expect(pageTransition).toHaveCSS('transform', 'none', { timeout: 5_000 });
+        await expect(pageTransition).toHaveCSS('opacity', '1', { timeout: 5_000 });
+      } else {
+        await page.waitForTimeout(700);
+      }
+      if (name === 'premium-site') await page.waitForTimeout(1_100);
 
       expect(pageErrors, `${name} page errors`).toEqual([]);
       expect(serverErrors, `${name} server errors`).toEqual([]);
       const metrics = await page.evaluate(() => ({
         textLength: document.body.innerText.trim().length,
         overflow: document.documentElement.scrollWidth - window.innerWidth,
+        verticalOverflow: document.documentElement.scrollHeight - window.innerHeight,
       }));
       expect(metrics.textLength, `${name} rendered content`).toBeGreaterThan(20);
       expect(metrics.overflow, `${name} horizontal overflow`).toBeLessThanOrEqual(8);
+      if (intentionallySingleScreenRoutes.has(name)) {
+        expect(metrics.verticalOverflow, `${name} avoidable page scroll`).toBeLessThanOrEqual(2);
+      }
+      const fitSelector =
+        name === 'sign-in' || name === 'sign-up' || name === 'verify-email'
+          ? '.auth-panel'
+          : name === 'forgot-password'
+            ? '.auth-glass-card'
+            : name === 'reset-password'
+              ? '.auth-reset-container'
+              : null;
+      if (fitSelector) {
+        const box = await page.locator(fitSelector).first().boundingBox();
+        expect(box, `${name} primary panel exists`).not.toBeNull();
+        expect(box!.y, `${name} panel top is visible`).toBeGreaterThanOrEqual(-1);
+        expect(box!.y + box!.height, `${name} panel bottom is visible`).toBeLessThanOrEqual(device.height + 1);
+      }
+      if (name === 'premium-site') {
+        const frameBox = await page.getByTestId('template-phone-frame').boundingBox();
+        expect(frameBox).not.toBeNull();
+        for (const personName of ['Darshan', 'Dharal']) {
+          const nameBox = await page.getByText(personName, { exact: true }).first().boundingBox();
+          expect(nameBox, `${personName} is rendered`).not.toBeNull();
+          expect(nameBox!.x, `${personName} stays inside the invitation`).toBeGreaterThanOrEqual(frameBox!.x);
+          expect(nameBox!.x + nameBox!.width, `${personName} stays inside the invitation`).toBeLessThanOrEqual(frameBox!.x + frameBox!.width);
+        }
+      }
       const sharedBackdrop = page.locator('.page-bokeh-bg, .hero-bokeh-bg').first();
       if (await sharedBackdrop.count()) {
         expect(
@@ -265,6 +319,66 @@ test('protected dashboard nested surfaces render with test-only authentication',
   await context.close();
 });
 
+test('create-flow chrome stays fully visible in compact browser windows', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 553, height: 555 } });
+  await installTestSession(context);
+  const page = await context.newPage();
+  await installApiMocks(page);
+  await page.goto('/create');
+  await expect(page.getByText('What are we celebrating today?')).toBeVisible({ timeout: 20_000 });
+
+  const closeButton = page.getByRole('button', { name: 'Close', exact: true });
+  await expect(closeButton).toBeVisible();
+  const closeBox = await closeButton.boundingBox();
+  expect(closeBox).not.toBeNull();
+  expect(closeBox!.x).toBeGreaterThanOrEqual(0);
+  expect(closeBox!.x + closeBox!.width).toBeLessThanOrEqual(553);
+  expect(closeBox!.x).toBeGreaterThan(490);
+  expect(await closeButton.evaluate((node) => getComputedStyle(node).position)).toBe('absolute');
+
+  const logo = page.getByRole('button', { name: /Moments & Memories/ });
+  const logoBox = await logo.boundingBox();
+  expect(logoBox).not.toBeNull();
+  expect(logoBox!.x).toBeGreaterThanOrEqual(0);
+  expect(logoBox!.x + logoBox!.width).toBeLessThanOrEqual(553);
+  expect(await logo.evaluate((node) => getComputedStyle(node).position)).toBe('absolute');
+
+  await page.screenshot({ path: 'test-results/release-route-audit/compact/create.png' });
+  await context.close();
+});
+
+test('create flow fills the complete widescreen viewport', async ({ browser }) => {
+  const width = 1904;
+  const height = 870;
+  const context = await browser.newContext({ viewport: { width, height } });
+  await installTestSession(context);
+  const page = await context.newPage();
+  await installApiMocks(page);
+  await page.goto('/create');
+  await expect(page.getByText('What are we celebrating today?')).toBeVisible({ timeout: 20_000 });
+
+  const measurements = await page.evaluate(() => {
+    const root = document.getElementById('root')?.getBoundingClientRect();
+    const flow = document.querySelector('.hero-bokeh-bg.product-light-shell.fixed')?.getBoundingClientRect();
+    return {
+      viewportWidth: window.innerWidth,
+      rootLeft: root?.left,
+      rootRight: root?.right,
+      flowLeft: flow?.left,
+      flowRight: flow?.right,
+    };
+  });
+  expect(measurements).toEqual({
+    viewportWidth: width,
+    rootLeft: 0,
+    rootRight: width,
+    flowLeft: 0,
+    flowRight: width,
+  });
+  await page.screenshot({ path: 'test-results/release-route-audit/widescreen/create.png' });
+  await context.close();
+});
+
 test('shop product list responds to the mouse wheel', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 700 } });
   const page = await context.newPage();
@@ -285,29 +399,27 @@ test('shop product list responds to the mouse wheel', async ({ browser }) => {
 });
 
 test('create flow keeps only shareable link active and reveals it after final send', async ({ browser }) => {
+  test.setTimeout(120_000);
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   await installTestSession(context);
   const page = await context.newPage();
   await installApiMocks(page);
-  await page.route('**/drafts/my', async (route) => {
-    if (route.request().method() === 'GET') {
-      return json(route, {
-        id: 'draft-audit',
-        step: 4,
-        event_type: 'birthday',
-        form_data: {
-          celebrantName: 'Asha', eventDate: '2027-03-12', eventTime: '18:00',
-          timezone: 'IST', venue: 'Garden Hall',
-          __mmDraft: { pendingPhase: 'guests', rsvpSettings: { enabled: true } },
-        },
-        selected_template: 'bday-c1',
-        guests: [{ id: 'guest-seed', name: '', email: '', phone: '' }],
-        delivery_preference: 'link',
-        updated_at: new Date().toISOString(),
-      });
-    }
-    return json(route, {});
-  });
+  const resumableDraft = {
+    id: 'draft-audit',
+    step: 4,
+    event_type: 'birthday',
+    form_data: {
+      celebrantName: 'Asha', eventDate: '2027-03-12', eventTime: '18:00',
+      timezone: 'ET', venue: 'Garden Hall',
+      __mmDraft: { pendingPhase: 'guests', resumePromptOnReturn: true, rsvpSettings: { enabled: true } },
+    },
+    selected_template: 'bday-c1',
+    guests: [{ id: 'guest-seed', name: '', email: '', phone: '' }],
+    delivery_preference: 'link' as const,
+    updated_at: new Date().toISOString(),
+  };
+  await page.route('**/drafts/my/claim-resume', (route) => json(route, resumableDraft));
+  await page.route('**/drafts/my', (route) => json(route, resumableDraft));
   await page.goto('/create');
 
   await page.getByRole('button', { name: /Continue editing/i }).click();
@@ -338,6 +450,11 @@ test('all website-builder event families open their editor', async ({ page }) =>
     await expect(page.getByText(/3 designs · 3 themes each/i)).toBeVisible({ timeout: 20_000 });
     await page.locator('button').nth(1).click();
     await expect(page.getByText('Design your shareable link')).toBeVisible({ timeout: 20_000 });
+    const previewOverflow = await page.getByTestId('template-phone-frame').evaluate((node) => ({
+      clientWidth: node.clientWidth,
+      scrollWidth: node.scrollWidth,
+    }));
+    expect(previewOverflow.scrollWidth, `${family} preview horizontal overflow`).toBeLessThanOrEqual(previewOverflow.clientWidth + 1);
     await page.screenshot({ path: `test-results/release-route-audit/builders/${family}.png` });
   }
 });

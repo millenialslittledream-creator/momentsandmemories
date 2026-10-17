@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import PageTransition from "@/components/PageTransition";
+import AuthLayout from "@/components/AuthLayout";
 import GoogleAuthButton from "@/components/GoogleAuthButton";
 import { getSafeRedirectPath } from "@/lib/authRedirect";
 
@@ -31,6 +31,7 @@ const SignIn = () => {
       if (authError) {
         if (authError.message.includes("Email not confirmed")) {
           toast.info("Please verify your email first.");
+          try { sessionStorage.setItem('mm_pending_signup_email', email.trim()); } catch { /* storage may be unavailable */ }
           navigate(
             redirectTo !== '/' ? `/verify-email?redirect=${encodeURIComponent(redirectTo)}` : '/verify-email',
             { state: { email } }
@@ -55,14 +56,9 @@ const SignIn = () => {
   };
 
   return (
-    <PageTransition>
-      <div className="page-bokeh-bg product-light-shell text-[#1a2418] font-display min-h-screen w-full overflow-hidden flex items-center justify-center relative py-10">
-        <div className="absolute top-0 left-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[100px] translate-x-1/3 translate-y-1/3" />
-        <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-[#B0BBA8]/30 rounded-full blur-[120px] pointer-events-none" />
-
-        <main className="auth-glass relative z-10 w-full max-w-md p-8 md:p-10 rounded-2xl flex flex-col items-center mx-4">
-          <div className="text-center mb-8">
+    <AuthLayout>
+        <main className="auth-panel auth-panel-signin auth-glass mx-auto flex w-full max-w-[500px] flex-col items-center rounded-2xl p-6 sm:p-8">
+          <div className="auth-panel-heading text-center mb-8">
             <p className="font-serif-exp text-sm uppercase tracking-[0.2em] mb-2 opacity-60">moments & memories</p>
             <h1 className="font-agatho text-4xl text-[#1a2418] drop-shadow-sm">Sign In</h1>
           </div>
@@ -73,27 +69,27 @@ const SignIn = () => {
             </div>
           )}
 
-          <form className="w-full space-y-5" onSubmit={e => { e.preventDefault(); handleSubmit(); }}>
+          <form className="auth-panel-form w-full space-y-4" onSubmit={e => { e.preventDefault(); handleSubmit(); }}>
             <div className="space-y-1">
               <label className="text-xs uppercase tracking-wider font-bold opacity-60 ml-1">Email</label>
-              <input className="w-full px-4 py-3 rounded-lg auth-input text-sm placeholder-gray-500/50" placeholder="name@example.com" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+              <input autoComplete="email" className="auth-control w-full px-4 py-3 rounded-lg auth-input text-sm placeholder-gray-500/50" placeholder="name@example.com" type="email" value={email} onChange={e => setEmail(e.target.value)} />
             </div>
             <div className="space-y-1">
               <div className="flex justify-between items-center ml-1 mr-1">
                 <label className="text-xs uppercase tracking-wider font-bold opacity-60">Password</label>
                 <Link to="/forgot-password" className="text-xs text-primary hover:text-primary/80 transition-colors font-medium">Forgot Password?</Link>
               </div>
-              <input className="w-full px-4 py-3 rounded-lg auth-input text-sm placeholder-gray-500/50" placeholder="••••••••" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+              <input autoComplete="current-password" className="auth-control w-full px-4 py-3 rounded-lg auth-input text-sm placeholder-gray-500/50" placeholder="••••••••" type="password" value={password} onChange={e => setPassword(e.target.value)} />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 mt-2 bg-primary text-white rounded-lg font-bold tracking-wide uppercase text-xs auth-btn-glow hover:bg-primary/90 transition-all transform active:scale-[0.99] disabled:opacity-60"
+              className="auth-submit w-full py-3.5 mt-2 bg-primary text-white rounded-lg font-bold tracking-wide uppercase text-xs auth-btn-glow hover:bg-primary/90 transition-all transform active:scale-[0.99] disabled:opacity-60"
             >
               {loading ? "Signing In..." : "Sign In"}
             </button>
 
-            <div className="relative flex items-center py-5 w-full">
+            <div className="auth-or-divider relative flex items-center py-3 w-full">
               <div className="flex-grow border-t border-black/10" />
               <span className="flex-shrink mx-4 text-[10px] uppercase tracking-widest opacity-40 font-bold">OR</span>
               <div className="flex-grow border-t border-black/10" />
@@ -102,11 +98,11 @@ const SignIn = () => {
             <GoogleAuthButton
               redirectTo={redirectTo}
               disabled={loading}
-              fallbackClassName="w-full py-4 bg-white/40 border border-black/10 rounded-lg flex items-center justify-center gap-3 hover:bg-white/60 transition-all active:scale-[0.99] disabled:opacity-60"
+              fallbackClassName="auth-google-button w-full py-4 bg-white/40 border border-black/10 rounded-lg flex items-center justify-center gap-3 hover:bg-white/60 transition-all active:scale-[0.99] disabled:opacity-60"
             />
           </form>
 
-          <div className="mt-8 pt-6 border-t border-black/5 w-full text-center">
+          <div className="auth-panel-footer mt-6 pt-5 border-t border-black/5 w-full text-center">
             <Link
               to={redirectTo !== '/' ? `/sign-up?redirect=${encodeURIComponent(redirectTo)}` : '/sign-up'}
               className="text-sm text-[#1a2418]/70 hover:text-primary transition-colors"
@@ -115,8 +111,7 @@ const SignIn = () => {
             </Link>
           </div>
         </main>
-      </div>
-    </PageTransition>
+    </AuthLayout>
   );
 };
 

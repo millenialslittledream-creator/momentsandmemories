@@ -29,7 +29,7 @@ export default function HouseOpenHouse({ theme, content, autoOpen = false }: Des
           <div className="relative px-6 pb-10 w-full">
             <Reveal>
               <p className="text-[10px] uppercase tracking-[0.5em] mb-2" style={{ color: theme.gold }}>You're invited</p>
-              <h1 className="uppercase" style={{ color: theme.surface, fontFamily: `'${theme.headingFont}', serif`, fontSize: 'clamp(2.4rem,13vw,4rem)', lineHeight: 0.88 }}>{content.brideName}</h1>
+              <h1 className="uppercase" style={{ color: theme.surface, fontFamily: `'${theme.headingFont}', serif`, fontSize: 'clamp(2.4rem,13cqi,4rem)', lineHeight: 0.88 }}>{content.brideName}</h1>
               <div className="mt-3 h-px w-24" style={{ background: theme.gold }} />
               <p className="mt-4 max-w-[290px] text-[12.5px] leading-relaxed" style={{ color: `${theme.surface}dd` }}>{content.intro}</p>
               <p className="mt-4 text-[11px] uppercase tracking-[0.3em]" style={{ color: theme.gold }}>{content.dateLabel}</p>

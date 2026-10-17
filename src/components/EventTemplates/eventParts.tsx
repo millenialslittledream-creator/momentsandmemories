@@ -239,6 +239,7 @@ export function TapCover({
       className="absolute inset-0 z-30 flex flex-col items-center justify-center text-center px-6 overflow-hidden"
       style={{
         background: bg,
+        containerType: 'inline-size',
         cursor: 'pointer',
         opacity: leaving ? 0 : 1,
         transform: leaving ? 'scale(1.06)' : 'scale(1)',
@@ -258,8 +259,14 @@ export function TapCover({
         {label}
       </p>
       <h1
-        className="leading-[0.95] px-2"
-        style={{ color: accent, fontFamily: `'Cormorant Garamond', serif`, fontSize: 'clamp(2.4rem,13vw,4rem)', fontWeight: 300 }}>
+        className="max-w-full leading-[0.95] px-2"
+        style={{
+          color: accent,
+          fontFamily: `'Cormorant Garamond', serif`,
+          fontSize: title.length > 13 ? 'clamp(2rem, 14cqi, 3rem)' : 'clamp(2.4rem, 24cqi, 4rem)',
+          fontWeight: 300,
+          overflowWrap: 'anywhere',
+        }}>
         {title}
       </h1>
       {sub && (

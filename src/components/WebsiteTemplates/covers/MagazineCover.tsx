@@ -73,7 +73,7 @@ export default function MagazineCover({
 
             <p style={{
               fontFamily:`'${theme.headingFont}', serif`,
-              fontSize:'clamp(1.4rem,8vw,1.9rem)',
+              fontSize:'clamp(1.4rem,8cqi,1.9rem)',
               letterSpacing:'0.12em',
               fontWeight:700,
               textTransform:'uppercase',
@@ -97,7 +97,7 @@ export default function MagazineCover({
           <div className="flex-1 flex items-center justify-center flex-col text-center py-3">
             <span style={{
               fontFamily:`'${theme.scriptFont}', cursive`,
-              fontSize:'clamp(1.8rem,9vw,2.6rem)',
+              fontSize:'clamp(1.8rem,9cqi,2.6rem)',
               color:theme.accent,
               lineHeight: 0.88,
             }}>{content.brideName}</span>
@@ -125,7 +125,7 @@ export default function MagazineCover({
           <div className="flex flex-col items-center justify-start text-center pt-1">
             <span style={{
               fontFamily:`'${theme.scriptFont}', cursive`,
-              fontSize:'clamp(1.8rem,9vw,2.6rem)',
+              fontSize:'clamp(1.8rem,9cqi,2.6rem)',
               color:theme.accent,
               lineHeight: 0.88,
             }}>{content.groomName}</span>

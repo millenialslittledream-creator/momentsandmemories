@@ -33,7 +33,7 @@ export default function BabyLittleWonder({ theme, content, autoOpen = false }: D
           </Reveal>
           <Reveal delay={120}>
             <p className="mt-7 text-[10px] uppercase tracking-[0.4em]" style={{ color: theme.muted }}>Please shower with love</p>
-            <h1 className="mt-2" style={{ ...head, fontFamily: `'${theme.scriptFont}', cursive`, fontSize: 'clamp(2.8rem,15vw,4.4rem)', lineHeight: 0.9 }}>{content.brideName}</h1>
+            <h1 className="mt-2" style={{ ...head, fontFamily: `'${theme.scriptFont}', cursive`, fontSize: 'clamp(2.8rem,15cqi,4.4rem)', lineHeight: 0.9 }}>{content.brideName}</h1>
             <Divider ornament={theme.ornament} color={theme.gold} />
             <p className="mx-auto max-w-[250px] text-[12.5px] leading-loose italic" style={{ color: theme.muted }}>{content.intro}</p>
             <p className="mt-5 text-[13px] tracking-[0.16em]" style={head}>{content.dateLabel}</p>

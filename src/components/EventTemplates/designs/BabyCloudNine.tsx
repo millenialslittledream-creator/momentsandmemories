@@ -49,7 +49,7 @@ export default function BabyCloudNine({ theme, content, autoOpen = false }: Desi
               <p className="text-[10px] uppercase tracking-[0.4em] mb-4" style={{ color: theme.muted }}>
                 Please join us to shower
               </p>
-              <h1 style={{ ...script, fontSize: 'clamp(3rem,16vw,5rem)', lineHeight: 0.9 }}>
+              <h1 style={{ ...script, fontSize: 'clamp(3rem,16cqi,5rem)', lineHeight: 0.9 }}>
                 {content.brideName}
               </h1>
               <Divider ornament={theme.ornament} color={theme.gold} />
