@@ -161,6 +161,49 @@ export const api = {
       updated_at: string;
     } | null>('/drafts/my'),
 
+  claimResumeDraft: () =>
+    apiFetch<{
+      id: string;
+      step: number;
+      event_type: string | null;
+      form_data: Record<string, unknown>;
+      selected_template: string | null;
+      guests: Array<{ id: string; name: string; email: string; phone: string }>;
+      delivery_preference: 'email' | 'phone' | 'both' | 'link';
+      updated_at: string;
+    } | null>('/drafts/my/claim-resume', { method: 'POST' }),
+
+  markDraftClosed: async (
+    data?: {
+      step: number;
+      event_type: string | null;
+      form_data: Record<string, unknown>;
+      selected_template: string | null;
+      guests: Array<{ id: string; name: string; email: string; phone: string }>;
+      delivery_preference: string;
+    },
+    accessToken?: string | null
+  ) => {
+    const token = accessToken ?? await getToken();
+    if (!token) return;
+    const serialized = data ? JSON.stringify(data) : '';
+    // Browser keepalive requests are size-limited; send a snapshot if small,
+    // otherwise just record the server-side close signal for the last autosave.
+    const body = serialized && new TextEncoder().encode(serialized).byteLength <= 50_000
+      ? serialized
+      : undefined;
+    const response = await fetch(`${API_URL}/drafts/my/mark-closed`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      body,
+      keepalive: true,
+    });
+    if (!response.ok) throw new Error('Could not mark the draft for resume');
+  },
+
   saveDraft: (data: {
     step: number;
     event_type: string | null;
@@ -171,13 +214,7 @@ export const api = {
   }) =>
     apiFetch<unknown>('/drafts/my', { method: 'PUT', body: JSON.stringify(data) }),
 
-  deleteDraft: async () => {
-    const token = await getToken();
-    return fetch(`${API_URL}/drafts/my`, {
-      method: 'DELETE',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    }).catch(() => {});
-  },
+  deleteDraft: () => apiFetch<unknown>('/drafts/my', { method: 'DELETE' }),
 
   getMyEvents: () =>
     apiFetch<Array<{

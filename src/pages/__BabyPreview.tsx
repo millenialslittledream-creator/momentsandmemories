@@ -15,6 +15,8 @@ import TemplateRenderer from '@/components/TemplateRenderer';
 // printed on the filled `-preview.jpg` samples, so a screenshot of a concept
 // can be diffed against its own preview one-to-one.
 const SAMPLE: Record<string, string> = {
+  celebrantName: 'Ananya Kapoor',
+  parentNames: 'Priya & Rohan Kapoor',
   eventDate: '2025-05-25',
   eventTime: '11:00',
   timezone: 'IST',
@@ -68,13 +70,11 @@ const PW_SAMPLE: Record<string, string> = {
   rsvpName: 'Arjun, +91 98765 43210',
 };
 
-// Wedding concepts (wed-c1 … wed-c12) — deliberately LONGER names than the
-// concepts' own "Ananya Sharma & Arjun Mehta" sample, so any collision with
-// baked connectors/dividers shows up immediately instead of only at render
-// time with real (possibly longer) guest names.
+// Wedding concepts (wed-c1 … wed-c12) — the reference artwork's own values.
+// `?long=1` below supplies the separate stress-test names.
 const WED_SAMPLE: Record<string, string> = {
-  brideName: 'Ishaani Bannerjee',
-  groomName: 'Rudraksh Chattopadhyay',
+  brideName: 'Ananya Sharma',
+  groomName: 'Arjun Mehta',
   eventDate: '2027-02-14',
   eventTime: '18:30',
   timezone: 'IST',
@@ -85,8 +85,8 @@ const WED_SAMPLE: Record<string, string> = {
 
 // Housewarming concepts (hw-c1 … hw-c10).
 const HW_SAMPLE: Record<string, string> = {
-  homeownerName: 'The Venkataraman Family',
-  hostName: 'Priya & Anjali Venkataraman',
+  homeownerName: 'The Reddy Family',
+  hostName: 'The Reddy Family',
   eventDate: '2026-06-21',
   eventTime: '10:30',
   timezone: 'IST',
@@ -97,7 +97,7 @@ const HW_SAMPLE: Record<string, string> = {
 
 // Gender reveal concepts (gr-c1 ... gr-c10).
 const GR_SAMPLE: Record<string, string> = {
-  fatherName: 'Rudraksh',
+  fatherName: 'Rahul',
   motherName: 'Aishwarya',
   eventDate: '2026-06-21',
   eventTime: '17:00',
@@ -109,27 +109,32 @@ const GR_SAMPLE: Record<string, string> = {
 // `?long=1` swaps in a deliberately long venue + note, so a card that can't
 // take a real-world address without colliding with the baked artwork shows it.
 const LONG: Record<string, string> = {
+  celebrantName: 'Ananya Venkataraman Chattopadhyay',
+  parentNames: 'Priyadarshini & Rohan Venkataraman',
+  brideName: 'Ishaani Venkataraman Bannerjee',
+  groomName: 'Rudraksh Chattopadhyay Varma',
+  motherName: 'Aishwarya Venkataraman',
+  fatherName: 'Rudraksh Chattopadhyay',
+  homeownerName: 'The Venkataraman Chattopadhyay Family',
+  hostName: 'Priyadarshini & Anjali Venkataraman',
+  eventName: 'A Beautiful Evening of Music and Memories',
   venue: 'The Rosewood Banquet Hall & Convention Centre, Plot 47, Sector 22B, Jubilee Enclave, Hyderabad, Telangana 500081',
   customMessage:
     'A tiny pair of hands, a brand new heartbeat, and a whole lot of love on the way. Come shower the parents-to-be with blessings, laughter and all the good wishes you can carry.',
 };
 const useLong = new URLSearchParams(window.location.search).get('long') === '1';
 
-const baseSampleFor = (id: string) =>
-  id.startsWith('bday-c')
-    ? BDAY_SAMPLE
-    : id.startsWith('pw-c')
-      ? PW_SAMPLE
-      : id.startsWith('wed-c')
-        ? WED_SAMPLE
-        : id.startsWith('hw-c')
-          ? HW_SAMPLE
-          : id.startsWith('gr-c')
-            ? GR_SAMPLE
-            : { ...SAMPLE, ...(OVERRIDES[id] || {}) };
+const baseSampleFor = (template: (typeof eviteTemplates)[number]) => {
+  if (template.eventType === 'birthday') return BDAY_SAMPLE;
+  if (template.eventType === 'bridetobe') return PW_SAMPLE;
+  if (template.eventType === 'marriage') return WED_SAMPLE;
+  if (template.eventType === 'housewarming') return HW_SAMPLE;
+  if (template.eventType === 'genderreveal') return GR_SAMPLE;
+  return { ...SAMPLE, ...(OVERRIDES[template.id] || {}) };
+};
 
-const sampleFor = (id: string) => ({
-  ...baseSampleFor(id),
+const sampleFor = (template: (typeof eviteTemplates)[number]) => ({
+  ...baseSampleFor(template),
   ...(useLong ? LONG : {}),
   ...(MONTH && MONTH_DATE[MONTH] ? { eventDate: MONTH_DATE[MONTH] } : {}),
 });
@@ -174,6 +179,8 @@ function Ruler() {
 export default function BabyPreview() {
   const p = new URLSearchParams(window.location.search);
   const only = p.get('id');
+  const requestedSet = p.get('set');
+  const eventFilter = p.get('event');
   const prefix = only
     ? only.startsWith('bday-c')
       ? 'bday-c'
@@ -186,20 +193,24 @@ export default function BabyPreview() {
             : only.startsWith('gr-c')
               ? 'gr-c'
               : 'baby-c'
-    : p.get('set') === 'bday'
+    : requestedSet === 'bday'
       ? 'bday-c'
-      : p.get('set') === 'pw'
+      : requestedSet === 'pw'
         ? 'pw-c'
-        : p.get('set') === 'wed'
+        : requestedSet === 'wed'
           ? 'wed-c'
-          : p.get('set') === 'hw'
+          : requestedSet === 'hw'
             ? 'hw-c'
-            : p.get('set') === 'gr'
+            : requestedSet === 'gr'
               ? 'gr-c'
               : 'baby-c';
-  const all = eviteTemplates.filter((t) => t.id.startsWith(prefix));
+  const all = requestedSet === 'all'
+    ? eviteTemplates.filter((template) => template.layout && (!eventFilter || template.eventType === eventFilter))
+    : eviteTemplates.filter((template) => template.id.startsWith(prefix));
   const ruler = p.get('ruler') === '1';
   const bare = p.get('bare') === '1';
+  const compare = p.get('compare') === '1';
+  const grid = p.get('grid') === '1';
   const cardWidth = Number(p.get('w') || 640) || 640;
   const concepts = only ? all.filter((t) => t.id === only) : all;
 
@@ -207,7 +218,7 @@ export default function BabyPreview() {
     const t = concepts[0];
     return (
       <div id="card" style={{ width: cardWidth, position: 'relative' }}>
-        <TemplateRenderer template={probed(t)} formData={sampleFor(t.id)} />
+        <TemplateRenderer template={probed(t)} formData={sampleFor(t)} />
       </div>
     );
   }
@@ -215,14 +226,24 @@ export default function BabyPreview() {
   return (
     <div className="page-bokeh-bg product-light-shell" style={{ padding: 16, minHeight: '100vh' }}>
       <h1 style={{ fontFamily: 'monospace', fontSize: 14 }}>
-        Baby tuning ({concepts.length}) — ?id=baby-c1 · &amp;w=1600 · &amp;ruler=1 · &amp;bare=1
+        Template tuning ({concepts.length}) — ?set=all · &amp;long=1 · &amp;grid=1 · &amp;compare=1
       </h1>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28 }}>
+      <div style={grid
+        ? { display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${Math.min(cardWidth, 240)}px, 1fr))`, alignItems: 'start', gap: 18 }
+        : { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28 }}>
         {concepts.map((t) => (
-          <div key={t.id} style={{ background: '#fff', padding: 8, boxShadow: '0 1px 4px rgba(0,0,0,.15)' }}>
+          <div key={t.id} data-template-card={t.id} style={{ background: '#fff', padding: 8, boxShadow: '0 1px 4px rgba(0,0,0,.15)' }}>
             <div style={{ fontFamily: 'monospace', fontSize: 13, padding: '2px 4px' }}>{t.id} — {t.name}</div>
-            <div style={{ width: cardWidth, maxWidth: '100%', position: 'relative' }}>
-              <TemplateRenderer template={probed(t)} formData={sampleFor(t.id)} />
+            {compare && t.realImage && (
+              <img
+                data-template-reference={t.id}
+                src={t.previewImage}
+                alt={`${t.name} reference`}
+                style={{ display: 'block', width: cardWidth, maxWidth: '100%', marginBottom: 8 }}
+              />
+            )}
+            <div data-template-render={t.id} style={{ width: cardWidth, maxWidth: '100%', position: 'relative' }}>
+              <TemplateRenderer template={probed(t)} formData={sampleFor(t)} />
               {ruler && <Ruler />}
             </div>
           </div>

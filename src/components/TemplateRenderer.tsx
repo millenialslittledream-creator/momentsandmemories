@@ -1,8 +1,10 @@
 import {
   Fragment,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
+  useState,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
@@ -105,11 +107,76 @@ function wrapAfter(text: string, limit: number): string {
  * straight through the divider beside it. `fitChars` is the widest the slot
  * can take, so anything longer is scaled down to fit instead of overflowing.
  */
-function fittedFontSize(field: TemplateFieldLayout, text: string): number {
-  if (!field.fitChars || !text) return field.fontSize;
-  const longest = Math.max(...text.split('\n').map((l) => l.length));
-  if (longest <= field.fitChars) return field.fontSize;
-  return Math.max(6, (field.fontSize * field.fitChars) / longest);
+type MeasurableTextStyle = Pick<
+  TemplateFieldLayout,
+  'fontFamily' | 'fontSize' | 'fontWeight' | 'fontStyle' | 'letterSpacing' | 'maxWidth' | 'textTransform'
+> & Partial<Pick<TemplateFieldLayout, 'fitChars' | 'iconBefore' | 'iconSize' | 'iconGap'>>;
+
+let measurementCanvas: HTMLCanvasElement | null = null;
+
+function transformedText(style: MeasurableTextStyle, text: string): string {
+  if (style.textTransform === 'uppercase') return text.toUpperCase();
+  if (style.textTransform === 'lowercase') return text.toLowerCase();
+  return text;
+}
+
+function measuredLineWidth(style: MeasurableTextStyle, text: string, fontSize: number): number {
+  if (typeof document === 'undefined') return text.length * fontSize * 0.56;
+  measurementCanvas ??= document.createElement('canvas');
+  const context = measurementCanvas.getContext('2d');
+  if (!context) return text.length * fontSize * 0.56;
+  context.font = `${style.fontStyle || 'normal'} ${style.fontWeight || 400} ${fontSize}px "${style.fontFamily}"`;
+  return context.measureText(text).width + Math.max(0, text.length - 1) * (style.letterSpacing || 0);
+}
+
+/**
+ * Preserve the designer's sample size whenever the entered value fits, then
+ * shrink only the values that would cross the field's measured text slot.
+ * This makes long real names/venues safe without making normal values smaller
+ * than the reference artwork.
+ */
+function fittedFontSize(
+  field: MeasurableTextStyle & {
+    x?: number;
+    y?: number;
+    align?: 'left' | 'center' | 'right';
+    lineHeight?: number;
+  },
+  text: string,
+  naturalWidth?: number,
+  naturalHeight?: number,
+): number {
+  if (!text) return field.fontSize;
+  const lines = transformedText(field, text).split('\n');
+  let size = field.fontSize;
+
+  if (field.fitChars) {
+    const longest = Math.max(...lines.map((line) => line.length));
+    if (longest > field.fitChars) size *= field.fitChars / longest;
+  }
+
+  if (field.maxWidth || (naturalWidth && field.x !== undefined)) {
+    const iconWidth = field.iconBefore ? (field.iconSize ?? field.fontSize) + (field.iconGap ?? 12) : 0;
+    const boundaryWidth = naturalWidth && field.x !== undefined
+      ? field.align === 'center'
+        ? Math.max(1, Math.min(field.x, naturalWidth - field.x) * 2)
+        : field.align === 'right'
+          ? Math.max(1, field.x)
+          : Math.max(1, naturalWidth - field.x)
+      : Number.POSITIVE_INFINITY;
+    const availableWidth = Math.max(1, Math.min(field.maxWidth ?? boundaryWidth, boundaryWidth) - iconWidth);
+    const renderedWidth = Math.max(...lines.map((line) => measuredLineWidth(field, line, size)));
+    if (renderedWidth > availableWidth) size *= availableWidth / renderedWidth;
+  }
+
+  if (naturalHeight && field.y !== undefined && lines.length > 1) {
+    const lineHeightRatio = field.lineHeight ? field.lineHeight / field.fontSize : 1.3;
+    const availableHeight = Math.max(1, naturalHeight - field.y);
+    const renderedHeight = lines.length * size * lineHeightRatio;
+    if (renderedHeight > availableHeight) size *= availableHeight / renderedHeight;
+  }
+
+  return Math.min(field.fontSize, Math.max(6, size));
 }
 
 function fieldStyle(
@@ -141,7 +208,7 @@ function fieldStyle(
     fontWeight: field.fontWeight || 400,
     fontStyle: field.fontStyle || 'normal',
     color: field.color,
-    fontSize: `calc(${fittedFontSize(field, text)} / ${naturalWidth} * 100cqi)`,
+    fontSize: `calc(${fittedFontSize(field, text, naturalWidth, naturalHeight)} / ${naturalWidth} * 100cqi)`,
     lineHeight: lineHeightRatio,
     letterSpacing: field.letterSpacing
       ? `calc(${field.letterSpacing} / ${naturalWidth} * 100cqi)`
@@ -166,7 +233,8 @@ function eventColumnStyle(
   col: EventsListColumnStyle,
   y: number,
   naturalWidth: number,
-  naturalHeight: number
+  naturalHeight: number,
+  text = ''
 ): CSSProperties {
   const leftPct = (col.x / naturalWidth) * 100;
   const topPct = (y / naturalHeight) * 100;
@@ -184,7 +252,7 @@ function eventColumnStyle(
     fontWeight: col.fontWeight || 400,
     fontStyle: col.fontStyle || 'normal',
     color: col.color,
-    fontSize: `calc(${col.fontSize} / ${naturalWidth} * 100cqi)`,
+    fontSize: `calc(${fittedFontSize({ ...col, y }, text, naturalWidth, naturalHeight)} / ${naturalWidth} * 100cqi)`,
     lineHeight: lineHeightRatio,
     letterSpacing: col.letterSpacing
       ? `calc(${col.letterSpacing} / ${naturalWidth} * 100cqi)`
@@ -257,6 +325,7 @@ export default function TemplateRenderer({
   // Measures the rendered container so screen-pixel deltas can be mapped
   // back into the template's natural pixel coordinate space.
   const containerRef = useRef<HTMLDivElement>(null);
+  const [fontRevision, setFontRevision] = useState(0);
   const dragRef = useRef<{
     key: string;
     kind: 'field' | 'photo';
@@ -334,6 +403,18 @@ export default function TemplateRenderer({
     dragRef.current = null;
   }, []);
 
+  // Canvas text metrics become exact once the web fonts have loaded. Re-run
+  // the fitting pass at that point so the final/public render uses the real
+  // invitation typeface rather than fallback-font estimates.
+  useEffect(() => {
+    if (typeof document === 'undefined' || !document.fonts) return;
+    let active = true;
+    void document.fonts.ready.then(() => {
+      if (active) setFontRevision((revision) => revision + 1);
+    });
+    return () => { active = false; };
+  }, []);
+
   const fieldNodes = useMemo(() => {
     if (!layout) return null;
     return layout.fields.map((field, idx) => {
@@ -386,7 +467,7 @@ export default function TemplateRenderer({
         </div>
       );
     });
-  }, [layout, formData, overrides, interactive, selectedKey, beginDrag, onDragMove, endDrag, onSelectField]);
+  }, [layout, formData, overrides, interactive, selectedKey, beginDrag, onDragMove, endDrag, onSelectField, fontRevision]);
 
   // Dynamic events list. Row 0 is ALWAYS the main event (sourced from
   // the main form's eventDate / eventTime / timezone / venue, with its
@@ -456,17 +537,17 @@ export default function TemplateRenderer({
       nodes.push(
         <Fragment key={`evrow-${i}`}>
           {nameStr && (
-            <div style={eventColumnStyle(list.name, row.nameY, layout.naturalWidth, layout.naturalHeight)}>
+            <div data-template-event-field="name" style={eventColumnStyle(list.name, row.nameY, layout.naturalWidth, layout.naturalHeight, nameStr)}>
               {nameStr}
             </div>
           )}
           {dateTimeStr && (
-            <div style={eventColumnStyle(list.dateTime, row.dateTimeY, layout.naturalWidth, layout.naturalHeight)}>
+            <div data-template-event-field="date-time" style={eventColumnStyle(list.dateTime, row.dateTimeY, layout.naturalWidth, layout.naturalHeight, dateTimeStr)}>
               {dateTimeStr}
             </div>
           )}
           {venueStr && (
-            <div style={eventColumnStyle(list.venue, row.venueY, layout.naturalWidth, layout.naturalHeight)}>
+            <div data-template-event-field="venue" style={eventColumnStyle(list.venue, row.venueY, layout.naturalWidth, layout.naturalHeight, venueStr)}>
               {venueStr}
             </div>
           )}
@@ -475,7 +556,7 @@ export default function TemplateRenderer({
     });
 
     return nodes;
-  }, [layout, formData]);
+  }, [layout, formData, fontRevision]);
 
   if (!layout) {
     return (

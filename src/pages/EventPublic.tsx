@@ -5,8 +5,9 @@ import BookViewer, { type BookPage } from '@/components/BookBuilder/BookViewer';
 import TemplateRenderer, { type PhotoOverlay } from '@/components/TemplateRenderer';
 import { eviteTemplates, type TemplateFieldLayout } from '@/data/eviteTemplates';
 import GuestRSVPForm from '@/components/GuestRSVPForm';
+import InvitationHeading from '@/components/InvitationHeading';
 import type { RSVPConfig } from '@/lib/api';
-import { getInvitationSentence, inferEventType } from '@/utils/eventInvitation';
+import { getInvitationHeadingParts, inferEventType } from '@/utils/eventInvitation';
 
 interface PublicEvent {
   id: string;
@@ -78,7 +79,7 @@ export default function EventPublic() {
   );
   const eventFormData = event?.form_data ?? {};
   const eventType = inferEventType(eventFormData, template?.eventType);
-  const invitationSentence = getInvitationSentence(eventType, eventFormData, event?.title ?? 'this celebration');
+  const invitationHeading = getInvitationHeadingParts(eventType, eventFormData, event?.title ?? 'this celebration');
 
   const scrollToRsvp = () => {
     rsvpSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -178,9 +179,12 @@ export default function EventPublic() {
         )}
 
         <div className={hasDesign ? 'text-center' : ''}>
-          <h1 data-testid="invitation-heading" className="font-serif-exp text-2xl md:text-4xl text-[#e4eee1] italic leading-tight mb-5">
-            {invitationSentence}
-          </h1>
+          <InvitationHeading
+            parts={invitationHeading}
+            tone="light"
+            testId="invitation-heading"
+            className="mb-5 text-2xl md:text-4xl"
+          />
 
           <div className={`w-12 h-px bg-[#9cb092]/40 mb-6 ${hasDesign ? 'mx-auto' : ''}`} />
 

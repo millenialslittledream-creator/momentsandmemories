@@ -139,7 +139,11 @@ async function installApiMocks(page: Page) {
       if (request.method() === 'POST') return json(route, { id: 'event-created-audit' });
       return json(route, [event]);
     }
-    if (path.endsWith('/drafts/my')) return json(route, null);
+    if (path.endsWith('/drafts/my/claim-resume')) return json(route, null);
+    if (path.endsWith('/drafts/my/mark-closed')) return route.fulfill({ status: 204, body: '' });
+    if (path.endsWith('/drafts/my')) return request.method() === 'DELETE'
+      ? route.fulfill({ status: 204, body: '' })
+      : json(route, null);
     if (path.endsWith('/event-websites')) return json(route, []);
     if (path.endsWith('/invitation-books')) return json(route, []);
     if (path.endsWith('/shop/items')) return json(route, []);
@@ -171,7 +175,7 @@ const routes = [
   ['premium-site', '/site/audit-premium', 'Darshan'],
   ['guest-gallery', `/gallery/${eventId}`, 'Release Audit Celebration'],
   ['website-builder', '/website-builder?event=marriage', 'Choose your Wedding website'],
-  ['baby-preview', '/__baby-preview', 'Baby tuning (13)'],
+  ['baby-preview', '/__baby-preview', 'Template tuning (13)'],
   ['not-found', '/definitely-not-a-page', 'Page not found'],
 ] as const;
 
@@ -418,11 +422,26 @@ test('create flow keeps only shareable link active and reveals it after final se
     delivery_preference: 'link' as const,
     updated_at: new Date().toISOString(),
   };
+  let markClosedCalls = 0;
+  let deleteCalls = 0;
   await page.route('**/drafts/my/claim-resume', (route) => json(route, resumableDraft));
-  await page.route('**/drafts/my', (route) => json(route, resumableDraft));
+  await page.route('**/drafts/my/mark-closed', (route) => {
+    markClosedCalls += 1;
+    return route.fulfill({ status: 204, body: '' });
+  });
+  await page.route('**/drafts/my', (route) => {
+    if (route.request().method() === 'DELETE') {
+      deleteCalls += 1;
+      return route.fulfill({ status: 204, body: '' });
+    }
+    return json(route, resumableDraft);
+  });
   await page.goto('/create');
 
   await page.getByRole('button', { name: /Continue editing/i }).click();
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await page.waitForTimeout(100);
+  expect(markClosedCalls, 'switching tabs must not arm the resume prompt').toBe(0);
   await expect(page.getByText('Share your invitation')).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText('Delivery', { exact: true }).first()).toBeVisible();
   for (const label of ['Email', 'SMS', 'Email + SMS']) {
@@ -437,6 +456,10 @@ test('create flow keeps only shareable link active and reveals it after final se
   await page.getByRole('button', { name: /Send Invitation — Free/ }).click();
 
   await expect(page.getByText('Your invitation is live')).toBeVisible();
+  expect(deleteCalls, 'completion removes the most recent draft').toBe(1);
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
+  await page.waitForTimeout(100);
+  expect(markClosedCalls, 'completed invitations must not be recreated on close').toBe(0);
   await expect(page.getByText(`${new URL(page.url()).origin}/event/event-created-audit`, { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'content_copy Copy', exact: true })).toBeVisible();
   await context.close();

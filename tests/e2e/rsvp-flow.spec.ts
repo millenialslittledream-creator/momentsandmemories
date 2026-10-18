@@ -241,6 +241,13 @@ test('Lotus Palace restores its invitation copy and readable key details', async
   await expect(page.getByTestId('invitation-heading')).toHaveText(
     "You are invited to Lavanya and Jeevan's wedding.",
   );
+  await expect(page.getByTestId('invitation-heading-names')).toHaveText('Lavanya and Jeevan');
+  await expect(page.getByTestId('invitation-heading-names')).toHaveCSS('font-style', 'normal');
+  const headingFonts = await page.getByTestId('invitation-heading').evaluate((heading) => ({
+    sentence: getComputedStyle(heading).fontFamily,
+    names: getComputedStyle(heading.querySelector('[data-testid="invitation-heading-names"]')!).fontFamily,
+  }));
+  expect(headingFonts.names).not.toBe(headingFonts.sentence);
   const invitation = page.getByTestId('public-invitation');
   await expect(invitation.getByText('INVITE YOU TO CELEBRATE', { exact: false })).toBeVisible();
   await expect(invitation.locator('[data-template-field="brideName"]')).toHaveText('Lavanya');

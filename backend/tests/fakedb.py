@@ -42,7 +42,6 @@ class Query:
 
     # operations
     def select(self, cols="*", count=None):
-        self.mode = "select"
         self.want_count = count == "exact"
         return self
 
@@ -63,7 +62,22 @@ class Query:
         return self
 
     # filters
-    def eq(self, c, v): self.filters.append(lambda r: str(r.get(c)) == str(v)); return self
+    @staticmethod
+    def _field_value(row, column):
+        parts = column.replace("->>", "->").split("->")
+        value = row.get(parts[0])
+        for part in parts[1:]:
+            value = value.get(part) if isinstance(value, dict) else None
+        return value
+
+    def eq(self, c, v):
+        def matches(row):
+            actual = self._field_value(row, c)
+            actual_text = str(actual).lower() if isinstance(actual, bool) else str(actual)
+            expected_text = str(v).lower() if isinstance(v, bool) else str(v)
+            return actual_text == expected_text
+        self.filters.append(matches)
+        return self
     def neq(self, c, v): self.filters.append(lambda r: str(r.get(c)) != str(v)); return self
     def in_(self, c, vs): self.filters.append(lambda r: r.get(c) in vs); return self
     def lt(self, c, v): self.filters.append(lambda r: r.get(c) is not None and str(r.get(c)) < str(v)); return self

@@ -1573,7 +1573,7 @@ const localEviteTemplates: EviteTemplate[] = [
       naturalHeight: 612,
       fields: [
         // Names
-        { formKey: 'homeownerName', x: 190, y: 208, fontFamily: 'Great Vibes', fontSize: 34, color: '#A62D58', align: 'center' },
+        { formKey: 'homeownerName', x: 190, y: 208, fontFamily: 'Great Vibes', fontSize: 34, color: '#A62D58', align: 'center', maxWidth: 360 },
 
         // Date — to the right of the calendar icon
         { formKey: 'eventDate', format: 'longDateUpper', x: 135, y: 325, fontFamily: 'Montserrat', fontSize: 10, fontWeight: '700', color: '#4A3728', align: 'left' },
@@ -1582,7 +1582,7 @@ const localEviteTemplates: EviteTemplate[] = [
         { formKey: 'eventTime', format: 'time12', prefix: 'MUHURTHAM: ', x: 135, y: 354, fontFamily: 'Montserrat', fontSize: 10, fontWeight: '700', color: '#4A3728', align: 'left' },
 
         // Venue (multi-line via \n)
-        { formKey: 'venue', x: 135, y: 382, fontFamily: 'Cormorant Garamond', fontSize: 13, lineHeight: 20, color: '#3E2D23', align: 'left' },
+        { formKey: 'venue', x: 135, y: 382, fontFamily: 'Cormorant Garamond', fontSize: 13, lineHeight: 20, color: '#3E2D23', align: 'left', maxWidth: 255, wrapAfterChars: 32, maxLines: 4 },
       ],
     },
   },

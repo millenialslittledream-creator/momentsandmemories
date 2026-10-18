@@ -46,6 +46,7 @@ interface DraftMetadata {
   fieldOverrides?: Record<string, Partial<TemplateFieldLayout>>;
   photoOverlay?: PhotoOverlay | null;
   pendingPhase?: ModalPhase | 'share';
+  resumePromptOnReturn?: boolean;
 }
 
 interface DraftRecord {
@@ -213,7 +214,7 @@ function renderEditorField(
 export default function CreateEvite() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, loading: authLoading } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const pageRef = useRef<HTMLDivElement>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
   const editorBackdropRef = useRef<HTMLDivElement>(null);
@@ -270,6 +271,9 @@ export default function CreateEvite() {
   const [serverDraft, setServerDraft] = useState<DraftRecord | null>(null);
   const [draftReady, setDraftReady] = useState(false);
   const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Once an invitation is completed (or an old draft is explicitly thrown
+  // away), pagehide must not recreate that obsolete snapshot on the server.
+  const resumeTrackingDisabledRef = useRef(false);
 
   // ── Derived state ────────────────────────────────────────────────
   const selectedTemplate = useMemo(
@@ -384,6 +388,7 @@ export default function CreateEvite() {
 
   // ── Handlers ─────────────────────────────────────────────────────
   const handleFieldChange = useCallback((name: string, value: string) => {
+    resumeTrackingDisabledRef.current = false;
     setFormData((prev) => ({ ...prev, [name]: value }));
   }, []);
 
@@ -517,7 +522,7 @@ export default function CreateEvite() {
       setDraftReady(false);
       try {
         const handoffRaw = sessionStorage.getItem(AUTH_HANDOFF_KEY);
-        const remoteDraft = await api.getDraft();
+        const remoteDraft = await api.claimResumeDraft();
         if (cancelled) return;
 
         if (handoffRaw) {
@@ -543,6 +548,41 @@ export default function CreateEvite() {
     void loadAuthenticatedDraft();
     return () => { cancelled = true; };
   }, [authLoading, restoreDraft, user]);
+
+  // Only mark a draft for the welcome-back prompt when the document is actually
+  // leaving. Tab switches, Alt+Tab, and visibility changes do not fire pagehide.
+  // Draft contents remain on the server; this writes only a server-side resume flag.
+  useEffect(() => {
+    if (authLoading || !user || !draftReady) return;
+    const hasUserContent =
+      Object.keys(formData).length > 0 ||
+      !!selectedTemplateId ||
+      !!uploadedTemplate ||
+      hasSubEvents ||
+      guests.some((guest) => guest.name.trim() || guest.email.trim() || guest.phone.trim());
+    if (!hasUserContent && !serverDraft) return;
+
+    const markClosed = () => {
+      if (resumeTrackingDisabledRef.current) return;
+      const payload = showResume && serverDraft
+        ? {
+            step: serverDraft.step,
+            event_type: serverDraft.event_type,
+            form_data: serverDraft.form_data,
+            selected_template: serverDraft.selected_template,
+            guests: serverDraft.guests,
+            delivery_preference: serverDraft.delivery_preference,
+          }
+        : createDraftPayload();
+      if (new TextEncoder().encode(JSON.stringify(payload)).byteLength <= 50_000 && draftSaveTimerRef.current) {
+        clearTimeout(draftSaveTimerRef.current);
+        draftSaveTimerRef.current = null;
+      }
+      void api.markDraftClosed(payload, session?.access_token).catch(() => {});
+    };
+    window.addEventListener('pagehide', markClosed);
+    return () => window.removeEventListener('pagehide', markClosed);
+  }, [authLoading, createDraftPayload, draftReady, formData, guests, hasSubEvents, selectedTemplateId, serverDraft, session?.access_token, showResume, uploadedTemplate, user]);
 
   // Autosave only after authentication and after the initial server lookup.
   // This keeps the durable copy scoped to the signed-in host and avoids
@@ -572,15 +612,19 @@ export default function CreateEvite() {
   // "Continue editing" — re-apply the saved draft and drop the host straight
   // back into the editor for their in-progress design.
   const resumeDraft = useCallback(() => {
+    resumeTrackingDisabledRef.current = false;
     setShowResume(false);
     if (serverDraft) restoreDraft(serverDraft, true);
   }, [restoreDraft, serverDraft]);
 
   // "Start fresh" — throw the old draft away and begin from the event picker.
   const discardDraft = useCallback(() => {
+    resumeTrackingDisabledRef.current = true;
     setShowResume(false);
     setServerDraft(null);
-    void api.deleteDraft();
+    void api.deleteDraft().catch((error) => {
+      console.warn('Could not discard server draft:', error);
+    });
     setFormData({});
     setSelectedTemplateId(null);
     setUploadedTemplate(null);
@@ -592,6 +636,9 @@ export default function CreateEvite() {
 
   const openTemplate = useCallback(
     (templateId: string) => {
+      // This is the first real edit in a new invitation, so it becomes the
+      // only draft eligible for a future welcome-back prompt.
+      resumeTrackingDisabledRef.current = false;
       setUploadedTemplate(null);
       setSelectedTemplateId(templateId);
       // Fresh template click starts a fresh celebration — clear any stale
@@ -643,6 +690,7 @@ export default function CreateEvite() {
   }, []);
 
   const handleCanvasEditorFinish = useCallback((pngDataUrl: string) => {
+    resumeTrackingDisabledRef.current = false;
     setUploadedTemplate({ url: pngDataUrl, type: 'image', fileName: 'custom-design.png' });
     setPickedCanvasTemplate(null);
     setModalPhase('editor');
@@ -888,7 +936,12 @@ export default function CreateEvite() {
         await api.addInvitees(eventId, invitees);
       }
 
+      // Completion wins over every older snapshot. Disable the exit handler
+      // before deleting so a near-simultaneous page close cannot recreate it.
+      resumeTrackingDisabledRef.current = true;
       await api.deleteDraft();
+      setServerDraft(null);
+      setShowResume(false);
       try { sessionStorage.removeItem(AUTH_HANDOFF_KEY); } catch { /* ignore */ }
     } catch (e) {
       console.warn('Evite send skipped (likely logged out or offline):', e);
@@ -980,6 +1033,7 @@ export default function CreateEvite() {
   };
 
   const handleSlotFilePicked = (id: string, file: File, kind: 'image' | 'video') => {
+    resumeTrackingDisabledRef.current = false;
     const url = URL.createObjectURL(file);
     setInvitationSlots((prev) =>
       prev.map((s) => (s.id === id ? { ...s, url, type: kind, fileName: file.name } : s))
@@ -990,6 +1044,7 @@ export default function CreateEvite() {
   // ── Upload handler ───────────────────────────────────────────────
   const handleFilePicked = useCallback(
     (file: File, kind: 'image' | 'video') => {
+      resumeTrackingDisabledRef.current = false;
       const url = URL.createObjectURL(file);
       setUploadedTemplate({ url, type: kind, fileName: file.name });
     },
