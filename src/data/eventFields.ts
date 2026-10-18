@@ -128,9 +128,9 @@ export const TEMPLATE_FIELD_OVERRIDES: Record<string, EventField[]> = {
 // note on every one of the 13 concepts — the celebrant name, guest count,
 // baby's gender, registry, "hosted by" and RSVP rows were all removed. Unlike
 // TEMPLATE_FIELD_OVERRIDES (which only swaps the event-specific fields and
-// still appends every common field), TEMPLATE_FIELD_SETS defines the COMPLETE
-// ordered field list so the editor collects exactly what that concept prints —
-// nothing more.
+// still appends every common field), TEMPLATE_FIELD_SETS defines the artwork-
+// specific ordered field list. getEditorFields additionally guarantees the
+// identity fields needed by the public evite and share message.
 const cf = (n: string): EventField => commonFields.find((f) => f.name === n)!;
 // Date + time + timezone + venue — the block every concept shares. (The editor
 // renders date/time/timezone together in one picker; venue is its own field.)
@@ -140,7 +140,8 @@ const dtv = (): EventField[] => [cf('eventDate'), cf('eventTime'), cf('timezone'
 // commonFields entry is for templates that only send it with the invite.
 const bfNote: EventField = { name: 'customMessage', label: 'A Little Note (printed on the card)', type: 'textarea', placeholder: 'A short message printed on the invitation — guests also see it in the message we send.', required: false };
 
-// Every revised concept collects the same thing: date · time · venue · note.
+// Every revised concept prints the same thing: date · time · venue · note.
+// The celebrant name is collected separately for the evite identity.
 const bfRsvpName: EventField = { name: 'rsvpName', label: 'RSVP To', type: 'text', placeholder: 'e.g. Melinda Shin', required: false };
 
 const babyNoteSet = (): EventField[] => [...dtv(), bfNote];
@@ -148,7 +149,7 @@ const babyNoteSet = (): EventField[] => [...dtv(), bfNote];
 // ── Birthday concept cards: full per-template field lists ─────────────────
 // Same rationale as the baby-shower sets above: each of the 12 birthday
 // "concept" templates (bday-c1 … bday-c12) prints a different subset, so the
-// editor collects exactly what that concept shows — nothing more.
+// editor follows what that concept shows, plus the evite identity.
 const bfBdayCelebrant: EventField = { name: 'celebrantName', label: "Celebrant's Name", type: 'text', placeholder: "Who's the birthday star?", required: true };
 // name · date · venue · guests · hosted by — the grid & ribbon concepts, whose
 // closing note ("Good people. Great vibes...") is baked into the artwork.
@@ -187,6 +188,42 @@ const wedCoupleSet = (): EventField[] => [bfBride, bfGroom, ...dtv()];
 const grParentA: EventField = { name: 'fatherName', label: "Celebrant 1 Name", type: 'text', placeholder: 'e.g. Rahul', required: true };
 const grParentB: EventField = { name: 'motherName', label: "Celebrant 2 Name", type: 'text', placeholder: 'e.g. Aishwarya', required: true };
 const grSetWithNote = (): EventField[] => [grParentA, grParentB, ...dtv(), bfNote];
+
+export const EVITE_IDENTITY_FIELD_NAMES = new Set([
+  'celebrantName',
+  'brideName',
+  'groomName',
+  'motherName',
+  'fatherName',
+  'homeownerName',
+  'eventName',
+]);
+
+function identityFieldsFor(eventType: EventType, fields: EventField[]): EventField[] {
+  if (
+    eventType === 'bridetobe' &&
+    fields.some((field) => field.name === 'brideName' || field.name === 'groomName')
+  ) {
+    return [bfBride, bfGroom];
+  }
+
+  const requiredNames: Record<EventType, string[]> = {
+    birthday: ['celebrantName'],
+    marriage: ['brideName', 'groomName'],
+    babyshower: ['celebrantName'],
+    bridetobe: ['celebrantName'],
+    genderreveal: ['motherName'],
+    housewarming: ['homeownerName'],
+    custom: ['eventName'],
+  };
+  return eventSpecificFields[eventType].filter((field) => requiredNames[eventType].includes(field.name));
+}
+
+function withIdentityFields(eventType: EventType, fields: EventField[]): EventField[] {
+  const existing = new Set(fields.map((field) => field.name));
+  const missing = identityFieldsFor(eventType, fields).filter((field) => !existing.has(field.name));
+  return [...missing, ...fields];
+}
 
 export const TEMPLATE_FIELD_SETS: Record<string, EventField[]> = {
   'baby-c1': babyNoteSet(),
@@ -276,9 +313,11 @@ const EVENTS_WITHOUT_HOST_NAME: EventType[] = ['marriage', 'bridetobe'];
  * RSVP is no longer collected for any event type.
  */
 export function getEditorFields(eventType: EventType, templateId?: string): EventField[] {
-  // Templates with a complete, hand-authored field list (baby-shower concepts)
-  // bypass the default composition entirely.
-  if (templateId && TEMPLATE_FIELD_SETS[templateId]) return TEMPLATE_FIELD_SETS[templateId];
+  // A template can control which details are printed on its artwork, but the
+  // evite identity is always collected for the public heading and share copy.
+  if (templateId && TEMPLATE_FIELD_SETS[templateId]) {
+    return withIdentityFields(eventType, TEMPLATE_FIELD_SETS[templateId]);
+  }
   const find = (n: string) => commonFields.find((f) => f.name === n)!;
   const specific = (templateId && TEMPLATE_FIELD_OVERRIDES[templateId]) || eventSpecificFields[eventType] || [];
   const fields: EventField[] = [...specific];

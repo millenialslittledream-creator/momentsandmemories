@@ -7,6 +7,7 @@ import { eviteTemplates } from '@/data/eviteTemplates';
 import {
   eventTypes,
   getEditorFields,
+  EVITE_IDENTITY_FIELD_NAMES,
   type EventType,
   type EventField,
 } from '@/data/eventFields';
@@ -121,6 +122,7 @@ function renderEditorField(
   value: string,
   onChange: (name: string, value: string) => void
 ) {
+  const fieldId = `event-field-${field.name}`;
   const baseInputClass =
     'bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-4 h-12 text-sm rounded-sm w-full outline-none transition-colors';
 
@@ -128,6 +130,7 @@ function renderEditorField(
     case 'date':
       return (
         <input
+          id={fieldId}
           type="date"
           value={value}
           onChange={(e) => onChange(field.name, e.target.value)}
@@ -137,6 +140,7 @@ function renderEditorField(
     case 'time':
       return (
         <input
+          id={fieldId}
           type="time"
           value={value}
           onChange={(e) => onChange(field.name, e.target.value)}
@@ -146,6 +150,7 @@ function renderEditorField(
     case 'number':
       return (
         <input
+          id={fieldId}
           type="number"
           inputMode="numeric"
           min={0}
@@ -159,6 +164,7 @@ function renderEditorField(
       return (
         <div className="space-y-1">
           <textarea
+            id={fieldId}
             value={value}
             onChange={(e) => {
               if (e.target.value.length <= 200) onChange(field.name, e.target.value);
@@ -176,6 +182,7 @@ function renderEditorField(
       return (
         <div className="relative">
           <select
+            id={fieldId}
             value={value}
             onChange={(e) => onChange(field.name, e.target.value)}
             className={`${baseInputClass} appearance-none cursor-pointer pr-8`}
@@ -200,6 +207,7 @@ function renderEditorField(
     default:
       return (
         <input
+          id={fieldId}
           type="text"
           value={value}
           onChange={(e) => onChange(field.name, e.target.value)}
@@ -313,7 +321,7 @@ export default function CreateEvite() {
   // the SAME fields a stock template of that event-type would ask for — so a
   // birthday upload still asks for celebrant name, a baby shower still asks
   // for parent + baby gender, etc. The image is the only thing that changed.
-  const currentEventType: EventType | null = uploadedTemplate
+  const currentEventType: EventType | null = uploadedTemplate || activeFilter === 'custom'
     ? activeFilter
     : selectedTemplate?.eventType ?? null;
 
@@ -321,7 +329,10 @@ export default function CreateEvite() {
     if (!currentEventType) return [];
     // Some templates override the default fields (e.g. the pre-wedding
     // "Champagne Toast" collects bride + groom names instead of one celebrant).
-    return getEditorFields(currentEventType, selectedTemplate?.id);
+    const templateId = selectedTemplate?.eventType === currentEventType
+      ? selectedTemplate.id
+      : undefined;
+    return getEditorFields(currentEventType, templateId);
   }, [currentEventType, selectedTemplate]);
 
   const supportsMultipleEvents = !!currentEventType && SUPPORTS_MULTI_EVENTS.includes(currentEventType);
@@ -879,7 +890,7 @@ export default function CreateEvite() {
         location: formData.venue || null,
         template_id: selectedTemplateId,
         cover_image_url: coverImageUrl,
-        form_data: { ...formData, rsvpSettings },
+        form_data: { ...formData, eventType: currentEventType, rsvpSettings },
         rsvp_enabled: rsvpSettings.enabled,
         rsvp_config: rsvpSettings,
         status: 'published',
@@ -2617,13 +2628,25 @@ export default function CreateEvite() {
                       if (field.name === 'eventTime' || field.name === 'timezone') continue;
 
                       const isFullWidth = field.type === 'textarea' || field.name === 'venue';
+                      const isEviteOnlyIdentity =
+                        EVITE_IDENTITY_FIELD_NAMES.has(field.name) &&
+                        !!selectedTemplate?.layout &&
+                        !selectedTemplate.layout.fields.some((layoutField) => layoutField.formKey === field.name);
                       items.push(
                         <div key={field.name} className={`space-y-1.5${isFullWidth ? ' sm:col-span-2' : ''}`}>
-                          <label className="block font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]">
+                          <label
+                            htmlFor={`event-field-${field.name}`}
+                            className="block font-display text-[9px] tracking-[0.15em] uppercase text-[#b2c3b1]"
+                          >
                             {field.label}
                             {field.required && <span className="text-[#9cb092] ml-1">*</span>}
                           </label>
                           {renderEditorField(field, formData[field.name] || '', handleFieldChange)}
+                          {isEviteOnlyIdentity && (
+                            <p className="font-display text-[9px] leading-relaxed text-[#b2c3b1]/50">
+                              Used in the public evite heading and share message; this design does not print it.
+                            </p>
+                          )}
                         </div>
                       );
                     }

@@ -15,11 +15,12 @@ export default function InvitationHeading({
 }: InvitationHeadingProps) {
   const primaryTone = tone === 'light' ? 'text-[#e4eee1]' : 'text-[#2a3328]';
   const eyebrowTone = tone === 'light' ? 'text-[#9cb092]' : 'text-[#405138]/75';
+  const sentence = `${parts.lead}${parts.names}${parts.sentenceSuffix}`;
 
   return (
     <h1
       data-testid={testId}
-      aria-label={`${parts.lead}${parts.names}${parts.occasion}`}
+      aria-label={sentence}
       className={`text-center ${primaryTone} ${className}`}
     >
       <span
@@ -35,7 +36,12 @@ export default function InvitationHeading({
         >
           {parts.names}
         </span>
-        <span>{parts.occasion}</span>
+      </span>
+      <span
+        data-testid={testId ? `${testId}-occasion` : undefined}
+        className={`mt-3 block font-display text-[0.28em] font-medium not-italic uppercase tracking-[0.34em] ${eyebrowTone}`}
+      >
+        {parts.occasionLabel}
       </span>
     </h1>
   );

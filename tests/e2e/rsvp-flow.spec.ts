@@ -243,6 +243,7 @@ test('Lotus Palace restores its invitation copy and readable key details', async
   );
   await expect(page.getByTestId('invitation-heading-lead')).toHaveText('You are invited to');
   await expect(page.getByTestId('invitation-heading-names')).toHaveText('Lavanya and Jeevan');
+  await expect(page.getByTestId('invitation-heading-occasion')).toHaveText('Wedding');
   await expect(page.getByTestId('invitation-heading-names')).toHaveCSS('font-style', 'italic');
   const headingFonts = await page.getByTestId('invitation-heading').evaluate((heading) => ({
     sentence: getComputedStyle(heading).fontFamily,
@@ -250,10 +251,12 @@ test('Lotus Palace restores its invitation copy and readable key details', async
     leadDisplay: getComputedStyle(heading.querySelector('[data-testid="invitation-heading-lead"]')!).display,
     leadSize: parseFloat(getComputedStyle(heading.querySelector('[data-testid="invitation-heading-lead"]')!).fontSize),
     namesSize: parseFloat(getComputedStyle(heading.querySelector('[data-testid="invitation-heading-names"]')!).fontSize),
+    occasionDisplay: getComputedStyle(heading.querySelector('[data-testid="invitation-heading-occasion"]')!).display,
   }));
   expect(headingFonts.names).not.toBe(headingFonts.sentence);
   expect(headingFonts.leadDisplay).toBe('block');
   expect(headingFonts.namesSize).toBeGreaterThan(headingFonts.leadSize * 2);
+  expect(headingFonts.occasionDisplay).toBe('block');
   const invitation = page.getByTestId('public-invitation');
   await expect(invitation.getByText('INVITE YOU TO CELEBRATE', { exact: false })).toBeVisible();
   await expect(invitation.locator('[data-template-field="brideName"]')).toHaveText('Lavanya');
@@ -270,4 +273,57 @@ test('Lotus Palace restores its invitation copy and readable key details', async
   expect(sizes.venue).toBeGreaterThan(8);
 
   await page.screenshot({ path: 'test-results/release-route-audit/desktop/lotus-palace-public.png', fullPage: true });
+});
+
+test('every event type separates the featured name from the occasion', async ({ page }) => {
+  const cases = [
+    { id: 'birthday-heading', type: 'birthday', data: { celebrantName: 'Jeevan' }, name: 'Jeevan', occasion: 'Birthday Party', sentence: "You are invited to Jeevan's birthday party." },
+    { id: 'baby-heading', type: 'babyshower', data: { celebrantName: 'Ananya' }, name: 'Ananya', occasion: 'Baby Shower', sentence: "You are invited to Ananya's baby shower." },
+    { id: 'wedding-heading', type: 'marriage', data: { brideName: 'Lavanya', groomName: 'Jeevan' }, name: 'Lavanya and Jeevan', occasion: 'Wedding', sentence: "You are invited to Lavanya and Jeevan's wedding." },
+    { id: 'prewedding-heading', type: 'bridetobe', data: { brideName: 'Maya', groomName: 'Arjun' }, name: 'Maya and Arjun', occasion: 'Pre-Wedding Celebration', sentence: "You are invited to Maya and Arjun's pre-wedding celebration." },
+    { id: 'gender-heading', type: 'genderreveal', data: { motherName: 'Asha', fatherName: 'Ravi' }, name: 'Asha and Ravi', occasion: 'Gender Reveal', sentence: "You are invited to Asha and Ravi's gender reveal." },
+    { id: 'house-heading', type: 'housewarming', data: { homeownerName: 'The Shah Family' }, name: 'The Shah Family', occasion: 'Housewarming', sentence: "You are invited to The Shah Family's housewarming." },
+    { id: 'custom-heading', type: 'custom', data: { eventName: 'Graduation Dinner' }, name: 'Graduation Dinner', occasion: 'Celebration', sentence: 'You are invited to Graduation Dinner.' },
+  ];
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route('**/public/events/**', async (route) => {
+    const id = route.request().url().split('/').pop()!;
+    if (id === 'book') {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+      return;
+    }
+    const current = cases.find((item) => item.id === id)!;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        title: current.name,
+        description: null,
+        event_date: '2027-02-14',
+        event_time: '18:30',
+        location: 'Celebration Hall',
+        cover_image_url: null,
+        rsvp_enabled: true,
+        invitee_count: 0,
+        template_id: null,
+        form_data: { ...current.data, eventType: current.type },
+        customization: null,
+        rsvp_config: { enabled: true },
+      }),
+    });
+  });
+
+  for (const current of cases) {
+    await page.goto(`/event/${current.id}`);
+    const heading = page.getByTestId('invitation-heading');
+    await expect(heading).toHaveAccessibleName(current.sentence);
+    await expect(page.getByTestId('invitation-heading-names')).toHaveText(current.name);
+    await expect(page.getByTestId('invitation-heading-occasion')).toHaveText(current.occasion);
+    await expect(heading).toBeInViewport();
+    const overflows = await heading.evaluate((element) => element.scrollWidth > element.clientWidth);
+    expect(overflows).toBe(false);
+    await page.screenshot({ path: `test-results/invitation-headings/${current.id}.png`, fullPage: true });
+  }
 });

@@ -5,7 +5,8 @@ type EventFormData = Record<string, unknown>;
 export interface InvitationHeadingParts {
   lead: string;
   names: string;
-  occasion: string;
+  sentenceSuffix: string;
+  occasionLabel: string;
 }
 
 const EVENT_LABELS: Record<EventType, string> = {
@@ -36,6 +37,8 @@ export function inferEventType(
   explicitType?: EventType | null,
 ): EventType | undefined {
   if (explicitType) return explicitType;
+  const savedType = value(formData, 'eventType') || value(formData, '_eventType');
+  if (savedType in EVENT_LABELS) return savedType as EventType;
   if (value(formData, 'brideName') || value(formData, 'groomName')) return 'marriage';
   if (value(formData, 'babyGender') || value(formData, 'registryLink')) return 'babyshower';
   if (value(formData, 'motherName') || value(formData, 'fatherName')) return 'genderreveal';
@@ -50,9 +53,15 @@ export function getEventDisplayTitle(
   formData: EventFormData,
   fallback = 'My Event',
 ): string {
-  if (eventType === 'marriage') {
+  if (eventType === 'marriage' || eventType === 'bridetobe') {
     const couple = [value(formData, 'brideName'), value(formData, 'groomName')].filter(Boolean);
-    return couple.join(' & ') || fallback;
+    if (couple.length) return couple.join(' & ');
+    if (eventType === 'marriage') return fallback;
+  }
+
+  if (eventType === 'genderreveal') {
+    const parents = [value(formData, 'motherName'), value(formData, 'fatherName')].filter(Boolean);
+    if (parents.length === 2) return `${parents[0]} & ${possessive(parents[1])} Gender Reveal`;
   }
 
   const primaryName =
@@ -75,7 +84,7 @@ export function getInvitationSentence(
   fallbackTitle: string,
 ): string {
   const heading = getInvitationHeadingParts(eventType, formData, fallbackTitle);
-  return `${heading.lead}${heading.names}${heading.occasion}`;
+  return `${heading.lead}${heading.names}${heading.sentenceSuffix}`;
 }
 
 export function getInvitationHeadingParts(
@@ -86,30 +95,33 @@ export function getInvitationHeadingParts(
   const lead = 'You are invited to ';
   if (eventType === 'marriage') {
     const couple = [value(formData, 'brideName'), value(formData, 'groomName')].filter(Boolean);
-    if (couple.length === 2) return { lead, names: `${couple[0]} and ${couple[1]}`, occasion: possessiveOccasion(couple[1], 'wedding') };
-    if (couple.length === 1) return { lead, names: couple[0], occasion: possessiveOccasion(couple[0], 'wedding') };
+    if (couple.length === 2) return { lead, names: `${couple[0]} and ${couple[1]}`, sentenceSuffix: possessiveOccasion(couple[1], 'wedding'), occasionLabel: 'Wedding' };
+    if (couple.length === 1) return { lead, names: couple[0], sentenceSuffix: possessiveOccasion(couple[0], 'wedding'), occasionLabel: 'Wedding' };
   }
 
   const celebrant = value(formData, 'celebrantName');
   if (eventType === 'birthday' && celebrant) {
-    return { lead, names: celebrant, occasion: possessiveOccasion(celebrant, 'birthday party') };
+    return { lead, names: celebrant, sentenceSuffix: possessiveOccasion(celebrant, 'birthday party'), occasionLabel: 'Birthday Party' };
   }
   if (eventType === 'babyshower' && celebrant) {
-    return { lead, names: celebrant, occasion: possessiveOccasion(celebrant, 'baby shower') };
+    return { lead, names: celebrant, sentenceSuffix: possessiveOccasion(celebrant, 'baby shower'), occasionLabel: 'Baby Shower' };
   }
-  if (eventType === 'bridetobe' && celebrant) {
-    return { lead, names: celebrant, occasion: possessiveOccasion(celebrant, 'pre-wedding celebration') };
+  if (eventType === 'bridetobe') {
+    const couple = [value(formData, 'brideName'), value(formData, 'groomName')].filter(Boolean);
+    if (couple.length === 2) return { lead, names: `${couple[0]} and ${couple[1]}`, sentenceSuffix: possessiveOccasion(couple[1], 'pre-wedding celebration'), occasionLabel: 'Pre-Wedding Celebration' };
+    if (couple.length === 1) return { lead, names: couple[0], sentenceSuffix: possessiveOccasion(couple[0], 'pre-wedding celebration'), occasionLabel: 'Pre-Wedding Celebration' };
+    if (celebrant) return { lead, names: celebrant, sentenceSuffix: possessiveOccasion(celebrant, 'pre-wedding celebration'), occasionLabel: 'Pre-Wedding Celebration' };
   }
   if (eventType === 'genderreveal') {
     const parents = [value(formData, 'motherName'), value(formData, 'fatherName')].filter(Boolean);
-    if (parents.length === 2) return { lead, names: `${parents[0]} and ${parents[1]}`, occasion: possessiveOccasion(parents[1], 'gender reveal') };
-    if (parents.length === 1) return { lead, names: parents[0], occasion: possessiveOccasion(parents[0], 'gender reveal') };
+    if (parents.length === 2) return { lead, names: `${parents[0]} and ${parents[1]}`, sentenceSuffix: possessiveOccasion(parents[1], 'gender reveal'), occasionLabel: 'Gender Reveal' };
+    if (parents.length === 1) return { lead, names: parents[0], sentenceSuffix: possessiveOccasion(parents[0], 'gender reveal'), occasionLabel: 'Gender Reveal' };
   }
   if (eventType === 'housewarming') {
     const homeowner = value(formData, 'homeownerName');
-    if (homeowner) return { lead, names: homeowner, occasion: possessiveOccasion(homeowner, 'housewarming') };
+    if (homeowner) return { lead, names: homeowner, sentenceSuffix: possessiveOccasion(homeowner, 'housewarming'), occasionLabel: 'Housewarming' };
   }
 
   const customName = value(formData, 'eventName');
-  return { lead, names: customName || fallbackTitle, occasion: '.' };
+  return { lead, names: customName || fallbackTitle, sentenceSuffix: '.', occasionLabel: 'Celebration' };
 }

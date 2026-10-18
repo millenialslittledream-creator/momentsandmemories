@@ -761,7 +761,8 @@ const localEviteTemplates: EviteTemplate[] = [
   // revised artwork ("FINAL BABY SHOWER INVITATIONS"). The revision stripped
   // every card back to DATE & TIME / VENUE / a closing note — the celebrant
   // name, guest count, baby's gender, registry, "hosted by" and RSVP rows are
-  // gone from the artwork, so they're gone from the overlay and the form too.
+  // gone from the artwork. The name is still collected outside the overlay so
+  // the public evite heading and share message can identify the celebration.
   // Designs 1 and 3 also swapped places in the designer's numbering.
   //
   // previewImage = the filled sample (gallery thumbnail); realImage = the

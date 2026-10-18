@@ -57,3 +57,24 @@ test('public full-page screens use the exact homepage background', async ({ page
     expect(await backgroundImage(page.locator('.page-bokeh-bg').first())).toBe(homeBackground);
   }
 });
+
+test('identity fields remain visible when a design does not print the name', async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
+
+  for (const scenario of [
+    { event: 'Baby Shower', template: 'Sweet Dreams Elephant', field: /Celebrant's name/i, slug: 'baby-shower' },
+    { event: 'Birthday', template: 'Party Hat & Confetti', field: /Celebrant's name/i, slug: 'birthday' },
+    { event: 'Others', template: 'Confetti Pop', field: /Event name/i, slug: 'custom' },
+  ]) {
+    await page.goto('/create');
+    await page.locator('.picker-card').filter({ hasText: scenario.event }).click();
+    await page.getByRole('button', { name: 'Browse Templates' }).click();
+    await page.getByRole('button', { name: new RegExp(scenario.template) }).first().click();
+    await expect(page.getByRole('textbox', { name: scenario.field })).toBeVisible();
+    await expect(page.getByText(/Used in the public evite heading and share message/)).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath(`identity-${scenario.slug}.png`),
+      fullPage: false,
+    });
+  }
+});
