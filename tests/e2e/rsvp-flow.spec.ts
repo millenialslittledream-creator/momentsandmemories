@@ -238,16 +238,22 @@ test('Lotus Palace restores its invitation copy and readable key details', async
   }));
 
   await page.goto(`/event/${weddingEventId}`);
-  await expect(page.getByTestId('invitation-heading')).toHaveText(
+  await expect(page.getByTestId('invitation-heading')).toHaveAccessibleName(
     "You are invited to Lavanya and Jeevan's wedding.",
   );
+  await expect(page.getByTestId('invitation-heading-lead')).toHaveText('You are invited to');
   await expect(page.getByTestId('invitation-heading-names')).toHaveText('Lavanya and Jeevan');
-  await expect(page.getByTestId('invitation-heading-names')).toHaveCSS('font-style', 'normal');
+  await expect(page.getByTestId('invitation-heading-names')).toHaveCSS('font-style', 'italic');
   const headingFonts = await page.getByTestId('invitation-heading').evaluate((heading) => ({
     sentence: getComputedStyle(heading).fontFamily,
     names: getComputedStyle(heading.querySelector('[data-testid="invitation-heading-names"]')!).fontFamily,
+    leadDisplay: getComputedStyle(heading.querySelector('[data-testid="invitation-heading-lead"]')!).display,
+    leadSize: parseFloat(getComputedStyle(heading.querySelector('[data-testid="invitation-heading-lead"]')!).fontSize),
+    namesSize: parseFloat(getComputedStyle(heading.querySelector('[data-testid="invitation-heading-names"]')!).fontSize),
   }));
   expect(headingFonts.names).not.toBe(headingFonts.sentence);
+  expect(headingFonts.leadDisplay).toBe('block');
+  expect(headingFonts.namesSize).toBeGreaterThan(headingFonts.leadSize * 2);
   const invitation = page.getByTestId('public-invitation');
   await expect(invitation.getByText('INVITE YOU TO CELEBRATE', { exact: false })).toBeVisible();
   await expect(invitation.locator('[data-template-field="brideName"]')).toHaveText('Lavanya');

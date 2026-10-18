@@ -13,20 +13,30 @@ export default function InvitationHeading({
   className = '',
   testId,
 }: InvitationHeadingProps) {
+  const primaryTone = tone === 'light' ? 'text-[#e4eee1]' : 'text-[#2a3328]';
+  const eyebrowTone = tone === 'light' ? 'text-[#9cb092]' : 'text-[#405138]/75';
+
   return (
     <h1
       data-testid={testId}
       aria-label={`${parts.lead}${parts.names}${parts.occasion}`}
-      className={`font-serif-exp italic leading-[1.12] ${tone === 'light' ? 'text-[#e4eee1]' : 'text-[#2a3328]'} ${className}`}
+      className={`text-center ${primaryTone} ${className}`}
     >
-      <span>{parts.lead}</span>
       <span
-        data-testid={testId ? `${testId}-names` : undefined}
-        className="font-agatho text-[1.18em] font-semibold not-italic tracking-[-0.025em] [overflow-wrap:anywhere]"
+        data-testid={testId ? `${testId}-lead` : undefined}
+        className={`mb-3 block font-display text-[0.28em] font-medium not-italic uppercase tracking-[0.34em] ${eyebrowTone}`}
       >
-        {parts.names}
+        {parts.lead.trim()}
       </span>
-      <span>{parts.occasion}</span>
+      <span className="block font-serif-exp italic leading-[1.08] tracking-[-0.02em]">
+        <span
+          data-testid={testId ? `${testId}-names` : undefined}
+          className="font-agatho font-medium italic [overflow-wrap:break-word]"
+        >
+          {parts.names}
+        </span>
+        <span>{parts.occasion}</span>
+      </span>
     </h1>
   );
 }

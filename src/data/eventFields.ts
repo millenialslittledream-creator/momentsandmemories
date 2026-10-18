@@ -69,7 +69,7 @@ export const eventTypes: EventTypeInfo[] = [
   },
 ];
 
-const TIMEZONE_OPTIONS = ['PT', 'MT', 'CT', 'ET', 'AKT', 'HAT', 'AST', 'SST', 'ChST', 'IST'];
+export const TIMEZONE_OPTIONS = ['PT', 'MT', 'CT', 'ET'];
 
 // Reusable common fields. Kept as a single export so legacy components keep compiling,
 // but the editor flow uses `getEditorFields(eventType)` below to compose ordered, event-aware lists.

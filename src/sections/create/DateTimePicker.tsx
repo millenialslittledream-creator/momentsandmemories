@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { format } from 'date-fns';
+import { addYears, format, startOfDay, startOfMonth } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
-
-const TIMEZONE_OPTIONS = ['PT', 'MT', 'CT', 'ET', 'AKT', 'HAT', 'AST', 'SST', 'ChST', 'IST'];
+import { TIMEZONE_OPTIONS } from '@/data/eventFields';
 
 interface DateTimePickerProps {
   date: string; // "YYYY-MM-DD"
@@ -18,6 +17,20 @@ interface DateTimePickerProps {
 }
 
 const TIME_STEP_MIN = 15;
+
+export function buildTimeOptions(): string[] {
+  const options: string[] = [];
+  const minutesInDay = 24 * 60;
+
+  for (let offset = 0; offset < minutesInDay; offset += TIME_STEP_MIN) {
+    const totalMinutes = (7 * 60 + offset) % minutesInDay;
+    const hour = Math.floor(totalMinutes / 60);
+    const minute = totalMinutes % 60;
+    options.push(`${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
+  }
+
+  return options;
+}
 
 function format12h(hhmm: string): string {
   if (!hhmm) return '';
@@ -50,16 +63,10 @@ export default function DateTimePicker({
   const [open, setOpen] = useState(false);
 
   const selected = date ? new Date(date + 'T00:00:00') : undefined;
+  const today = startOfDay(new Date());
+  const latestDate = addYears(today, 1);
 
-  const timeOptions = useMemo(() => {
-    const opts: string[] = [];
-    for (let h = 0; h < 24; h++) {
-      for (let m = 0; m < 60; m += TIME_STEP_MIN) {
-        opts.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
-      }
-    }
-    return opts;
-  }, []);
+  const timeOptions = useMemo(buildTimeOptions, []);
 
   const summary = useMemo(() => {
     if (!date) return 'Pick a date & time';
@@ -98,7 +105,7 @@ export default function DateTimePicker({
       className={`w-full ${isSm ? 'h-9 px-2 gap-1.5' : 'h-12 px-4 gap-2'} bg-white/[0.06] border border-white/15 hover:border-[#9cb092]/60 focus:border-[#9cb092] transition-colors text-left rounded-sm flex items-center outline-none`}
     >
       {/* Calendar icon — only shown while empty. Once a date is picked, the
-         icon disappears so the full "Jun 25, 2026 · 1:30 AM ChST" string
+         icon disappears so the full "Jun 25, 2026 · 1:30 AM PT" string
          has room and doesn't trigger horizontal scroll in the sub-events
          table. */}
       {!date && (
@@ -157,7 +164,9 @@ export default function DateTimePicker({
                 onSelect={(d) => {
                   if (d) onChange({ date: format(d, 'yyyy-MM-dd') });
                 }}
-                disabled={{ before: new Date(new Date().setHours(0, 0, 0, 0)) }}
+                startMonth={startOfMonth(today)}
+                endMonth={startOfMonth(latestDate)}
+                disabled={[{ before: today }, { after: latestDate }]}
                 className="bg-transparent text-[#e4eee1]"
                 classNames={{
                   day: 'text-[#e4eee1] hover:bg-[#9cb092]/20 rounded-md h-8 w-8 p-0 font-display text-sm aria-selected:bg-[#9cb092] aria-selected:text-[#111914]',

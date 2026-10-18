@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
-import { format } from 'date-fns';
+import { addYears, format, startOfDay, startOfMonth } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,6 +17,7 @@ import {
   commonFields,
   eventSpecificFields,
   eventTypes,
+  TIMEZONE_OPTIONS,
   type EventType,
   type EventField,
 } from '@/data/eventFields';
@@ -153,6 +154,8 @@ function DatePicker({
 }) {
   const [open, setOpen] = useState(false);
   const selected = value ? new Date(value + 'T00:00:00') : undefined;
+  const today = startOfDay(new Date());
+  const latestDate = addYears(today, 1);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -180,7 +183,9 @@ function DatePicker({
               setOpen(false);
             }
           }}
-          disabled={{ before: new Date() }}
+          startMonth={startOfMonth(today)}
+          endMonth={startOfMonth(latestDate)}
+          disabled={[{ before: today }, { after: latestDate }]}
           className="bg-transparent text-[#e4eee1]"
           classNames={{
             day: 'text-[#e4eee1] hover:bg-[#9cb092]/20 rounded-md h-9 w-9 p-0 font-display text-sm aria-selected:bg-[#9cb092] aria-selected:text-[#111914]',
@@ -283,19 +288,6 @@ function VenueAutocomplete({
 }
 
 /* ── Timezone Select — compact inline version ─────────────── */
-const TIMEZONE_OPTIONS = [
-  'PT',
-  'MT',
-  'CT',
-  'ET',
-  'AKT',
-  'HAT',
-  'AST',
-  'SST',
-  'ChST',
-  'IST',
-];
-
 function TimezoneSelect({
   value,
   onChange,
