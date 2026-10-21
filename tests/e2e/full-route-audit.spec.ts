@@ -465,6 +465,75 @@ test('create flow keeps only shareable link active and reveals it after final se
   await context.close();
 });
 
+test('sign-in handoff resumes multi-invite delivery and publishes one link per design', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await installTestSession(context);
+  const page = await context.newPage();
+  await installApiMocks(page);
+
+  const createdEventIds = ['event-family', 'event-friends'];
+  const createdPayloads: Array<Record<string, unknown>> = [];
+  const inviteesByEvent = new Map<string, Array<Record<string, unknown>>>();
+  await page.route('**/events', async (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    createdPayloads.push(route.request().postDataJSON() as Record<string, unknown>);
+    return json(route, { id: createdEventIds[createdPayloads.length - 1] });
+  });
+  await page.route('**/events/*/invitees', async (route) => {
+    const match = new URL(route.request().url()).pathname.match(/\/events\/([^/]+)\/invitees$/);
+    if (!match || route.request().method() !== 'POST') return route.fallback();
+    inviteesByEvent.set(match[1], route.request().postDataJSON() as Array<Record<string, unknown>>);
+    return json(route, []);
+  });
+
+  await page.addInitScript((draft) => {
+    sessionStorage.setItem('mm_evite_auth_handoff', JSON.stringify(draft));
+  }, {
+    step: 3,
+    event_type: 'marriage',
+    form_data: {
+      brideName: 'Asha', groomName: 'Ravi', eventDate: '2027-03-12', eventTime: '18:00',
+      timezone: 'IST', venue: 'Garden Hall',
+      __mmDraft: {
+        multipleInvitations: true,
+        pendingPhase: 'guests',
+        invitationSlots: [
+          { id: 'slot-family', url: '/templates/wedding/concepts/1-preview.jpg', type: 'image', fileName: 'family.jpg', name: 'Family' },
+          { id: 'slot-friends', url: '/templates/wedding/concepts/2-preview.jpg', type: 'image', fileName: 'friends.jpg', name: 'Friends' },
+        ],
+      },
+    },
+    selected_template: null,
+    guests: [
+      { id: 'guest-family', name: 'Maya', email: 'maya@example.com', phone: '', invitationSetId: 'slot-family' },
+      { id: 'guest-friends', name: 'Noah', email: 'noah@example.com', phone: '', invitationSetId: 'slot-friends' },
+    ],
+    delivery_preference: 'link',
+  });
+
+  await page.goto('/create');
+  await expect(page.getByText('Share your invitation')).toBeVisible({ timeout: 20_000 });
+  await page.getByRole('button', { name: /Continue to Preview/ }).click();
+  await page.getByRole('button', { name: /^Continue/ }).click();
+  await page.getByRole('button', { name: /No thanks, continue for free/ }).click();
+  await page.getByPlaceholder('1234 5678 9012 3456').fill('4242 4242 4242 4242');
+  await page.getByPlaceholder('John Doe').fill('Asha Ravi');
+  await page.getByPlaceholder('MM/YY').fill('12/30');
+  await page.getByPlaceholder('123', { exact: true }).fill('123');
+  await page.getByRole('button', { name: /Complete Payment/ }).click();
+
+  await expect(page.getByText('Your invitations are live')).toBeVisible();
+  await expect(page.getByText(`${new URL(page.url()).origin}/event/event-family`, { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(`${new URL(page.url()).origin}/event/event-friends`, { exact: true }).first()).toBeVisible();
+  expect(createdPayloads).toHaveLength(2);
+  expect((createdPayloads[0].form_data as Record<string, unknown>).invitationSetName).toBe('Family');
+  expect((createdPayloads[1].form_data as Record<string, unknown>).invitationSetName).toBe('Friends');
+  expect(inviteesByEvent.get('event-family')?.map((guest) => guest.name)).toEqual(['Maya']);
+  expect(inviteesByEvent.get('event-friends')?.map((guest) => guest.name)).toEqual(['Noah']);
+  await context.close();
+});
+
 test('all website-builder event families open their editor', async ({ page }) => {
   test.setTimeout(180_000);
   const eventFamilies = ['marriage', 'birthday', 'babyshower', 'bridetobe', 'genderreveal', 'housewarming', 'custom'];

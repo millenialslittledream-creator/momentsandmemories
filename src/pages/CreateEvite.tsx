@@ -56,7 +56,14 @@ interface DraftRecord {
   event_type: string | null;
   form_data: Record<string, unknown>;
   selected_template: string | null;
-  guests: Array<{ id: string; name: string; email: string; phone: string }>;
+  guests: Array<{
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    events?: string[];
+    invitationSetId?: string;
+  }>;
   delivery_preference: 'email' | 'phone' | 'both' | 'link';
   updated_at?: string;
 }
@@ -94,6 +101,12 @@ interface InvitationSlot {
   fileName: string;
   name: string;
   formData?: Record<string, string>;
+}
+
+interface PublishedInvitation {
+  slotId: string;
+  name: string;
+  eventId: string;
 }
 
 const SUPPORTS_MULTI_EVENTS: EventType[] = ['marriage', 'custom'];
@@ -265,9 +278,11 @@ export default function CreateEvite() {
 
   // ── Publish / share (the evite goes live only after final confirmation) ──
   const [publishedEventId, setPublishedEventId] = useState<string | null>(null);
+  const [publishedInvitations, setPublishedInvitations] = useState<PublishedInvitation[]>([]);
+  const [selectedPublishedEventId, setSelectedPublishedEventId] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState('');
-  const [linkCopied, setLinkCopied] = useState(false);
+  const [copiedEventId, setCopiedEventId] = useState<string | null>(null);
   const [messageCopied, setMessageCopied] = useState(false);
 
   // ── Resume-in-progress prompt (H10) ──────────────────────────────────
@@ -438,10 +453,13 @@ export default function CreateEvite() {
     return 0;
   }, [flowStage, modalPhase]);
 
-  const createDraftPayload = useCallback((pendingPhase: ModalPhase = null): DraftRecord => {
+  const createDraftPayload = useCallback((
+    pendingPhase: ModalPhase = null,
+    includeEphemeralMedia = false,
+  ): DraftRecord => {
     const safeUploaded =
       uploadedTemplate &&
-      !uploadedTemplate.url.startsWith('blob:') &&
+      (includeEphemeralMedia || !uploadedTemplate.url.startsWith('blob:')) &&
       uploadedTemplate.url.length <= 750_000
         ? uploadedTemplate
         : null;
@@ -468,6 +486,8 @@ export default function CreateEvite() {
         name: guest.name,
         email: guest.email,
         phone: guest.phone,
+        events: guest.events,
+        invitationSetId: guest.invitationSetId,
       })),
       delivery_preference: deliveryPreference,
     };
@@ -488,30 +508,52 @@ export default function CreateEvite() {
         name: guest.name || '',
         email: guest.email || '',
         phone: guest.phone || '',
+        events: guest.events,
+        invitationSetId: guest.invitationSetId,
       })));
     }
     setDeliveryPreference(draft.delivery_preference || 'link');
     setRsvpSettings(normalizeRsvpSettings(metadata.rsvpSettings));
     setHasSubEvents(!!metadata.hasSubEvents);
     setMultipleInvitations(!!metadata.multipleInvitations);
+    const restoredInvitationSlots = metadata.invitationSlots?.filter((slot) => slot.url && slot.type) ?? [];
     if (metadata.invitationSlots?.length) setInvitationSlots(metadata.invitationSlots);
     setFieldOverrides(metadata.fieldOverrides ?? {});
     setPhotoOverlay(metadata.photoOverlay ?? null);
     if (draft.event_type && eventTypes.some((event) => event.id === draft.event_type)) {
       setActiveFilter(draft.event_type as EventType);
     }
+    let restoredUploadedTemplate = metadata.uploadedTemplate ?? null;
+    // Uploaded files are represented by short blob: URLs while the anonymous
+    // host signs in. The legacy handoff deliberately omitted uploadedTemplate,
+    // but retained the multi-invite slots, leaving modalPhase='guests' with no
+    // active design and exposing the design chooser underneath. Rehydrate the
+    // active design from the first filled slot so Delivery/Preview can render.
+    if (!restoredUploadedTemplate && metadata.multipleInvitations && restoredInvitationSlots.length > 0) {
+      const firstSlot = restoredInvitationSlots[0];
+      restoredUploadedTemplate = {
+        url: firstSlot.url,
+        type: firstSlot.type!,
+        fileName: firstSlot.fileName,
+      };
+    }
+
     if (draft.selected_template) {
       setSelectedTemplateId(draft.selected_template);
       setUploadedTemplate(null);
-    } else if (metadata.uploadedTemplate) {
+    } else if (restoredUploadedTemplate) {
       setSelectedTemplateId(null);
-      setUploadedTemplate(metadata.uploadedTemplate);
+      setUploadedTemplate(restoredUploadedTemplate);
     }
 
     if (openEditor) {
       setFlowStage('gallery');
       const pendingPhase = metadata.pendingPhase;
-      setModalPhase(pendingPhase === 'share' ? 'guests' : pendingPhase || (draft.selected_template || metadata.uploadedTemplate ? 'editor' : null));
+      setModalPhase(
+        pendingPhase === 'share'
+          ? 'guests'
+          : pendingPhase || (draft.selected_template || restoredUploadedTemplate ? 'editor' : null)
+      );
       animateModalIn();
     }
   }, [animateModalIn]);
@@ -533,15 +575,24 @@ export default function CreateEvite() {
       setDraftReady(false);
       try {
         const handoffRaw = sessionStorage.getItem(AUTH_HANDOFF_KEY);
-        const remoteDraft = await api.claimResumeDraft();
-        if (cancelled) return;
-
         if (handoffRaw) {
           sessionStorage.removeItem(AUTH_HANDOFF_KEY);
           const handoff = JSON.parse(handoffRaw) as DraftRecord;
+          if (cancelled) return;
+          // The in-tab handoff is the exact flow the host was completing, so
+          // restore it immediately instead of waiting on an unrelated remote
+          // resume lookup. A failure in that endpoint must never send the host
+          // back to design selection after a successful sign-in.
           restoreDraft(handoff, true);
-          await api.saveDraft(handoff);
-        } else if (remoteDraft) {
+          void api.saveDraft(handoff).catch((error) => {
+            console.warn('Could not save the signed-in draft:', error);
+          });
+          return;
+        }
+
+        const remoteDraft = await api.claimResumeDraft();
+        if (cancelled) return;
+        if (remoteDraft) {
           setServerDraft(remoteDraft as DraftRecord);
           const eventType = remoteDraft.event_type;
           setResumeLabel(eventType && eventTypes.some((event) => event.id === eventType)
@@ -661,6 +712,9 @@ export default function CreateEvite() {
       setHasSubEvents(false);
       setFieldOverrides({});
       setPhotoOverlay(null);
+      setPublishedEventId(null);
+      setPublishedInvitations([]);
+      setSelectedPublishedEventId(null);
       setSelectedOverrideKey(null);
       setRightPanelTab('details');
       setModalPhase('editor');
@@ -679,6 +733,9 @@ export default function CreateEvite() {
     setHasSubEvents(false);
     setFieldOverrides({});
     setPhotoOverlay(null);
+    setPublishedEventId(null);
+    setPublishedInvitations([]);
+    setSelectedPublishedEventId(null);
     setSelectedOverrideKey(null);
     setRightPanelTab('details');
     // Everyone starts on the single-invitation upload ("No, same invite to all
@@ -697,6 +754,9 @@ export default function CreateEvite() {
     setFormData({});
     setRsvpSettings(DEFAULT_RSVP_SETTINGS);
     setHasSubEvents(false);
+    setPublishedEventId(null);
+    setPublishedInvitations([]);
+    setSelectedPublishedEventId(null);
     setModalPhase('canvas-editor');
   }, []);
 
@@ -823,7 +883,7 @@ export default function CreateEvite() {
       setModalPhase('guests');
     } else {
       try {
-        sessionStorage.setItem(AUTH_HANDOFF_KEY, JSON.stringify(createDraftPayload('guests')));
+        sessionStorage.setItem(AUTH_HANDOFF_KEY, JSON.stringify(createDraftPayload('guests', true)));
       } catch {
         /* ignore */
       }
@@ -850,67 +910,101 @@ export default function CreateEvite() {
   const backToPreview = useCallback(() => setModalPhase('preview'), []);
 
   // ── Publish the evite after the host confirms the final send ─────────
-  // Upserts: creates a published event the first time, updates it on
-  // re-entry (e.g. the host went Back, tweaked the design, and returned).
-  // Returns the event id, or null on failure.
-  const publishEvite = useCallback(async (): Promise<string | null> => {
+  // Upserts one published event per invitation design. A single-design flow
+  // still produces one event, while every filled multi-invite slot gets its
+  // own event id (and therefore its own public URL).
+  const publishEvite = useCallback(async (): Promise<PublishedInvitation[] | null> => {
     setPublishing(true);
     setPublishError('');
     try {
-      // Uploaded / canvas designs are local blob:/data: URLs — upload them so
-      // the public page has a real, hosted cover image to render.
-      let coverImageUrl: string | null = null;
-      if (uploadedTemplate?.url) {
-        if (uploadedTemplate.url.startsWith('blob:') || uploadedTemplate.url.startsWith('data:')) {
-          try {
-            const res = await fetch(uploadedTemplate.url);
-            const blob = await res.blob();
-            const file = new File([blob], uploadedTemplate.fileName || 'invitation.png', {
-              type: blob.type || 'image/png',
-            });
-            const up = await api.uploadMedia(file);
-            coverImageUrl = up.public_url;
-          } catch (e) {
-            console.warn('Cover image upload failed:', e);
-          }
-        } else {
-          coverImageUrl = uploadedTemplate.url;
-        }
-      } else if (selectedTemplate && !selectedTemplate.layout) {
-        // Stock template without a positioned layout — its flat preview image
-        // already conveys the design.
-        coverImageUrl = selectedTemplate.previewImage;
-      }
+      const uploadCover = async (design: UploadedTemplate | null): Promise<string | null> => {
+        if (!design?.url) return null;
+        if (!design.url.startsWith('blob:') && !design.url.startsWith('data:')) return design.url;
 
-      const payload: Record<string, unknown> = {
+        const res = await fetch(design.url);
+        const blob = await res.blob();
+        const file = new File([blob], design.fileName || 'invitation.png', {
+          type: blob.type || (design.type === 'video' ? 'video/mp4' : 'image/png'),
+        });
+        const uploaded = await api.uploadMedia(file);
+        return uploaded.public_url;
+      };
+
+      const filledSlots = invitationSlots.filter(
+        (slot): slot is InvitationSlot & { type: 'image' | 'video' } => !!slot.url && !!slot.type
+      );
+      const publishEachSlot = multipleInvitations && filledSlots.length > 0;
+      const targets: Array<{ slotId: string; name: string; design: UploadedTemplate | null }> = publishEachSlot
+        ? filledSlots.map((slot, index) => ({
+            slotId: slot.id,
+            name: slot.name.trim() || `Invitation ${index + 1}`,
+            design: { url: slot.url, type: slot.type, fileName: slot.fileName },
+          }))
+        : [{ slotId: 'single', name: 'Main Invitation', design: uploadedTemplate }];
+
+      const basePayload: Record<string, unknown> = {
         title: getEventDisplayTitle(currentEventType, formData),
         description: formData.customMessage || null,
         event_date: formData.eventDate || new Date().toISOString().split('T')[0],
         event_time: formData.eventTime || null,
         location: formData.venue || null,
         template_id: selectedTemplateId,
-        cover_image_url: coverImageUrl,
-        form_data: { ...formData, eventType: currentEventType, rsvpSettings },
         rsvp_enabled: rsvpSettings.enabled,
         rsvp_config: rsvpSettings,
         status: 'published',
       };
 
-      let eventId = publishedEventId;
-      if (eventId) {
-        await api.updateEvent(eventId, payload);
-      } else {
-        const evt = await api.createEvent(payload);
-        eventId = evt.id;
-        setPublishedEventId(eventId);
+      const completed: PublishedInvitation[] = [];
+      for (const target of targets) {
+        let coverImageUrl = await uploadCover(target.design);
+        if (!coverImageUrl && selectedTemplate && !selectedTemplate.layout) {
+          // Stock template without a positioned layout — its flat preview image
+          // already conveys the design.
+          coverImageUrl = selectedTemplate.previewImage;
+        }
+
+        const payload: Record<string, unknown> = {
+          ...basePayload,
+          cover_image_url: coverImageUrl,
+          form_data: {
+            ...formData,
+            eventType: currentEventType,
+            rsvpSettings,
+            ...(publishEachSlot
+              ? { invitationSetId: target.slotId, invitationSetName: target.name }
+              : {}),
+          },
+        };
+
+        const existingEventId = publishEachSlot
+          ? publishedInvitations.find((item) => item.slotId === target.slotId)?.eventId
+          : publishedEventId;
+        let eventId = existingEventId ?? null;
+        if (eventId) {
+          await api.updateEvent(eventId, payload);
+        } else {
+          const event = await api.createEvent(payload);
+          eventId = event.id;
+        }
+
+        const published = { slotId: target.slotId, name: target.name, eventId };
+        completed.push(published);
+        setPublishedInvitations((previous) => [
+          ...previous.filter((item) => item.slotId !== target.slotId),
+          published,
+        ]);
       }
+
+      const primaryEventId = completed[0]?.eventId ?? null;
+      setPublishedEventId(primaryEventId);
+      setSelectedPublishedEventId((current) => current ?? primaryEventId);
 
       // Persist the font/color/size/position overrides + photo overlay so the
       // public page re-renders the design exactly as the host arranged it.
-      if (eventId && selectedTemplateId && (Object.keys(fieldOverrides).length > 0 || photoOverlay)) {
+      if (primaryEventId && selectedTemplateId && (Object.keys(fieldOverrides).length > 0 || photoOverlay)) {
         try {
           await api.createEviteCustomization({
-            event_id: eventId,
+            event_id: primaryEventId,
             template_id: selectedTemplateId,
             field_overrides: fieldOverrides,
             photo_overlay: photoOverlay as unknown as Record<string, unknown> | null,
@@ -920,7 +1014,7 @@ export default function CreateEvite() {
         }
       }
 
-      return eventId;
+      return completed;
     } catch (e) {
       console.warn('Evite publish failed:', e);
       setPublishError(e instanceof Error ? e.message : 'Could not publish your evite. Please try again.');
@@ -928,23 +1022,29 @@ export default function CreateEvite() {
     } finally {
       setPublishing(false);
     }
-  }, [uploadedTemplate, selectedTemplate, selectedTemplateId, formData, rsvpSettings, fieldOverrides, photoOverlay, publishedEventId, currentEventType]);
+  }, [uploadedTemplate, invitationSlots, multipleInvitations, selectedTemplate, selectedTemplateId, formData, rsvpSettings, fieldOverrides, photoOverlay, publishedEventId, publishedInvitations, currentEventType]);
 
   const handlePaymentConfirm = useCallback(async () => {
     try {
-      const eventId = publishedEventId ?? (await publishEvite());
-      if (!eventId) return;
-      setPublishedEventId(eventId);
+      const publications = await publishEvite();
+      if (!publications?.length) return;
 
       const filledGuests = guests.filter((g) => g.name.trim());
-      if (eventId && filledGuests.length > 0) {
-        const invitees = filledGuests.map((g) => ({
-          name: g.name,
-          email: g.email || undefined,
-          phone: g.phone || undefined,
-          source: 'manual' as const,
-        }));
-        await api.addInvitees(eventId, invitees);
+      const firstSlotId = publications[0].slotId;
+      for (const publication of publications) {
+        const publicationGuests = publications.length > 1
+          ? filledGuests.filter((guest) => (guest.invitationSetId ?? firstSlotId) === publication.slotId)
+          : filledGuests;
+        if (publicationGuests.length === 0) continue;
+        await api.addInvitees(
+          publication.eventId,
+          publicationGuests.map((guest) => ({
+            name: guest.name,
+            email: guest.email || undefined,
+            phone: guest.phone || undefined,
+            source: 'manual' as const,
+          }))
+        );
       }
 
       // Completion wins over every older snapshot. Disable the exit handler
@@ -958,7 +1058,7 @@ export default function CreateEvite() {
       console.warn('Evite send skipped (likely logged out or offline):', e);
     }
     setModalPhase('sent');
-  }, [publishedEventId, publishEvite, guests]);
+  }, [publishEvite, guests]);
 
   const resetFlow = useCallback(() => {
     setSelectedTemplateId(null);
@@ -970,7 +1070,7 @@ export default function CreateEvite() {
   // Sign-in modal action — store pending phase + redirect.
   const goToSignIn = useCallback(() => {
     try {
-      sessionStorage.setItem(AUTH_HANDOFF_KEY, JSON.stringify(createDraftPayload('guests')));
+      sessionStorage.setItem(AUTH_HANDOFF_KEY, JSON.stringify(createDraftPayload('guests', true)));
     } catch {
       /* ignore */
     }
@@ -2847,7 +2947,17 @@ export default function CreateEvite() {
 
       {/* The shareable link is revealed only after the final send succeeds. */}
       {modalPhase === 'sent' && (selectedTemplate || uploadedTemplate) && (() => {
-        const shareUrl = publishedEventId ? `${window.location.origin}/event/${publishedEventId}` : '';
+        const liveInvitations = publishedInvitations.length > 0
+          ? publishedInvitations
+          : publishedEventId
+            ? [{ slotId: 'single', name: 'Main Invitation', eventId: publishedEventId }]
+            : [];
+        const activeInvitation =
+          liveInvitations.find((item) => item.eventId === selectedPublishedEventId) ?? liveInvitations[0];
+        const shareUrl = activeInvitation
+          ? `${window.location.origin}/event/${activeInvitation.eventId}`
+          : '';
+        const hasMultipleLiveInvitations = liveInvitations.length > 1;
         const shareTitle =
           eventTitle ||
           formData.eventName ||
@@ -2907,10 +3017,10 @@ export default function CreateEvite() {
         const mailHref = `mailto:?subject=${encodeURIComponent(`You're invited: ${shareTitle}`)}&body=${encodeURIComponent(shareMsg)}`;
         // Keep the primary copy action literal: copy exactly the visible link.
         const copyLink = () => {
-          if (!shareUrl) return;
+          if (!shareUrl || !activeInvitation) return;
           navigator.clipboard.writeText(shareUrl);
-          setLinkCopied(true);
-          setTimeout(() => setLinkCopied(false), 2000);
+          setCopiedEventId(activeInvitation.eventId);
+          setTimeout(() => setCopiedEventId(null), 2000);
         };
         const copyMessage = () => {
           if (!shareMsg) return;
@@ -2945,10 +3055,13 @@ export default function CreateEvite() {
               {/* Header */}
               <div className="flex-shrink-0 px-6 md:px-10 pl-32 md:pl-44 pr-14 pt-2.5 pb-3 border-b border-white/[0.06]">
                 <h2 className="font-serif-exp text-lg md:text-xl text-[#e4eee1] leading-tight">
-                  Your invitation is <span className="text-[#9cb092] font-agatho italic">live</span>
+                  Your {hasMultipleLiveInvitations ? 'invitations are' : 'invitation is'}{' '}
+                  <span className="text-[#9cb092] font-agatho italic">live</span>
                 </h2>
                 <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/55 mt-1.5">
-                  Your shareable link is ready. Copy it and send it anywhere.
+                  {hasMultipleLiveInvitations
+                    ? 'Each invitation has its own link. Select one to copy or share it.'
+                    : 'Your shareable link is ready. Copy it and send it anywhere.'}
                 </p>
               </div>
 
@@ -2976,6 +3089,58 @@ export default function CreateEvite() {
                     </div>
                   ) : (
                     <>
+                      {hasMultipleLiveInvitations && (
+                        <div className="mb-5">
+                          <p className="font-display text-[9px] tracking-[0.22em] uppercase text-[#9cb092]/80 mb-2 flex items-center gap-1.5">
+                            <span className="material-icons text-sm">link</span>
+                            Invitation links
+                          </p>
+                          <div className="space-y-2">
+                            {liveInvitations.map((invitation) => {
+                              const invitationUrl = `${window.location.origin}/event/${invitation.eventId}`;
+                              const active = invitation.eventId === activeInvitation?.eventId;
+                              const copied = copiedEventId === invitation.eventId;
+                              return (
+                                <div
+                                  key={invitation.eventId}
+                                  className={`flex items-center gap-3 border px-3 py-2.5 transition-colors ${
+                                    active
+                                      ? 'border-[#9cb092]/70 bg-[#9cb092]/10'
+                                      : 'border-white/10 bg-white/[0.03]'
+                                  }`}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedPublishedEventId(invitation.eventId)}
+                                    className="min-w-0 flex-1 text-left"
+                                  >
+                                    <span className="block font-display text-[10px] uppercase tracking-[0.16em] text-[#e4eee1] truncate">
+                                      {invitation.name}
+                                    </span>
+                                    <span className="block font-display text-[10px] text-[#b2c3b1]/55 truncate mt-0.5">
+                                      {invitationUrl}
+                                    </span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(invitationUrl);
+                                      setSelectedPublishedEventId(invitation.eventId);
+                                      setCopiedEventId(invitation.eventId);
+                                      setTimeout(() => setCopiedEventId(null), 2000);
+                                    }}
+                                    className="flex-shrink-0 inline-flex items-center gap-1.5 border border-[#9cb092]/35 px-3 py-2 font-display text-[9px] uppercase tracking-[0.15em] text-[#b2c3b1] hover:border-[#9cb092] hover:text-[#e4eee1] transition-colors"
+                                  >
+                                    <span className="material-icons text-sm">{copied ? 'check' : 'content_copy'}</span>
+                                    {copied ? 'Copied' : 'Copy'}
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Ready-to-send invite message — this is what Copy / Share sends */}
                       <p className="font-display text-[9px] tracking-[0.22em] uppercase text-[#9cb092]/80 mb-2 flex items-center gap-1.5">
                         <span className="material-icons text-sm">chat_bubble_outline</span>
@@ -3015,13 +3180,15 @@ export default function CreateEvite() {
                         <button
                           onClick={copyLink}
                           className={`flex-shrink-0 px-5 h-12 flex items-center gap-2 font-display text-[10px] tracking-[0.2em] uppercase font-bold transition-colors ${
-                            linkCopied
+                            copiedEventId === activeInvitation?.eventId
                               ? 'bg-[#9cb092]/20 text-[#9cb092] border border-[#9cb092]/50'
                               : 'bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]'
                           }`}
                         >
-                          <span className="material-icons text-base">{linkCopied ? 'check' : 'content_copy'}</span>
-                          {linkCopied ? 'Copied' : 'Copy'}
+                          <span className="material-icons text-base">
+                            {copiedEventId === activeInvitation?.eventId ? 'check' : 'content_copy'}
+                          </span>
+                          {copiedEventId === activeInvitation?.eventId ? 'Copied' : 'Copy'}
                         </button>
                       </div>
                       <p className="font-display text-[9px] text-[#b2c3b1]/45 mb-6">
