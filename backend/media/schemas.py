@@ -10,3 +10,7 @@ class MediaUploadResponse(BaseModel):
     mime_type: Optional[str] = None
     file_size_bytes: Optional[int] = None
     created_at: str
+
+
+class MediaRegisterRequest(BaseModel):
+    storage_path: str

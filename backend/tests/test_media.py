@@ -59,6 +59,39 @@ def test_upload_rejects_oversized_image(mock_db):
         upload_media("user-1", "huge.png", PNG + b"x" * MAX_IMAGE_BYTES, "image/png")
 
 
+def test_register_direct_upload_validates_stored_bytes(mock_db):
+    mock_db.storage.from_.return_value.download.return_value = PNG
+    mock_db.storage.from_.return_value.get_public_url.return_value = "https://example.com/u/large.png"
+    mock_db.table.return_value.insert.return_value.execute.return_value = MagicMock(
+        data=[{"id": "media-large", "storage_path": "user-1/large.png", "public_url": "https://example.com/u/large.png",
+               "kind": "image", "mime_type": "image/png", "file_size_bytes": len(PNG), "created_at": "now"}]
+    )
+
+    from media.service import register_direct_upload
+
+    result = register_direct_upload("user-1", "user-1/large.png")
+    assert result["kind"] == "image"
+    mock_db.storage.from_.return_value.download.assert_called_once_with("user-1/large.png")
+
+
+def test_register_direct_upload_rejects_another_users_path(mock_db):
+    from media.service import register_direct_upload
+
+    with pytest.raises(ValueError, match="Invalid upload path"):
+        register_direct_upload("user-1", "user-2/stolen.png")
+    mock_db.storage.from_.assert_not_called()
+
+
+def test_register_direct_upload_removes_invalid_content(mock_db):
+    mock_db.storage.from_.return_value.download.return_value = b"<script>alert(1)</script>"
+
+    from media.service import register_direct_upload
+
+    with pytest.raises(ValueError, match="Unsupported file type"):
+        register_direct_upload("user-1", "user-1/fake.png")
+    mock_db.storage.from_.return_value.remove.assert_called_once_with(["user-1/fake.png"])
+
+
 def test_delete_media_not_found(mock_db):
     mock_db.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
         data=[]

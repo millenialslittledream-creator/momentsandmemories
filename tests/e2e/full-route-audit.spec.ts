@@ -23,7 +23,16 @@ async function installTestSession(context: BrowserContext) {
   const projectRef = new URL(supabaseUrl).hostname.split('.')[0];
   const now = new Date().toISOString();
   await context.addInitScript(
-    ({ key, value }) => localStorage.setItem(key, JSON.stringify(value)),
+    ({ key, value }) => {
+      try {
+        if (location.origin === 'http://localhost:5173') {
+          localStorage.setItem(key, JSON.stringify(value));
+        }
+      } catch {
+        // The initial about:blank document can deny storage access. The script
+        // runs again after navigation, where the test origin is available.
+      }
+    },
     {
       key: `sb-${projectRef}-auth-token`,
       value: {
@@ -154,6 +163,40 @@ async function installApiMocks(page: Page) {
     if (path.endsWith('/admin/shop/items')) return json(route, []);
     return route.continue();
   });
+}
+
+async function finishFreeCheckout(page: Page) {
+  const freeButton = page.getByRole('button', { name: /Send Invitation — Free/ });
+  const skipUpsellButton = page.getByRole('button', { name: /No thanks, continue for free/ });
+  await expect.poll(async () => (
+    (await freeButton.isVisible()) || (await skipUpsellButton.isVisible())
+  )).toBe(true);
+
+  if (await freeButton.isVisible()) {
+    await freeButton.click();
+    return;
+  }
+
+  if (await skipUpsellButton.isVisible()) {
+    await skipUpsellButton.click();
+    const completePaymentButton = page.getByRole('button', { name: /Complete Payment/ });
+    await expect.poll(async () => (
+      (await freeButton.isVisible()) || (await completePaymentButton.isVisible())
+    )).toBe(true);
+    if (await freeButton.isVisible()) {
+      await freeButton.click();
+      return;
+    }
+
+    await page.getByPlaceholder('1234 5678 9012 3456').fill('4242 4242 4242 4242');
+    await page.getByPlaceholder('John Doe').fill('Asha Ravi');
+    await page.getByPlaceholder('MM/YY').fill('12/30');
+    await page.getByPlaceholder('123', { exact: true }).fill('123');
+    await completePaymentButton.click();
+    return;
+  }
+
+  await freeButton.click();
 }
 
 const routes = [
@@ -465,6 +508,99 @@ test('create flow keeps only shareable link active and reveals it after final se
   await context.close();
 });
 
+for (const scenario of [
+  {
+    name: 'chosen template',
+    eventType: 'birthday',
+    selectedTemplate: 'bday-c1',
+    uploadedTemplate: null,
+    formData: {
+      celebrantName: 'Asha', eventDate: '2027-03-12', eventTime: '18:00',
+      timezone: 'ET', venue: 'Garden Hall',
+    },
+  },
+  {
+    name: 'uploaded single design',
+    eventType: 'birthday',
+    selectedTemplate: null,
+    uploadedTemplate: {
+      url: '/test-fixtures/page1.png', type: 'image', fileName: 'birthday-upload.png',
+    },
+    formData: {
+      celebrantName: 'Asha', eventDate: '2027-03-12', eventTime: '18:00',
+      timezone: 'ET', venue: 'Garden Hall',
+    },
+  },
+  {
+    name: 'build-your-own canvas design',
+    eventType: 'birthday',
+    selectedTemplate: null,
+    uploadedTemplate: {
+      url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADElEQVR42mNk+M/wHwAF/gL+X9WZ5QAAAABJRU5ErkJggg==',
+      type: 'image',
+      fileName: 'custom-design.png',
+    },
+    formData: {
+      celebrantName: 'Asha', eventDate: '2027-03-12', eventTime: '18:00',
+      timezone: 'ET', venue: 'Garden Hall',
+    },
+  },
+] as const) {
+  test(`sign-in handoff resumes ${scenario.name} at delivery and publishes its link`, async ({ browser }) => {
+    test.setTimeout(120_000);
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    await installTestSession(context);
+    const page = await context.newPage();
+    await installApiMocks(page);
+
+    const createdPayloads: Array<Record<string, unknown>> = [];
+    await page.route('**/events', async (route) => {
+      if (route.request().method() !== 'POST') return route.fallback();
+      createdPayloads.push(route.request().postDataJSON() as Record<string, unknown>);
+      return json(route, { id: `event-${scenario.eventType}-${scenario.name.replace(/\W+/g, '-')}` });
+    });
+    await page.route('**/media/upload', (route) => json(route, {
+      id: 'media-canvas-audit',
+      public_url: '/uploads/custom-design.png',
+      kind: 'image',
+    }));
+
+    await page.addInitScript((draft) => {
+      sessionStorage.setItem('mm_evite_auth_handoff', JSON.stringify(draft));
+    }, {
+      step: 3,
+      event_type: scenario.eventType,
+      form_data: {
+        ...scenario.formData,
+        __mmDraft: {
+          uploadedTemplate: scenario.uploadedTemplate,
+          pendingPhase: 'guests',
+          multipleInvitations: false,
+        },
+      },
+      selected_template: scenario.selectedTemplate,
+      guests: [{ id: 'guest-single', name: 'Maya', email: 'maya@example.com', phone: '' }],
+      delivery_preference: 'link',
+    });
+
+    await page.goto('/create');
+    await expect(page.getByText('Share your invitation')).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText('Delivery', { exact: true }).first()).toBeVisible();
+
+    await page.getByRole('button', { name: /Continue to Preview/ }).click();
+    await expect(page.getByRole('heading', { name: 'Preview & Send' })).toBeVisible();
+    await page.getByRole('button', { name: /^Continue/ }).click();
+    await finishFreeCheckout(page);
+
+    await expect(page.getByText('Your invitation is live')).toBeVisible({ timeout: 20_000 });
+    const eventId = `event-${scenario.eventType}-${scenario.name.replace(/\W+/g, '-')}`;
+    await expect(page.getByText(`${new URL(page.url()).origin}/event/${eventId}`, { exact: true })).toBeVisible();
+    expect(createdPayloads).toHaveLength(1);
+    expect(createdPayloads[0].template_id).toBe(scenario.selectedTemplate);
+    await context.close();
+  });
+}
+
 test('sign-in handoff resumes multi-invite delivery and publishes one link per design', async ({ browser }) => {
   test.setTimeout(120_000);
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -475,6 +611,7 @@ test('sign-in handoff resumes multi-invite delivery and publishes one link per d
   const createdEventIds = ['event-family', 'event-friends'];
   const createdPayloads: Array<Record<string, unknown>> = [];
   const inviteesByEvent = new Map<string, Array<Record<string, unknown>>>();
+  const directUploadPaths: string[] = [];
   await page.route('**/events', async (route) => {
     if (route.request().method() !== 'POST') return route.fallback();
     createdPayloads.push(route.request().postDataJSON() as Record<string, unknown>);
@@ -486,8 +623,33 @@ test('sign-in handoff resumes multi-invite delivery and publishes one link per d
     inviteesByEvent.set(match[1], route.request().postDataJSON() as Array<Record<string, unknown>>);
     return json(route, []);
   });
+  await page.route('**/storage/v1/object/user-uploads/**', async (route) => {
+    const storagePath = new URL(route.request().url()).pathname.split('/user-uploads/')[1];
+    directUploadPaths.push(storagePath);
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ Key: `user-uploads/${storagePath}` }),
+    });
+  });
+  await page.route('**/media/register', async (route) => {
+    const { storage_path: storagePath } = route.request().postDataJSON() as { storage_path: string };
+    return json(route, {
+      id: `media-${directUploadPaths.length}`,
+      public_url: `https://storage.example/user-uploads/${storagePath}`,
+      kind: 'image',
+    });
+  });
 
   await page.addInitScript((draft) => {
+    const makeLargePngUrl = () => {
+      const bytes = new Uint8Array(4 * 1024 * 1024 + 1);
+      bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+      return URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
+    };
+    draft.form_data.__mmDraft.invitationSlots[0].url = makeLargePngUrl();
+    draft.form_data.__mmDraft.invitationSlots[1].url = makeLargePngUrl();
     sessionStorage.setItem('mm_evite_auth_handoff', JSON.stringify(draft));
   }, {
     step: 3,
@@ -516,21 +678,71 @@ test('sign-in handoff resumes multi-invite delivery and publishes one link per d
   await expect(page.getByText('Share your invitation')).toBeVisible({ timeout: 20_000 });
   await page.getByRole('button', { name: /Continue to Preview/ }).click();
   await page.getByRole('button', { name: /^Continue/ }).click();
-  await page.getByRole('button', { name: /No thanks, continue for free/ }).click();
-  await page.getByPlaceholder('1234 5678 9012 3456').fill('4242 4242 4242 4242');
-  await page.getByPlaceholder('John Doe').fill('Asha Ravi');
-  await page.getByPlaceholder('MM/YY').fill('12/30');
-  await page.getByPlaceholder('123', { exact: true }).fill('123');
-  await page.getByRole('button', { name: /Complete Payment/ }).click();
+  await finishFreeCheckout(page);
 
   await expect(page.getByText('Your invitations are live')).toBeVisible();
   await expect(page.getByText(`${new URL(page.url()).origin}/event/event-family`, { exact: true }).first()).toBeVisible();
   await expect(page.getByText(`${new URL(page.url()).origin}/event/event-friends`, { exact: true }).first()).toBeVisible();
   expect(createdPayloads).toHaveLength(2);
+  expect(directUploadPaths).toHaveLength(2);
+  expect(createdPayloads[0].cover_image_url).not.toBe(createdPayloads[1].cover_image_url);
   expect((createdPayloads[0].form_data as Record<string, unknown>).invitationSetName).toBe('Family');
   expect((createdPayloads[1].form_data as Record<string, unknown>).invitationSetName).toBe('Friends');
   expect(inviteesByEvent.get('event-family')?.map((guest) => guest.name)).toEqual(['Maya']);
   expect(inviteesByEvent.get('event-friends')?.map((guest) => guest.name)).toEqual(['Noah']);
+  await context.close();
+});
+
+test('custom event multi-invite handoff publishes a distinct link for every uploaded design', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await installTestSession(context);
+  const page = await context.newPage();
+  await installApiMocks(page);
+
+  const createdEventIds = ['event-custom-vip', 'event-custom-general'];
+  const createdPayloads: Array<Record<string, unknown>> = [];
+  await page.route('**/events', async (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    createdPayloads.push(route.request().postDataJSON() as Record<string, unknown>);
+    return json(route, { id: createdEventIds[createdPayloads.length - 1] });
+  });
+
+  await page.addInitScript((draft) => {
+    sessionStorage.setItem('mm_evite_auth_handoff', JSON.stringify(draft));
+  }, {
+    step: 3,
+    event_type: 'custom',
+    form_data: {
+      eventTitle: 'Founders Dinner', eventDate: '2027-04-10', eventTime: '19:00',
+      timezone: 'IST', venue: 'Courtyard',
+      __mmDraft: {
+        multipleInvitations: true,
+        pendingPhase: 'guests',
+        invitationSlots: [
+          { id: 'slot-vip', url: '/templates/wedding/concepts/1-preview.jpg', type: 'image', fileName: 'vip.jpg', name: 'VIP' },
+          { id: 'slot-general', url: '/templates/wedding/concepts/2-preview.jpg', type: 'image', fileName: 'general.jpg', name: 'General' },
+        ],
+      },
+    },
+    selected_template: null,
+    guests: [],
+    delivery_preference: 'link',
+  });
+
+  await page.goto('/create');
+  await expect(page.getByText('Share your invitation')).toBeVisible({ timeout: 20_000 });
+  await page.getByRole('button', { name: /Continue to Preview/ }).click();
+  await page.getByRole('button', { name: /^Continue/ }).click();
+  await finishFreeCheckout(page);
+
+  await expect(page.getByText('Your invitations are live')).toBeVisible();
+  for (const eventId of createdEventIds) {
+    await expect(page.getByText(`${new URL(page.url()).origin}/event/${eventId}`, { exact: true }).first()).toBeVisible();
+  }
+  expect(createdPayloads).toHaveLength(2);
+  expect((createdPayloads[0].form_data as Record<string, unknown>).invitationSetName).toBe('VIP');
+  expect((createdPayloads[1].form_data as Record<string, unknown>).invitationSetName).toBe('General');
   await context.close();
 });
 

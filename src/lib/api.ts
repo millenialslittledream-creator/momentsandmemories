@@ -74,6 +74,15 @@ export interface RSVPSubmission {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const DIRECT_UPLOAD_THRESHOLD_BYTES = 4 * 1024 * 1024;
+const MEDIA_EXTENSION_BY_TYPE: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'video/mp4': 'mp4',
+  'video/quicktime': 'mov',
+};
 
 export async function getToken(): Promise<string | null> {
   const { data: { session } } = await supabase.auth.getSession();
@@ -343,6 +352,40 @@ export const api = {
 
   // ── Media uploads (canvas editor) ───────────────────────────────────────
   uploadMedia: async (file: File): Promise<{ id: string; public_url: string; kind: 'image' | 'video' }> => {
+    // Vercel's serverless gateway rejects multipart bodies at roughly 4.5 MB,
+    // before our FastAPI validation runs. Keep small uploads on the existing
+    // endpoint; send larger allowed media directly to the signed-in user's
+    // Supabase Storage folder and ask the backend to verify/register it.
+    if (file.size > DIRECT_UPLOAD_THRESHOLD_BYTES) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!session || !userId) throw new Error('Please sign in before uploading media');
+
+      const extension = MEDIA_EXTENSION_BY_TYPE[file.type];
+      if (!extension) {
+        throw new Error('Unsupported file type. Use JPEG, PNG, GIF, WebP, MP4, or MOV.');
+      }
+
+      const storagePath = `${userId}/${crypto.randomUUID()}.${extension}`;
+      const bucket = supabase.storage.from('user-uploads');
+      const { error } = await bucket.upload(storagePath, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+      if (error) throw new Error(error.message || 'Upload failed');
+
+      try {
+        return await apiFetch('/media/register', {
+          method: 'POST',
+          body: JSON.stringify({ storage_path: storagePath }),
+        });
+      } catch (error) {
+        // Do not leave an unregistered object behind when validation fails.
+        await bucket.remove([storagePath]).catch(() => undefined);
+        throw error;
+      }
+    }
+
     const token = await getToken();
     const formData = new FormData();
     formData.append('file', file);
@@ -353,6 +396,9 @@ export const api = {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
+      if (res.status === 413) {
+        throw new Error('This file is too large to upload. Please choose a smaller file.');
+      }
       throw new Error(err.detail || 'Upload failed');
     }
     return res.json();

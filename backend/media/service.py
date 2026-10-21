@@ -48,6 +48,54 @@ def upload_media(user_id: str, filename: str, content: bytes, mime_type: str) ->
     return result.data[0]
 
 
+def register_direct_upload(user_id: str, storage_path: str) -> dict:
+    """Validate and register a file uploaded directly to Supabase Storage.
+
+    Vercel rejects request bodies around 4.5 MB before FastAPI can read them.
+    Large browser uploads therefore go straight to the authenticated user's
+    Storage folder, then this small request verifies the stored bytes and
+    creates the same media_uploads record as the normal multipart endpoint.
+    """
+    expected_prefix = f"{user_id}/"
+    if not storage_path.startswith(expected_prefix) or storage_path == expected_prefix:
+        raise ValueError("Invalid upload path")
+
+    db = database.get_db()
+    bucket = db.storage.from_(BUCKET)
+    try:
+        content = bucket.download(storage_path)
+    except Exception as exc:
+        raise ValueError("Uploaded file could not be verified") from exc
+
+    detected = sniff_media_type(content)
+    if detected is None:
+        bucket.remove([storage_path])
+        raise ValueError("Unsupported file type: only JPEG, PNG, GIF, WebP images and MP4/MOV video are allowed")
+
+    kind = _kind_for(detected)
+    max_bytes = MAX_IMAGE_BYTES if kind == "image" else MAX_VIDEO_BYTES
+    if len(content) > max_bytes:
+        bucket.remove([storage_path])
+        raise ValueError(f"File too large — max {max_bytes // (1024 * 1024)}MB for {kind}")
+
+    public_url = bucket.get_public_url(storage_path)
+    result = db.table("media_uploads").insert({
+        "user_id": user_id,
+        "storage_path": storage_path,
+        "public_url": public_url,
+        "kind": kind,
+        "mime_type": detected,
+        "file_size_bytes": len(content),
+    }).execute()
+
+    _log("media", "media.uploaded", user_id=user_id, metadata={
+        "kind": kind,
+        "size": len(content),
+        "direct": True,
+    })
+    return result.data[0]
+
+
 def delete_media(user_id: str, media_id: str) -> None:
     db = database.get_db()
     result = db.table("media_uploads").select("*").eq("id", media_id).eq("user_id", user_id).execute()

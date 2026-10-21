@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from middleware.auth import get_current_user
 from media import service
+from media.schemas import MediaRegisterRequest
 from middleware.ratelimit import user_limit
 
 router = APIRouter(prefix="/media", tags=["media"])
@@ -25,6 +26,17 @@ def list_uploads(
     current_user: dict = Depends(get_current_user),
 ):
     return service.list_media(current_user["sub"], limit=limit, offset=offset)
+
+
+@router.post("/register", dependencies=[Depends(user_limit("media-register", 30, 60))])
+def register_upload(
+    payload: MediaRegisterRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    try:
+        return service.register_direct_upload(current_user["sub"], payload.storage_path)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.delete("/{media_id}")

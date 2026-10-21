@@ -146,6 +146,9 @@ class _Bucket:
     def get_public_url(self, path):
         return f"https://fake.storage/{path}"
 
+    def download(self, path):
+        return b"\x89PNG\r\n\x1a\n" + b"0" * 100
+
     def remove(self, paths):
         pass
 
