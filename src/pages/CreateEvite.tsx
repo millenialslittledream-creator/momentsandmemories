@@ -26,6 +26,7 @@ import { type CanvasTemplate } from '@/data/canvasTemplates';
 import type { TemplateFieldLayout } from '@/data/eviteTemplates';
 import { getEventDisplayTitle } from '@/utils/eventInvitation';
 import { FONT_CATEGORIES, COLOR_SWATCHES } from '@/components/CanvasEditor/types';
+import { getEviteUploadError } from '@/lib/mediaValidation';
 
 type EventTypeFilter = EventType;
 type ModalPhase = 'upload' | 'canvas-editor' | 'editor' | 'signin' | 'guests' | 'preview' | 'payment' | 'sent' | null;
@@ -265,6 +266,7 @@ export default function CreateEvite() {
   const [invitationSlots, setInvitationSlots] = useState<InvitationSlot[]>([
     { id: 'slot-1', url: '', type: null, fileName: '', name: 'Main Invitation' },
   ]);
+  const [designUploadError, setDesignUploadError] = useState('');
   const [pickedCanvasTemplate, setPickedCanvasTemplate] = useState<CanvasTemplate | null>(null);
 
   // ── Template customization (font/color/position overrides + photo) ──
@@ -500,6 +502,16 @@ export default function CreateEvite() {
     const restoredFormData = Object.fromEntries(
       Object.entries(rawFormData).filter(([key, value]) => key !== DRAFT_META_KEY && typeof value === 'string')
     ) as Record<string, string>;
+    const restoredInvitationSlots = metadata.invitationSlots?.filter((slot) => slot.url && slot.type) ?? [];
+    const restoredMinimumSubEvents =
+      metadata.multipleInvitations &&
+      SUPPORTS_MULTI_EVENTS.includes(draft.event_type as EventType)
+        ? Math.max(0, restoredInvitationSlots.length - 1)
+        : 0;
+    const restoredSubEvents = parseInt(restoredFormData['sub_events_count'] || '0', 10) || 0;
+    if (restoredSubEvents < restoredMinimumSubEvents) {
+      restoredFormData['sub_events_count'] = String(restoredMinimumSubEvents);
+    }
 
     setFormData(restoredFormData);
     if (draft.guests?.length) {
@@ -514,9 +526,8 @@ export default function CreateEvite() {
     }
     setDeliveryPreference(draft.delivery_preference || 'link');
     setRsvpSettings(normalizeRsvpSettings(metadata.rsvpSettings));
-    setHasSubEvents(!!metadata.hasSubEvents);
+    setHasSubEvents(!!metadata.hasSubEvents || restoredMinimumSubEvents > 0);
     setMultipleInvitations(!!metadata.multipleInvitations);
-    const restoredInvitationSlots = metadata.invitationSlots?.filter((slot) => slot.url && slot.type) ?? [];
     if (metadata.invitationSlots?.length) setInvitationSlots(metadata.invitationSlots);
     setFieldOverrides(metadata.fieldOverrides ?? {});
     setPhotoOverlay(metadata.photoOverlay ?? null);
@@ -738,6 +749,7 @@ export default function CreateEvite() {
     setSelectedPublishedEventId(null);
     setSelectedOverrideKey(null);
     setRightPanelTab('details');
+    setDesignUploadError('');
     // Everyone starts on the single-invitation upload ("No, same invite to all
     // guests" is the default). For wedding/others the upload modal shows a
     // "Multiple Invitations" toggle so the host can opt into different invites
@@ -1110,6 +1122,7 @@ export default function CreateEvite() {
   // the host starts from the same two-invitation layout the examples show
   // (unless they already have real slots in progress).
   const selectMultiInvitations = (multi: boolean) => {
+    setDesignUploadError('');
     setMultipleInvitations(multi);
     if (multi) {
       setInvitationSlots((prev) => {
@@ -1129,6 +1142,7 @@ export default function CreateEvite() {
 
   // ── Invitation slots helpers (multiple invitations in upload) ───
   const addInvitationSlot = () => {
+    setDesignUploadError('');
     setInvitationSlots((prev) => [
       ...prev,
       { id: `slot-${Date.now()}`, url: '', type: null, fileName: '', name: '' },
@@ -1136,6 +1150,7 @@ export default function CreateEvite() {
   };
 
   const removeInvitationSlot = (id: string) => {
+    setDesignUploadError('');
     setInvitationSlots((prev) => prev.filter((s) => s.id !== id));
   };
 
@@ -1144,7 +1159,13 @@ export default function CreateEvite() {
   };
 
   const handleSlotFilePicked = (id: string, file: File, kind: 'image' | 'video') => {
+    const error = getEviteUploadError(file, kind);
+    if (error) {
+      setDesignUploadError(error);
+      return;
+    }
     resumeTrackingDisabledRef.current = false;
+    setDesignUploadError('');
     const url = URL.createObjectURL(file);
     setInvitationSlots((prev) =>
       prev.map((s) => (s.id === id ? { ...s, url, type: kind, fileName: file.name } : s))
@@ -1155,7 +1176,13 @@ export default function CreateEvite() {
   // ── Upload handler ───────────────────────────────────────────────
   const handleFilePicked = useCallback(
     (file: File, kind: 'image' | 'video') => {
+      const error = getEviteUploadError(file, kind);
+      if (error) {
+        setDesignUploadError(error);
+        return;
+      }
       resumeTrackingDisabledRef.current = false;
+      setDesignUploadError('');
       const url = URL.createObjectURL(file);
       setUploadedTemplate({ url, type: kind, fileName: file.name });
     },
@@ -1168,15 +1195,14 @@ export default function CreateEvite() {
       if (!filled.length) return;
       setCurrentSlotIdx(0);
       setUploadedTemplate({ url: filled[0].url, type: filled[0].type!, fileName: filled[0].fileName });
-      // With 2+ invitations the host is almost always running a multi-event
-      // celebration (Mehendi/Sangeet/Wedding/Reception, etc.), so light up
-      // the Multiple Events toggle by default AND seed the table with one
-      // empty row so they can start typing right away. Form details (date,
-      // venue, etc.) are shared across all uploaded invitations — clear
+      // One invitation is the primary event. Every additional uploaded
+      // invitation needs its own additional-event row, so three designs render
+      // two rows, four designs render three rows, and so on. Form details
+      // (date, venue, etc.) are shared across all uploaded invitations — clear
       // them once and let the host fill them on a single editor screen.
       if (filled.length >= 2) {
         setHasSubEvents(true);
-        setFormData({ sub_events_count: '1' });
+        setFormData({ sub_events_count: String(filled.length - 1) });
       } else {
         setFormData({});
       }
@@ -1777,6 +1803,16 @@ export default function CreateEvite() {
 
             <div data-lenis-prevent className="flex-1 min-h-0 px-6 md:px-10 py-5 space-y-5 overflow-y-auto scrollbar-subtle">
 
+              {designUploadError && (
+                <div
+                  role="alert"
+                  className="sticky top-0 z-20 border border-red-400/35 bg-[#2a1717]/95 px-4 py-3 font-display text-[10px] leading-relaxed text-red-300 shadow-lg backdrop-blur-sm"
+                >
+                  <span className="material-icons text-sm align-middle mr-1.5">error_outline</span>
+                  {designUploadError}
+                </div>
+              )}
+
               {/* ── Different-invitations question (wedding & others only) ──
                   Non-supporting events skip this entirely and go straight to a
                   single image/video upload. */}
@@ -1888,9 +1924,9 @@ export default function CreateEvite() {
                                     Upload Invitation {slotIdx + 1}
                                   </span>
                                   <span className="font-display text-[8px] text-[#b2c3b1]/45 leading-tight">
-                                    JPG, PNG or MP4
+                                    JPG, PNG, MP4 or MOV
                                     <br />
-                                    (Max. 10MB)
+                                    (Image 10MB · Video 50MB)
                                   </span>
                                   <input
                                     type="file"
@@ -2090,8 +2126,8 @@ export default function CreateEvite() {
                 // and at least one invitation must be uploaded.
                 const filledForProceed = invitationSlots.filter((s) => s.url);
                 const canProceed = multipleInvitations
-                  ? filledForProceed.length > 0 && filledForProceed.every((s) => s.name.trim())
-                  : !!uploadedTemplate;
+                  ? !designUploadError && filledForProceed.length > 0 && filledForProceed.every((s) => s.name.trim())
+                  : !designUploadError && !!uploadedTemplate;
                 return (
                   <button
                     onClick={proceedFromUpload}

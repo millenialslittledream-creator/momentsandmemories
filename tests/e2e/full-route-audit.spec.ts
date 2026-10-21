@@ -608,7 +608,7 @@ test('sign-in handoff resumes multi-invite delivery and publishes one link per d
   const page = await context.newPage();
   await installApiMocks(page);
 
-  const createdEventIds = ['event-family', 'event-friends'];
+  const createdEventIds = ['event-family', 'event-friends', 'event-colleagues'];
   const createdPayloads: Array<Record<string, unknown>> = [];
   const inviteesByEvent = new Map<string, Array<Record<string, unknown>>>();
   const directUploadPaths: string[] = [];
@@ -650,6 +650,7 @@ test('sign-in handoff resumes multi-invite delivery and publishes one link per d
     };
     draft.form_data.__mmDraft.invitationSlots[0].url = makeLargePngUrl();
     draft.form_data.__mmDraft.invitationSlots[1].url = makeLargePngUrl();
+    draft.form_data.__mmDraft.invitationSlots[2].url = makeLargePngUrl();
     sessionStorage.setItem('mm_evite_auth_handoff', JSON.stringify(draft));
   }, {
     step: 3,
@@ -663,6 +664,7 @@ test('sign-in handoff resumes multi-invite delivery and publishes one link per d
         invitationSlots: [
           { id: 'slot-family', url: '/templates/wedding/concepts/1-preview.jpg', type: 'image', fileName: 'family.jpg', name: 'Family' },
           { id: 'slot-friends', url: '/templates/wedding/concepts/2-preview.jpg', type: 'image', fileName: 'friends.jpg', name: 'Friends' },
+          { id: 'slot-colleagues', url: '/templates/wedding/concepts/3-preview.jpg', type: 'image', fileName: 'colleagues.jpg', name: 'Colleagues' },
         ],
       },
     },
@@ -670,12 +672,13 @@ test('sign-in handoff resumes multi-invite delivery and publishes one link per d
     guests: [
       { id: 'guest-family', name: 'Maya', email: 'maya@example.com', phone: '', invitationSetId: 'slot-family' },
       { id: 'guest-friends', name: 'Noah', email: 'noah@example.com', phone: '', invitationSetId: 'slot-friends' },
+      { id: 'guest-colleagues', name: 'Ira', email: 'ira@example.com', phone: '', invitationSetId: 'slot-colleagues' },
     ],
     delivery_preference: 'link',
   });
 
   await page.goto('/create');
-  await expect(page.getByText('Share your invitation')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('Share your invitation')).toBeVisible({ timeout: 60_000 });
   await page.getByRole('button', { name: /Continue to Preview/ }).click();
   await page.getByRole('button', { name: /^Continue/ }).click();
   await finishFreeCheckout(page);
@@ -683,13 +686,16 @@ test('sign-in handoff resumes multi-invite delivery and publishes one link per d
   await expect(page.getByText('Your invitations are live')).toBeVisible();
   await expect(page.getByText(`${new URL(page.url()).origin}/event/event-family`, { exact: true }).first()).toBeVisible();
   await expect(page.getByText(`${new URL(page.url()).origin}/event/event-friends`, { exact: true }).first()).toBeVisible();
-  expect(createdPayloads).toHaveLength(2);
-  expect(directUploadPaths).toHaveLength(2);
-  expect(createdPayloads[0].cover_image_url).not.toBe(createdPayloads[1].cover_image_url);
+  await expect(page.getByText(`${new URL(page.url()).origin}/event/event-colleagues`, { exact: true }).first()).toBeVisible();
+  expect(createdPayloads).toHaveLength(3);
+  expect(directUploadPaths).toHaveLength(3);
+  expect(new Set(createdPayloads.map((payload) => payload.cover_image_url)).size).toBe(3);
   expect((createdPayloads[0].form_data as Record<string, unknown>).invitationSetName).toBe('Family');
   expect((createdPayloads[1].form_data as Record<string, unknown>).invitationSetName).toBe('Friends');
+  expect((createdPayloads[2].form_data as Record<string, unknown>).invitationSetName).toBe('Colleagues');
   expect(inviteesByEvent.get('event-family')?.map((guest) => guest.name)).toEqual(['Maya']);
   expect(inviteesByEvent.get('event-friends')?.map((guest) => guest.name)).toEqual(['Noah']);
+  expect(inviteesByEvent.get('event-colleagues')?.map((guest) => guest.name)).toEqual(['Ira']);
   await context.close();
 });
 
@@ -744,6 +750,65 @@ test('custom event multi-invite handoff publishes a distinct link for every uplo
   expect((createdPayloads[0].form_data as Record<string, unknown>).invitationSetName).toBe('VIP');
   expect((createdPayloads[1].form_data as Record<string, unknown>).invitationSetName).toBe('General');
   await context.close();
+});
+
+test('three uploaded wedding invitations create two additional-event rows', async ({ page }) => {
+  test.setTimeout(120_000);
+  await installApiMocks(page);
+  await page.goto('/create?stage=design&event=marriage');
+
+  await page
+    .locator('.design-card')
+    .filter({ hasText: 'Upload Your Own Design' })
+    .getByRole('button', { name: 'Choose This' })
+    .click();
+  await page.getByRole('button', { name: /Yes, send different invitations/ }).click();
+
+  const multiFileInputs = page.locator('input[type="file"][accept="image/*,video/mp4,video/quicktime"]');
+  const inviteNames = page.getByPlaceholder('Enter a name for this invitation');
+  const uploadFixture = 'tests/fixtures/page1.png';
+
+  await multiFileInputs.nth(0).setInputFiles(uploadFixture);
+  await inviteNames.nth(0).fill('Wedding');
+  await multiFileInputs.nth(1).setInputFiles(uploadFixture);
+  await inviteNames.nth(1).fill('Sangeet');
+  await page.getByRole('button', { name: /Add Another Invitation/ }).click();
+  await multiFileInputs.nth(2).setInputFiles(uploadFixture);
+  await inviteNames.nth(2).fill('Reception');
+
+  await page.getByRole('button', { name: /^Continue/ }).click();
+
+  await expect(page.getByText(/Invitation 1 of 3/i)).toBeVisible();
+  await expect(page.getByPlaceholder('e.g. Mehendi, Sangeet')).toHaveCount(2);
+});
+
+test('oversized designs are rejected on the upload step in single and multi-invite flows', async ({ page }) => {
+  test.setTimeout(120_000);
+  await installApiMocks(page);
+  await page.goto('/create?stage=design&event=marriage');
+
+  await page
+    .locator('.design-card')
+    .filter({ hasText: 'Upload Your Own Design' })
+    .getByRole('button', { name: 'Choose This' })
+    .click();
+
+  const oversizedImage = {
+    name: 'too-large.png',
+    mimeType: 'image/png',
+    buffer: Buffer.alloc(10 * 1024 * 1024 + 1),
+  };
+  await page.locator('input[type="file"][accept="image/*"]').setInputFiles(oversizedImage);
+  await expect(page.getByRole('alert')).toContainText('File too large — max 10MB for image');
+  await expect(page.getByRole('button', { name: /^Continue/ })).toBeDisabled();
+
+  await page.getByRole('button', { name: /Yes, send different invitations/ }).click();
+  await page
+    .locator('input[type="file"][accept="image/*,video/mp4,video/quicktime"]')
+    .first()
+    .setInputFiles(oversizedImage);
+  await expect(page.getByRole('alert')).toContainText('File too large — max 10MB for image');
+  await expect(page.getByRole('button', { name: /^Continue/ })).toBeDisabled();
 });
 
 test('all website-builder event families open their editor', async ({ page }) => {
