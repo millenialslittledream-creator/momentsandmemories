@@ -25,6 +25,7 @@ import CanvasEditor from '@/components/CanvasEditor';
 import { type CanvasTemplate } from '@/data/canvasTemplates';
 import type { TemplateFieldLayout } from '@/data/eviteTemplates';
 import { getEventDisplayTitle } from '@/utils/eventInvitation';
+import { getEventOccurrences, getSingleEventFormData } from '@/utils/eventOccurrences';
 import { FONT_CATEGORIES, COLOR_SWATCHES } from '@/components/CanvasEditor/types';
 import { getEviteUploadError } from '@/lib/mediaValidation';
 
@@ -281,11 +282,10 @@ export default function CreateEvite() {
   // ── Publish / share (the evite goes live only after final confirmation) ──
   const [publishedEventId, setPublishedEventId] = useState<string | null>(null);
   const [publishedInvitations, setPublishedInvitations] = useState<PublishedInvitation[]>([]);
-  const [selectedPublishedEventId, setSelectedPublishedEventId] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState('');
   const [copiedEventId, setCopiedEventId] = useState<string | null>(null);
-  const [messageCopied, setMessageCopied] = useState(false);
+  const [copiedMessageEventId, setCopiedMessageEventId] = useState<string | null>(null);
 
   // ── Resume-in-progress prompt (H10) ──────────────────────────────────
   // If the authenticated host left a half-finished evite behind on the server,
@@ -353,10 +353,21 @@ export default function CreateEvite() {
   }, [currentEventType, selectedTemplate]);
 
   const supportsMultipleEvents = !!currentEventType && SUPPORTS_MULTI_EVENTS.includes(currentEventType);
+  const filledSlots = useMemo(
+    () => invitationSlots.filter((slot) => slot.url && slot.type),
+    [invitationSlots]
+  );
 
   // Sub-events count is mirrored into formData so downstream components
   // (GuestPopup multi-event checkboxes) can read it.
   const subEventCount = parseInt(formData['sub_events_count'] || '0', 10) || 0;
+  const requiredSubEventCount = multipleInvitations && supportsMultipleEvents
+    ? Math.max(0, filledSlots.length - 1)
+    : 0;
+  const eventOccurrences = useMemo(
+    () => getEventOccurrences(currentEventType, formData),
+    [currentEventType, formData]
+  );
 
   // ── Customizable text fields for the active template ───────────────
   // Each entry's key matches the override key TemplateRenderer merges on
@@ -503,13 +514,16 @@ export default function CreateEvite() {
       Object.entries(rawFormData).filter(([key, value]) => key !== DRAFT_META_KEY && typeof value === 'string')
     ) as Record<string, string>;
     const restoredInvitationSlots = metadata.invitationSlots?.filter((slot) => slot.url && slot.type) ?? [];
-    const restoredMinimumSubEvents =
+    const restoredUsesFixedInvitationEvents =
       metadata.multipleInvitations &&
-      SUPPORTS_MULTI_EVENTS.includes(draft.event_type as EventType)
-        ? Math.max(0, restoredInvitationSlots.length - 1)
-        : 0;
+      SUPPORTS_MULTI_EVENTS.includes(draft.event_type as EventType);
+    const restoredMinimumSubEvents = restoredUsesFixedInvitationEvents
+      ? Math.max(0, restoredInvitationSlots.length - 1)
+      : 0;
     const restoredSubEvents = parseInt(restoredFormData['sub_events_count'] || '0', 10) || 0;
-    if (restoredSubEvents < restoredMinimumSubEvents) {
+    if (restoredUsesFixedInvitationEvents) {
+      restoredFormData['sub_events_count'] = String(restoredMinimumSubEvents);
+    } else if (restoredSubEvents < restoredMinimumSubEvents) {
       restoredFormData['sub_events_count'] = String(restoredMinimumSubEvents);
     }
 
@@ -725,7 +739,6 @@ export default function CreateEvite() {
       setPhotoOverlay(null);
       setPublishedEventId(null);
       setPublishedInvitations([]);
-      setSelectedPublishedEventId(null);
       setSelectedOverrideKey(null);
       setRightPanelTab('details');
       setModalPhase('editor');
@@ -746,7 +759,6 @@ export default function CreateEvite() {
     setPhotoOverlay(null);
     setPublishedEventId(null);
     setPublishedInvitations([]);
-    setSelectedPublishedEventId(null);
     setSelectedOverrideKey(null);
     setRightPanelTab('details');
     setDesignUploadError('');
@@ -768,7 +780,6 @@ export default function CreateEvite() {
     setHasSubEvents(false);
     setPublishedEventId(null);
     setPublishedInvitations([]);
-    setSelectedPublishedEventId(null);
     setModalPhase('canvas-editor');
   }, []);
 
@@ -858,11 +869,14 @@ export default function CreateEvite() {
     for (const field of editorFields) {
       if (field.required && !formData[field.name]?.trim()) return false;
     }
-    // Additional events are optional; only validate the rows the host actually
-    // added (each must at least be named so guests can be assigned to it).
+    // An additional event is a complete event, so every visible row must have
+    // its name, date, time, timezone, venue, and guest count before continuing.
     if (supportsMultipleEvents && subEventCount > 0) {
       for (let i = 0; i < subEventCount; i++) {
-        if (!formData[`sub_${i}_name`]?.trim()) return false;
+        const requiredFields = ['name', 'date', 'time', 'timezone', 'venue'];
+        if (requiredFields.some((field) => !formData[`sub_${i}_${field}`]?.trim())) return false;
+        const guestCount = Number(formData[`sub_${i}_guestCount`]);
+        if (!Number.isFinite(guestCount) || guestCount < 1) return false;
       }
     }
     return true;
@@ -955,11 +969,7 @@ export default function CreateEvite() {
         : [{ slotId: 'single', name: 'Main Invitation', design: uploadedTemplate }];
 
       const basePayload: Record<string, unknown> = {
-        title: getEventDisplayTitle(currentEventType, formData),
         description: formData.customMessage || null,
-        event_date: formData.eventDate || new Date().toISOString().split('T')[0],
-        event_time: formData.eventTime || null,
-        location: formData.venue || null,
         template_id: selectedTemplateId,
         rsvp_enabled: rsvpSettings.enabled,
         rsvp_config: rsvpSettings,
@@ -967,7 +977,7 @@ export default function CreateEvite() {
       };
 
       const completed: PublishedInvitation[] = [];
-      for (const target of targets) {
+      for (const [targetIndex, target] of targets.entries()) {
         let coverImageUrl = await uploadCover(target.design);
         if (!coverImageUrl && selectedTemplate && !selectedTemplate.layout) {
           // Stock template without a positioned layout — its flat preview image
@@ -975,11 +985,19 @@ export default function CreateEvite() {
           coverImageUrl = selectedTemplate.previewImage;
         }
 
+        const occurrence = eventOccurrences[targetIndex] ?? eventOccurrences[0];
+        const eventFormData = getSingleEventFormData(currentEventType, formData, occurrence);
         const payload: Record<string, unknown> = {
           ...basePayload,
+          title: targetIndex === 0
+            ? getEventDisplayTitle(currentEventType, formData)
+            : occurrence.name,
+          event_date: occurrence.date || new Date().toISOString().split('T')[0],
+          event_time: occurrence.time || null,
+          location: occurrence.venue || null,
           cover_image_url: coverImageUrl,
           form_data: {
-            ...formData,
+            ...eventFormData,
             eventType: currentEventType,
             rsvpSettings,
             ...(publishEachSlot
@@ -1008,8 +1026,10 @@ export default function CreateEvite() {
       }
 
       const primaryEventId = completed[0]?.eventId ?? null;
+      // Keep the final event/link sections in the same order as the uploaded
+      // invitations, including after retrying a partially completed publish.
+      setPublishedInvitations(completed);
       setPublishedEventId(primaryEventId);
-      setSelectedPublishedEventId((current) => current ?? primaryEventId);
 
       // Persist the font/color/size/position overrides + photo overlay so the
       // public page re-renders the design exactly as the host arranged it.
@@ -1034,7 +1054,7 @@ export default function CreateEvite() {
     } finally {
       setPublishing(false);
     }
-  }, [uploadedTemplate, invitationSlots, multipleInvitations, selectedTemplate, selectedTemplateId, formData, rsvpSettings, fieldOverrides, photoOverlay, publishedEventId, publishedInvitations, currentEventType]);
+  }, [uploadedTemplate, invitationSlots, multipleInvitations, selectedTemplate, selectedTemplateId, formData, rsvpSettings, fieldOverrides, photoOverlay, publishedEventId, publishedInvitations, currentEventType, eventOccurrences]);
 
   const handlePaymentConfirm = useCallback(async () => {
     try {
@@ -1099,6 +1119,7 @@ export default function CreateEvite() {
   };
 
   const removeSubEvent = (index: number) => {
+    if (subEventCount <= requiredSubEventCount) return;
     setFormData((prev) => {
       const next = { ...prev };
       const count = parseInt(next['sub_events_count'] || '0', 10) || 0;
@@ -1215,10 +1236,6 @@ export default function CreateEvite() {
   // Multi-invite slot navigation — arrows in the editor preview that swap
   // which uploaded invitation is shown on the left. Does NOT touch formData;
   // event details stay constant across all slots.
-  const filledSlots = useMemo(
-    () => invitationSlots.filter((s) => s.url && s.type),
-    [invitationSlots]
-  );
   const prevSlot = useCallback(() => {
     if (!multipleInvitations || filledSlots.length < 2 || currentSlotIdx <= 0) return;
     const next = filledSlots[currentSlotIdx - 1];
@@ -2802,16 +2819,20 @@ export default function CreateEvite() {
                           Additional Events
                         </p>
                         <p className="font-display text-[9px] text-[#b2c3b1]/45 leading-relaxed mt-1 normal-case tracking-normal">
-                          Hosting more than one event? Add them here — optional.
+                          {multipleInvitations
+                            ? `${filledSlots.length} invitations = ${filledSlots.length} events. Complete every event below.`
+                            : 'Hosting more than one event? Add them here — optional.'}
                         </p>
                       </div>
-                      <button
-                        onClick={addSubEvent}
-                        className="flex-shrink-0 font-display text-[9px] tracking-[0.15em] uppercase text-[#9cb092] hover:text-[#adc4a3] flex items-center gap-1 transition-colors border border-[#9cb092]/30 px-2.5 py-1 hover:border-[#9cb092]/60"
-                      >
-                        <span className="material-icons text-sm">add</span>
-                        Add Another Event
-                      </button>
+                      {!multipleInvitations && (
+                        <button
+                          onClick={addSubEvent}
+                          className="flex-shrink-0 font-display text-[9px] tracking-[0.15em] uppercase text-[#9cb092] hover:text-[#adc4a3] flex items-center gap-1 transition-colors border border-[#9cb092]/30 px-2.5 py-1 hover:border-[#9cb092]/60"
+                        >
+                          <span className="material-icons text-sm">add</span>
+                          Add Another Event
+                        </button>
+                      )}
                     </div>
 
                     {/* Event rows — only rendered once at least one event is added. */}
@@ -2824,7 +2845,7 @@ export default function CreateEvite() {
                             <th className="px-2 py-2 text-left font-display text-[8px] tracking-[0.15em] uppercase text-[#9cb092]/70 min-w-[120px]">Event Name <span className="text-[#9cb092]">*</span></th>
                             <th className="px-2 py-2 text-left font-display text-[8px] tracking-[0.15em] uppercase text-[#9cb092]/70 min-w-[140px]">Date &amp; Time <span className="text-[#9cb092]">*</span></th>
                             <th className="px-2 py-2 text-left font-display text-[8px] tracking-[0.15em] uppercase text-[#9cb092]/70 min-w-[120px]">Venue / Location <span className="text-[#9cb092]">*</span></th>
-                            <th className="px-2 py-2 text-left font-display text-[8px] tracking-[0.15em] uppercase text-[#9cb092]/70 w-20">Guest Count</th>
+                            <th className="px-2 py-2 text-left font-display text-[8px] tracking-[0.15em] uppercase text-[#9cb092]/70 w-20">Guest Count <span className="text-[#9cb092]">*</span></th>
                             <th className="w-8" />
                           </tr>
                         </thead>
@@ -2832,7 +2853,7 @@ export default function CreateEvite() {
                           {Array.from({ length: subEventCount }, (_, i) => {
                             const subInputClass = 'bg-white/[0.06] border border-white/15 focus:border-[#9cb092] text-[#e4eee1] font-display placeholder:text-[#b2c3b1]/30 px-2 h-9 text-xs rounded-sm w-full outline-none transition-colors';
                             return (
-                              <tr key={i} className="border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.015] transition-colors">
+                              <tr key={i} data-testid="additional-event-row" className="border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.015] transition-colors">
                                 <td className="px-2 py-1.5 text-center font-display text-[10px] text-[#9cb092]/60">{i + 1}</td>
                                 <td className="px-2 py-1.5">
                                   <input
@@ -2846,6 +2867,7 @@ export default function CreateEvite() {
                                 <td className="px-2 py-1.5">
                                   <DateTimePicker
                                     compact
+                                    required
                                     size="sm"
                                     date={formData[`sub_${i}_date`] || ''}
                                     time={formData[`sub_${i}_time`] || ''}
@@ -2870,7 +2892,7 @@ export default function CreateEvite() {
                                   <input
                                     type="number"
                                     inputMode="numeric"
-                                    min={0}
+                                    min={1}
                                     value={formData[`sub_${i}_guestCount`] || ''}
                                     onChange={(e) => handleFieldChange(`sub_${i}_guestCount`, e.target.value)}
                                     placeholder="e.g. 50"
@@ -2878,9 +2900,11 @@ export default function CreateEvite() {
                                   />
                                 </td>
                                 <td className="px-1 py-1.5 text-center">
-                                  <button onClick={() => removeSubEvent(i)} className="text-[#b2c3b1]/30 hover:text-red-400/70 transition-colors">
-                                    <span className="material-icons text-sm">close</span>
-                                  </button>
+                                  {!multipleInvitations && (
+                                    <button onClick={() => removeSubEvent(i)} aria-label={`Remove event ${i + 2}`} className="text-[#b2c3b1]/30 hover:text-red-400/70 transition-colors">
+                                      <span className="material-icons text-sm">close</span>
+                                    </button>
+                                  )}
                                 </td>
                               </tr>
                             );
@@ -2988,11 +3012,6 @@ export default function CreateEvite() {
           : publishedEventId
             ? [{ slotId: 'single', name: 'Main Invitation', eventId: publishedEventId }]
             : [];
-        const activeInvitation =
-          liveInvitations.find((item) => item.eventId === selectedPublishedEventId) ?? liveInvitations[0];
-        const shareUrl = activeInvitation
-          ? `${window.location.origin}/event/${activeInvitation.eventId}`
-          : '';
         const hasMultipleLiveInvitations = liveInvitations.length > 1;
         const shareTitle =
           eventTitle ||
@@ -3003,12 +3022,6 @@ export default function CreateEvite() {
           formData.parentNames ||
           formData.hostName ||
           'our celebration';
-        // Nicely formatted time, e.g. "10:00 AM".
-        const shareTime = formData.eventTime
-          ? new Date(`2000-01-01T${formData.eventTime}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-          : '';
-        // "Sunday, September 6, 2026 at 10:00 AM"
-        const shareWhen = [displayDate, shareTime].filter(Boolean).join(' at ');
         // Event-type-specific celebratory line so the message reads right for
         // each occasion (wedding, baby shower, birthday, …).
         const SHARE_FLAVORS: Record<EventType, { phrase: string; emoji: string }> = {
@@ -3021,16 +3034,6 @@ export default function CreateEvite() {
           custom:       { phrase: 'with joy and togetherness',                                 emoji: '🎉' },
         };
         const flavor = (currentEventType && SHARE_FLAVORS[currentEventType]) || SHARE_FLAVORS.custom;
-        // Ready-to-send invite message hosts paste into WhatsApp / SMS / email.
-        // shareBody is the message without the raw URL; shareMsg appends the link.
-        const shareLines = [`Please join us as we celebrate ${shareTitle} ${flavor.phrase}! ${flavor.emoji}`];
-        if (formData.customMessage?.trim()) shareLines.push(formData.customMessage.trim());
-        if (formData.venue) shareLines.push(`📍 Where: ${formData.venue}`);
-        if (shareWhen) shareLines.push(`📅 When: ${shareWhen}`);
-        shareLines.push('', '🔗 RSVP & Evite Details:');
-        const shareBody = shareLines.join('\n');
-        const shareMsg = `${shareBody}\n${shareUrl}`;
-
         // WhatsApp's web hand-off can replace some four-byte emoji with � on
         // older desktop/browser builds. Use a conservative BMP-only fallback
         // for that hand-off while keeping the richer message for copy/email.
@@ -3043,33 +3046,64 @@ export default function CreateEvite() {
           housewarming: '\u2302\u2728',
           custom: '\u2728',
         };
-        const whatsappLines = [`Please join us as we celebrate ${shareTitle} ${flavor.phrase}! ${whatsappEmoji[currentEventType ?? 'custom']}`];
-        if (formData.customMessage?.trim()) whatsappLines.push(formData.customMessage.trim());
-        if (formData.venue) whatsappLines.push(`Where: ${formData.venue}`);
-        if (shareWhen) whatsappLines.push(`When: ${shareWhen}`);
-        whatsappLines.push('', 'RSVP & Evite Details:');
-        const whatsappMsg = `${whatsappLines.join('\n')}\n${shareUrl}`;
-        const waHref = `https://wa.me/?${new URLSearchParams({ text: whatsappMsg }).toString()}`;
-        const mailHref = `mailto:?subject=${encodeURIComponent(`You're invited: ${shareTitle}`)}&body=${encodeURIComponent(shareMsg)}`;
-        // Keep the primary copy action literal: copy exactly the visible link.
-        const copyLink = () => {
-          if (!shareUrl || !activeInvitation) return;
-          navigator.clipboard.writeText(shareUrl);
-          setCopiedEventId(activeInvitation.eventId);
+        const shareCards = liveInvitations.map((invitation, index) => {
+          const occurrence = eventOccurrences[index] ?? eventOccurrences[0];
+          const url = `${window.location.origin}/event/${invitation.eventId}`;
+          const date = occurrence.date
+            ? new Date(`${occurrence.date}T00:00:00`).toLocaleDateString('en-US', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+              })
+            : '';
+          const time = occurrence.time
+            ? new Date(`2000-01-01T${occurrence.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+            : '';
+          const when = `${[date, time].filter(Boolean).join(' at ')}${occurrence.timezone ? ` ${occurrence.timezone}` : ''}`.trim();
+          const intro = index === 0
+            ? `Please join us as we celebrate ${shareTitle} ${flavor.phrase}! ${flavor.emoji}`
+            : `Please join us for ${occurrence.name} as we celebrate ${shareTitle}! ${flavor.emoji}`;
+          const shareLines = [intro];
+          if (formData.customMessage?.trim()) shareLines.push(formData.customMessage.trim());
+          if (occurrence.venue) shareLines.push(`📍 Where: ${occurrence.venue}`);
+          if (when) shareLines.push(`📅 When: ${when}`);
+          shareLines.push('', '🔗 RSVP & Evite Details:');
+          const body = shareLines.join('\n');
+          const message = `${body}\n${url}`;
+
+          const whatsappIntro = index === 0
+            ? `Please join us as we celebrate ${shareTitle} ${flavor.phrase}! ${whatsappEmoji[currentEventType ?? 'custom']}`
+            : `Please join us for ${occurrence.name} as we celebrate ${shareTitle}! ${whatsappEmoji[currentEventType ?? 'custom']}`;
+          const whatsappLines = [whatsappIntro];
+          if (formData.customMessage?.trim()) whatsappLines.push(formData.customMessage.trim());
+          if (occurrence.venue) whatsappLines.push(`Where: ${occurrence.venue}`);
+          if (when) whatsappLines.push(`When: ${when}`);
+          whatsappLines.push('', 'RSVP & Evite Details:');
+          const whatsappMessage = `${whatsappLines.join('\n')}\n${url}`;
+
+          return {
+            invitation,
+            occurrence,
+            url,
+            message,
+            body,
+            waHref: `https://wa.me/?${new URLSearchParams({ text: whatsappMessage }).toString()}`,
+            mailHref: `mailto:?subject=${encodeURIComponent(`You're invited: ${occurrence.name}`)}&body=${encodeURIComponent(message)}`,
+          };
+        });
+        const copyLink = (eventId: string, url: string) => {
+          navigator.clipboard.writeText(url);
+          setCopiedEventId(eventId);
           setTimeout(() => setCopiedEventId(null), 2000);
         };
-        const copyMessage = () => {
-          if (!shareMsg) return;
-          navigator.clipboard.writeText(shareMsg);
-          setMessageCopied(true);
-          setTimeout(() => setMessageCopied(false), 2000);
+        const copyMessage = (eventId: string, message: string) => {
+          navigator.clipboard.writeText(message);
+          setCopiedMessageEventId(eventId);
+          setTimeout(() => setCopiedMessageEventId(null), 2000);
         };
-        const nativeShare = async () => {
-          if (!shareUrl) return;
+        const nativeShare = async (card: (typeof shareCards)[number]) => {
           if (navigator.share) {
-            try { await navigator.share({ title: shareTitle, text: shareBody, url: shareUrl }); } catch { /* cancelled */ }
+            try { await navigator.share({ title: card.occurrence.name, text: card.body, url: card.url }); } catch { /* cancelled */ }
           } else {
-            copyLink();
+            copyLink(card.invitation.eventId, card.url);
           }
         };
         const shareTileClass =
@@ -3096,14 +3130,14 @@ export default function CreateEvite() {
                 </h2>
                 <p className="font-display text-[10px] tracking-[0.15em] uppercase text-[#b2c3b1]/55 mt-1.5">
                   {hasMultipleLiveInvitations
-                    ? 'Each invitation has its own link. Select one to copy or share it.'
+                    ? `Your ${shareCards.length} events are separated below, each with its own invitation and link.`
                     : 'Your shareable link is ready. Copy it and send it anywhere.'}
                 </p>
               </div>
 
               {/* Body */}
-              <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-6 md:px-10 py-6 flex flex-col items-center justify-center">
-                <div className="w-full max-w-xl">
+              <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle px-6 md:px-10 py-6 flex flex-col items-center justify-start">
+                <div className="w-full max-w-3xl">
                   {publishing && !publishedEventId ? (
                     <div className="flex flex-col items-center gap-3 py-10">
                       <div className="w-6 h-6 border-2 border-[#9cb092]/30 border-t-[#9cb092] rounded-full animate-spin" />
@@ -3124,136 +3158,103 @@ export default function CreateEvite() {
                       </button>
                     </div>
                   ) : (
-                    <>
-                      {hasMultipleLiveInvitations && (
-                        <div className="mb-5">
-                          <p className="font-display text-[9px] tracking-[0.22em] uppercase text-[#9cb092]/80 mb-2 flex items-center gap-1.5">
-                            <span className="material-icons text-sm">link</span>
-                            Invitation links
-                          </p>
-                          <div className="space-y-2">
-                            {liveInvitations.map((invitation) => {
-                              const invitationUrl = `${window.location.origin}/event/${invitation.eventId}`;
-                              const active = invitation.eventId === activeInvitation?.eventId;
-                              const copied = copiedEventId === invitation.eventId;
-                              return (
-                                <div
-                                  key={invitation.eventId}
-                                  className={`flex items-center gap-3 border px-3 py-2.5 transition-colors ${
-                                    active
-                                      ? 'border-[#9cb092]/70 bg-[#9cb092]/10'
-                                      : 'border-white/10 bg-white/[0.03]'
-                                  }`}
-                                >
+                    <div className="space-y-6">
+                      {shareCards.map((card, index) => {
+                        const linkCopied = copiedEventId === card.invitation.eventId;
+                        const messageCopied = copiedMessageEventId === card.invitation.eventId;
+                        return (
+                          <section
+                            key={card.invitation.eventId}
+                            data-testid="published-event-card"
+                            className="border border-white/12 bg-white/[0.025]"
+                          >
+                            <div className="flex items-start justify-between gap-4 border-b border-white/10 bg-[#9cb092]/[0.07] px-4 py-3">
+                              <div>
+                                <p className="font-display text-[8px] uppercase tracking-[0.22em] text-[#9cb092]/75">
+                                  Event {index + 1} of {shareCards.length}
+                                </p>
+                                <h3 className="mt-1 font-serif-exp text-lg text-[#e4eee1]">{card.occurrence.name}</h3>
+                                <p className="mt-0.5 font-display text-[9px] uppercase tracking-[0.14em] text-[#b2c3b1]/50">
+                                  Invitation: {card.invitation.name}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => window.open(card.url, '_blank', 'noopener,noreferrer')}
+                                className="flex-shrink-0 inline-flex items-center gap-1.5 border border-[#9cb092]/35 px-3 py-2 font-display text-[9px] uppercase tracking-[0.15em] text-[#b2c3b1] hover:border-[#9cb092] hover:text-[#e4eee1] transition-colors"
+                              >
+                                Open
+                                <span className="material-icons text-sm">open_in_new</span>
+                              </button>
+                            </div>
+
+                            <div className="px-4 py-4">
+                              <p className="font-display text-[9px] tracking-[0.22em] uppercase text-[#9cb092]/80 mb-2 flex items-center gap-1.5">
+                                <span className="material-icons text-sm">chat_bubble_outline</span>
+                                Message for {card.occurrence.name}
+                              </p>
+                              <div className="mb-4 bg-white/[0.04] border border-white/10">
+                                <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2.5">
+                                  <span className="font-display text-[9px] uppercase tracking-[0.18em] text-[#b2c3b1]/60">
+                                    Full message + event link
+                                  </span>
                                   <button
                                     type="button"
-                                    onClick={() => setSelectedPublishedEventId(invitation.eventId)}
-                                    className="min-w-0 flex-1 text-left"
+                                    onClick={() => copyMessage(card.invitation.eventId, card.message)}
+                                    className={`flex-shrink-0 inline-flex items-center gap-1.5 border px-3 py-1.5 font-display text-[9px] uppercase tracking-[0.15em] transition-colors ${
+                                      messageCopied
+                                        ? 'border-[#9cb092]/50 bg-[#9cb092]/20 text-[#9cb092]'
+                                        : 'border-[#9cb092]/35 text-[#b2c3b1] hover:border-[#9cb092] hover:text-[#e4eee1]'
+                                    }`}
                                   >
-                                    <span className="block font-display text-[10px] uppercase tracking-[0.16em] text-[#e4eee1] truncate">
-                                      {invitation.name}
-                                    </span>
-                                    <span className="block font-display text-[10px] text-[#b2c3b1]/55 truncate mt-0.5">
-                                      {invitationUrl}
-                                    </span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(invitationUrl);
-                                      setSelectedPublishedEventId(invitation.eventId);
-                                      setCopiedEventId(invitation.eventId);
-                                      setTimeout(() => setCopiedEventId(null), 2000);
-                                    }}
-                                    className="flex-shrink-0 inline-flex items-center gap-1.5 border border-[#9cb092]/35 px-3 py-2 font-display text-[9px] uppercase tracking-[0.15em] text-[#b2c3b1] hover:border-[#9cb092] hover:text-[#e4eee1] transition-colors"
-                                  >
-                                    <span className="material-icons text-sm">{copied ? 'check' : 'content_copy'}</span>
-                                    {copied ? 'Copied' : 'Copy'}
+                                    <span className="material-icons text-sm">{messageCopied ? 'check' : 'content_copy'}</span>
+                                    {messageCopied ? 'Copied' : 'Copy full message'}
                                   </button>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
+                                <div className="max-h-44 overflow-y-auto px-4 py-3.5 scrollbar-subtle">
+                                  <p className="font-display text-[12px] leading-relaxed text-[#e4eee1]/85 whitespace-pre-line break-words">
+                                    {card.message}
+                                  </p>
+                                </div>
+                              </div>
 
-                      {/* Ready-to-send invite message — this is what Copy / Share sends */}
-                      <p className="font-display text-[9px] tracking-[0.22em] uppercase text-[#9cb092]/80 mb-2 flex items-center gap-1.5">
-                        <span className="material-icons text-sm">chat_bubble_outline</span>
-                        Message guests will receive
-                      </p>
-                      <div className="mb-4 bg-white/[0.05] border border-white/12">
-                        <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2.5">
-                          <span className="font-display text-[9px] uppercase tracking-[0.18em] text-[#b2c3b1]/60">
-                            Full message + link
-                          </span>
-                          <button
-                            type="button"
-                            onClick={copyMessage}
-                            className={`flex-shrink-0 inline-flex items-center gap-1.5 border px-3 py-1.5 font-display text-[9px] uppercase tracking-[0.15em] transition-colors ${
-                              messageCopied
-                                ? 'border-[#9cb092]/50 bg-[#9cb092]/20 text-[#9cb092]'
-                                : 'border-[#9cb092]/35 text-[#b2c3b1] hover:border-[#9cb092] hover:text-[#e4eee1]'
-                            }`}
-                          >
-                            <span className="material-icons text-sm">{messageCopied ? 'check' : 'content_copy'}</span>
-                            {messageCopied ? 'Copied' : 'Copy full message'}
-                          </button>
-                        </div>
-                        <div className="max-h-44 overflow-y-auto px-4 py-3.5 scrollbar-subtle">
-                          <p className="font-display text-[12px] leading-relaxed text-[#e4eee1]/85 whitespace-pre-line break-words">
-                            {shareMsg}
-                          </p>
-                        </div>
-                      </div>
+                              <div className="flex items-stretch gap-2 mb-4">
+                                <div className="flex-1 flex items-center gap-2 px-3 h-12 bg-white/[0.05] border border-white/15 overflow-hidden">
+                                  <span className="material-icons text-[#9cb092]/70 text-base flex-shrink-0">link</span>
+                                  <span className="font-display text-[12px] text-[#e4eee1]/85 truncate">{card.url}</span>
+                                </div>
+                                <button
+                                  onClick={() => copyLink(card.invitation.eventId, card.url)}
+                                  className={`flex-shrink-0 px-5 h-12 flex items-center gap-2 font-display text-[10px] tracking-[0.2em] uppercase font-bold transition-colors ${
+                                    linkCopied
+                                      ? 'bg-[#9cb092]/20 text-[#9cb092] border border-[#9cb092]/50'
+                                      : 'bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]'
+                                  }`}
+                                >
+                                  <span className="material-icons text-base">{linkCopied ? 'check' : 'content_copy'}</span>
+                                  {linkCopied ? 'Copied' : 'Copy'}
+                                </button>
+                              </div>
 
-                      {/* Link + copy */}
-                      <div className="flex items-stretch gap-2 mb-2">
-                        <div className="flex-1 flex items-center gap-2 px-3 h-12 bg-white/[0.05] border border-white/15 overflow-hidden">
-                          <span className="material-icons text-[#9cb092]/70 text-base flex-shrink-0">link</span>
-                          <span className="font-display text-[12px] text-[#e4eee1]/85 truncate">{shareUrl}</span>
-                        </div>
-                        <button
-                          onClick={copyLink}
-                          className={`flex-shrink-0 px-5 h-12 flex items-center gap-2 font-display text-[10px] tracking-[0.2em] uppercase font-bold transition-colors ${
-                            copiedEventId === activeInvitation?.eventId
-                              ? 'bg-[#9cb092]/20 text-[#9cb092] border border-[#9cb092]/50'
-                              : 'bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]'
-                          }`}
-                        >
-                          <span className="material-icons text-base">
-                            {copiedEventId === activeInvitation?.eventId ? 'check' : 'content_copy'}
-                          </span>
-                          {copiedEventId === activeInvitation?.eventId ? 'Copied' : 'Copy'}
-                        </button>
-                      </div>
-                      <p className="font-display text-[9px] text-[#b2c3b1]/45 mb-6">
-                        This copies your shareable link.
-                      </p>
-
-                      {/* Share options */}
-                      <p className="font-display text-[9px] tracking-[0.22em] uppercase text-[#9cb092]/80 mb-2">
-                        Share via
-                      </p>
-                      <div className="grid grid-cols-3 gap-2">
-                        <a href={waHref} target="_blank" rel="noopener noreferrer" className={shareTileClass}>
-                          <span className="material-icons text-xl text-[#b2c3b1]/70 group-hover:text-[#9cb092] transition-colors">chat</span>
-                          WhatsApp
-                        </a>
-                        <a href={mailHref} className={shareTileClass}>
-                          <span className="material-icons text-xl text-[#b2c3b1]/70 group-hover:text-[#9cb092] transition-colors">mail</span>
-                          Email
-                        </a>
-                        <button onClick={nativeShare} className={shareTileClass}>
-                          <span className="material-icons text-xl text-[#b2c3b1]/70 group-hover:text-[#9cb092] transition-colors">ios_share</span>
-                          More
-                        </button>
-                      </div>
-
-                      <p className="font-display text-[9px] text-[#b2c3b1]/45 leading-relaxed mt-6 text-center">
-                        Anyone with this link can view your invitation and RSVP by entering their name.
-                      </p>
-                    </>
+                              <div className="grid grid-cols-3 gap-2">
+                                <a href={card.waHref} target="_blank" rel="noopener noreferrer" className={shareTileClass}>
+                                  <span className="material-icons text-xl text-[#b2c3b1]/70 group-hover:text-[#9cb092] transition-colors">chat</span>
+                                  WhatsApp
+                                </a>
+                                <a href={card.mailHref} className={shareTileClass}>
+                                  <span className="material-icons text-xl text-[#b2c3b1]/70 group-hover:text-[#9cb092] transition-colors">mail</span>
+                                  Email
+                                </a>
+                                <button onClick={() => nativeShare(card)} className={shareTileClass}>
+                                  <span className="material-icons text-xl text-[#b2c3b1]/70 group-hover:text-[#9cb092] transition-colors">ios_share</span>
+                                  More
+                                </button>
+                              </div>
+                            </div>
+                          </section>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               </div>
@@ -3267,13 +3268,15 @@ export default function CreateEvite() {
                   <span className="material-icons text-sm">arrow_back</span>
                   Back to Home
                 </button>
-                <button
-                  onClick={() => window.open(shareUrl, '_blank', 'noopener,noreferrer')}
-                  className="py-2.5 px-8 font-display text-[11px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center gap-2 bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]"
-                >
-                  Open Invitation
-                  <span className="material-icons text-sm">open_in_new</span>
-                </button>
+                {shareCards.length === 1 && (
+                  <button
+                    onClick={() => window.open(shareCards[0].url, '_blank', 'noopener,noreferrer')}
+                    className="py-2.5 px-8 font-display text-[11px] tracking-[0.22em] uppercase font-bold transition-colors flex items-center gap-2 bg-[#9cb092] text-[#111914] hover:bg-[#adc4a3]"
+                  >
+                    Open Invitation
+                    <span className="material-icons text-sm">open_in_new</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

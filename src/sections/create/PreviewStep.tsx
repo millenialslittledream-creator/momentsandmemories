@@ -7,6 +7,7 @@ import { eventTypes, type EventType } from '@/data/eventFields';
 import type { EviteTemplate, TemplateFieldLayout } from '@/data/eviteTemplates';
 import type { Guest } from './GuestDetails';
 import { ALL_FOOD_OPTIONS, type RSVPSettings } from './rsvpSettings';
+import { getEventOccurrences } from '@/utils/eventOccurrences';
 
 export interface InvitationSetPreview {
   id: string;
@@ -31,14 +32,6 @@ interface PreviewStepProps {
   onBack: () => void;
   onClose?: () => void;
   onProceed: () => void;
-}
-
-interface SubEventInfo {
-  idx: number;
-  name: string;
-  date: string;
-  time: string;
-  venue: string;
 }
 
 export default function PreviewStep({
@@ -112,17 +105,9 @@ export default function PreviewStep({
   const [selectedId, setSelectedId] = useState(versions[0]?.id ?? 'single');
   const selectedVersion = versions.find((v) => v.id === selectedId) ?? versions[0];
 
-  // ── Events in this invitation (sub-events from the editor) ──────────
-  const subEvents: SubEventInfo[] = useMemo(() => {
-    const count = parseInt(formData['sub_events_count'] || '0', 10) || 0;
-    return Array.from({ length: count }, (_, i) => ({
-      idx: i,
-      name: formData[`sub_${i}_name`]?.trim() || `Event ${i + 1}`,
-      date: formData[`sub_${i}_date`] || '',
-      time: formData[`sub_${i}_time`] || '',
-      venue: formData[`sub_${i}_venue`] || '',
-    }));
-  }, [formData]);
+  // The primary event counts too: three uploaded invitations map to the
+  // primary event plus two additional events, for three events total.
+  const events = useMemo(() => getEventOccurrences(eventType, formData), [eventType, formData]);
 
   useEffect(() => {
     if (backdropRef.current && panelRef.current) {
@@ -176,7 +161,7 @@ export default function PreviewStep({
   ] as const;
 
   const totalGuests = guestList.filter((g) => g.name.trim()).length || guestCount;
-  const totalEvents = subEvents.length || 1;
+  const totalEvents = events.length;
 
   // ── RSVP settings helpers ───────────────────────────────────────────
   const patchRsvp = (patch: Partial<RSVPSettings>) => onRsvpSettingsChange({ ...rsvpSettings, ...patch });
@@ -327,9 +312,8 @@ export default function PreviewStep({
                 Events in this invitation
               </p>
               <div className="space-y-2">
-                {subEvents.length > 0 ? (
-                  subEvents.map((ev) => (
-                    <div key={ev.idx} className="border border-white/10 bg-white/[0.02] p-3">
+                {events.map((ev) => (
+                    <div key={ev.index} className="border border-white/10 bg-white/[0.02] p-3">
                       <p className="font-display text-[11px] text-[#e4eee1]">{ev.name}</p>
                       <div className="mt-1 space-y-0.5">
                         {(ev.date || ev.time) && (
@@ -347,27 +331,7 @@ export default function PreviewStep({
                         )}
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="border border-white/10 bg-white/[0.02] p-3">
-                    <p className="font-display text-[11px] text-[#e4eee1]">{eventTitle}</p>
-                    <div className="mt-1 space-y-0.5">
-                      {displayDate && (
-                        <p className="font-display text-[9px] text-[#b2c3b1]/55 flex items-center gap-1.5">
-                          <span className="material-icons text-[#9cb092]" style={{ fontSize: '11px' }}>event</span>
-                          {displayDate}
-                          {formData.eventTime && ` · ${formData.eventTime}`}
-                        </p>
-                      )}
-                      {formData.venue && (
-                        <p className="font-display text-[9px] text-[#b2c3b1]/55 flex items-center gap-1.5">
-                          <span className="material-icons text-[#9cb092]" style={{ fontSize: '11px' }}>location_on</span>
-                          {formData.venue}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
+                  ))}
               </div>
             </div>
           </div>

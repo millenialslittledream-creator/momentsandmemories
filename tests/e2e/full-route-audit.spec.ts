@@ -657,7 +657,11 @@ test('sign-in handoff resumes multi-invite delivery and publishes one link per d
     event_type: 'marriage',
     form_data: {
       brideName: 'Asha', groomName: 'Ravi', eventDate: '2027-03-12', eventTime: '18:00',
-      timezone: 'IST', venue: 'Garden Hall',
+      timezone: 'PT', venue: 'Garden Hall', guestCount: '40', sub_events_count: '2',
+      sub_0_name: 'Sangeet', sub_0_date: '2027-03-13', sub_0_time: '19:00',
+      sub_0_timezone: 'PT', sub_0_venue: 'Music Hall', sub_0_guestCount: '60',
+      sub_1_name: 'Reception', sub_1_date: '2027-03-14', sub_1_time: '20:00',
+      sub_1_timezone: 'PT', sub_1_venue: 'Grand Ballroom', sub_1_guestCount: '100',
       __mmDraft: {
         multipleInvitations: true,
         pendingPhase: 'guests',
@@ -680,16 +684,27 @@ test('sign-in handoff resumes multi-invite delivery and publishes one link per d
   await page.goto('/create');
   await expect(page.getByText('Share your invitation')).toBeVisible({ timeout: 60_000 });
   await page.getByRole('button', { name: /Continue to Preview/ }).click();
+  await expect(page.getByText('Total Events').locator('..')).toContainText('3');
+  await expect(page.getByText('Wedding', { exact: true })).toBeVisible();
+  await expect(page.getByText('Sangeet', { exact: true })).toBeVisible();
+  await expect(page.getByText('Reception', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: /^Continue/ }).click();
   await finishFreeCheckout(page);
 
-  await expect(page.getByText('Your invitations are live')).toBeVisible();
+  await expect(page.getByText(/3 events are separated below/i)).toBeVisible();
   await expect(page.getByText(`${new URL(page.url()).origin}/event/event-family`, { exact: true }).first()).toBeVisible();
   await expect(page.getByText(`${new URL(page.url()).origin}/event/event-friends`, { exact: true }).first()).toBeVisible();
   await expect(page.getByText(`${new URL(page.url()).origin}/event/event-colleagues`, { exact: true }).first()).toBeVisible();
+  await expect(page.getByTestId('published-event-card')).toHaveCount(3);
+  for (const eventName of ['Wedding', 'Sangeet', 'Reception']) {
+    await expect(page.getByRole('heading', { name: eventName, exact: true })).toBeVisible();
+  }
   expect(createdPayloads).toHaveLength(3);
   expect(directUploadPaths).toHaveLength(3);
   expect(new Set(createdPayloads.map((payload) => payload.cover_image_url)).size).toBe(3);
+  expect(createdPayloads.map((payload) => payload.event_date)).toEqual(['2027-03-12', '2027-03-13', '2027-03-14']);
+  expect(createdPayloads.map((payload) => payload.location)).toEqual(['Garden Hall', 'Music Hall', 'Grand Ballroom']);
+  expect(createdPayloads.map((payload) => (payload.form_data as Record<string, unknown>).sub_events_count)).toEqual(['0', '0', '0']);
   expect((createdPayloads[0].form_data as Record<string, unknown>).invitationSetName).toBe('Family');
   expect((createdPayloads[1].form_data as Record<string, unknown>).invitationSetName).toBe('Friends');
   expect((createdPayloads[2].form_data as Record<string, unknown>).invitationSetName).toBe('Colleagues');
@@ -721,7 +736,9 @@ test('custom event multi-invite handoff publishes a distinct link for every uplo
     event_type: 'custom',
     form_data: {
       eventTitle: 'Founders Dinner', eventDate: '2027-04-10', eventTime: '19:00',
-      timezone: 'IST', venue: 'Courtyard',
+      eventName: 'Founders Dinner', timezone: 'PT', venue: 'Courtyard', guestCount: '20',
+      sub_events_count: '1', sub_0_name: 'After Party', sub_0_date: '2027-04-11',
+      sub_0_time: '21:00', sub_0_timezone: 'PT', sub_0_venue: 'Rooftop', sub_0_guestCount: '15',
       __mmDraft: {
         multipleInvitations: true,
         pendingPhase: 'guests',
@@ -780,6 +797,51 @@ test('three uploaded wedding invitations create two additional-event rows', asyn
 
   await expect(page.getByText(/Invitation 1 of 3/i)).toBeVisible();
   await expect(page.getByPlaceholder('e.g. Mehendi, Sangeet')).toHaveCount(2);
+  await expect(page.getByRole('button', { name: /^Continue/ })).toBeDisabled();
+});
+
+test('all additional-event fields are required before continuing', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await installTestSession(context);
+  const page = await context.newPage();
+  await installApiMocks(page);
+  await page.addInitScript((draft) => {
+    sessionStorage.setItem('mm_evite_auth_handoff', JSON.stringify(draft));
+  }, {
+    step: 3,
+    event_type: 'marriage',
+    form_data: {
+      brideName: 'Asha', groomName: 'Ravi', eventDate: '2027-03-12', eventTime: '18:00',
+      timezone: 'PT', venue: 'Garden Hall', sub_events_count: '2',
+      sub_0_name: 'Sangeet', sub_0_date: '2027-03-13', sub_0_time: '19:00', sub_0_timezone: 'PT',
+      sub_1_name: 'Reception', sub_1_date: '2027-03-14', sub_1_time: '20:00', sub_1_timezone: 'PT',
+      __mmDraft: {
+        multipleInvitations: true,
+        pendingPhase: 'editor',
+        invitationSlots: [
+          { id: 'slot-wedding', url: '/test-fixtures/page1.png', type: 'image', fileName: 'wedding.png', name: 'Wedding' },
+          { id: 'slot-sangeet', url: '/test-fixtures/page1.png', type: 'image', fileName: 'sangeet.png', name: 'Sangeet' },
+          { id: 'slot-reception', url: '/test-fixtures/page1.png', type: 'image', fileName: 'reception.png', name: 'Reception' },
+        ],
+      },
+    },
+    selected_template: null,
+    guests: [],
+    delivery_preference: 'link',
+  });
+
+  await page.goto('/create');
+  await expect(page.getByTestId('additional-event-row')).toHaveCount(2);
+  const continueButton = page.getByRole('button', { name: /^Continue/ });
+  await expect(continueButton).toBeDisabled();
+
+  const additionalRows = page.getByTestId('additional-event-row');
+  await additionalRows.nth(0).getByPlaceholder('Venue').fill('Music Hall');
+  await additionalRows.nth(1).getByPlaceholder('Venue').fill('Grand Ballroom');
+  await additionalRows.nth(0).locator('input[type="number"]').fill('60');
+  await additionalRows.nth(1).locator('input[type="number"]').fill('100');
+  await expect(continueButton).toBeEnabled();
+  await context.close();
 });
 
 test('oversized designs are rejected on the upload step in single and multi-invite flows', async ({ page }) => {
