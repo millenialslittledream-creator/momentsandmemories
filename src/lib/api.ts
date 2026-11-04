@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { prepareImageFile } from '@/lib/imagePrep';
 
 export interface BookPageDto {
   id: string;
@@ -549,12 +550,20 @@ export const api = {
   getPublicBook: (eventId: string) => publicGet(`/public/events/${eventId}/book`),
 
   // ── Guest photo gallery ──────────────────────────────────────────────────
-  uploadGalleryPhoto: (eventId: string, file: File, uploadedByName: string) => {
+  uploadGalleryPhoto: async (eventId: string, file: File, uploadedByName: string) => {
+    // Guests upload straight from their phones; shrink big photos so Vercel's ~4.5 MB limit never rejects them.
+    const ready = await prepareImageFile(file);
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', ready);
     formData.append('uploaded_by_name', uploadedByName);
-    return fetch(`${API_URL}/public/events/${eventId}/gallery`, { method: 'POST', body: formData })
-      .then(r => r.ok ? r.json() : r.json().then((e: { detail: string }) => Promise.reject(new Error(e.detail))));
+    const res = await fetch(`${API_URL}/public/events/${eventId}/gallery`, { method: 'POST', body: formData });
+    if (!res.ok) {
+      if (res.status === 413) throw new Error('This photo is too large. Please choose a smaller one.');
+      if (res.status === 429) throw new Error('Too many uploads at once. Please wait a minute and try again.');
+      const err = await res.json().catch(() => null) as { detail?: unknown } | null;
+      throw new Error(typeof err?.detail === 'string' ? err.detail : 'Upload failed. Please try again.');
+    }
+    return res.json();
   },
 
   getGalleryPhotos: (eventId: string) =>
