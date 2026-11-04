@@ -63,15 +63,15 @@ def test_register_direct_upload_validates_stored_bytes(mock_db):
     mock_db.storage.from_.return_value.download.return_value = PNG
     mock_db.storage.from_.return_value.get_public_url.return_value = "https://example.com/u/large.png"
     mock_db.table.return_value.insert.return_value.execute.return_value = MagicMock(
-        data=[{"id": "media-large", "storage_path": "user-1/large.png", "public_url": "https://example.com/u/large.png",
+        data=[{"id": "media-large", "storage_path": "user-1/11111111-aaaa-4bbb-8ccc-222222222222.png", "public_url": "https://example.com/u/large.png",
                "kind": "image", "mime_type": "image/png", "file_size_bytes": len(PNG), "created_at": "now"}]
     )
 
     from media.service import register_direct_upload
 
-    result = register_direct_upload("user-1", "user-1/large.png")
+    result = register_direct_upload("user-1", "user-1/11111111-aaaa-4bbb-8ccc-222222222222.png")
     assert result["kind"] == "image"
-    mock_db.storage.from_.return_value.download.assert_called_once_with("user-1/large.png")
+    mock_db.storage.from_.return_value.download.assert_called_once_with("user-1/11111111-aaaa-4bbb-8ccc-222222222222.png")
 
 
 def test_register_direct_upload_rejects_another_users_path(mock_db):
@@ -88,8 +88,8 @@ def test_register_direct_upload_removes_invalid_content(mock_db):
     from media.service import register_direct_upload
 
     with pytest.raises(ValueError, match="Unsupported file type"):
-        register_direct_upload("user-1", "user-1/fake.png")
-    mock_db.storage.from_.return_value.remove.assert_called_once_with(["user-1/fake.png"])
+        register_direct_upload("user-1", "user-1/11111111-aaaa-4bbb-8ccc-222222222222.png")
+    mock_db.storage.from_.return_value.remove.assert_called_once_with(["user-1/11111111-aaaa-4bbb-8ccc-222222222222.png"])
 
 
 def test_delete_media_not_found(mock_db):
@@ -122,3 +122,34 @@ def test_list_media(mock_db):
 
     result = list_media("user-1")
     assert len(result) == 2
+
+
+@pytest.mark.parametrize("bad_path", [
+    "user-1/../user-2/11111111-aaaa-4bbb-8ccc-222222222222.png",              # traversal into another user's folder
+    "user-1/..%2Fuser-2%2F11111111-aaaa-4bbb-8ccc-222222222222.png",          # encoded traversal
+    "user-1/sub/11111111-aaaa-4bbb-8ccc-222222222222.png",                    # nested folder
+    "user-1//11111111-aaaa-4bbb-8ccc-222222222222.png",                       # empty segment
+    "user-1" + chr(92) + ".." + chr(92) + "user-2" + chr(92) + "11111111-aaaa-4bbb-8ccc-222222222222.png",      # backslashes
+    "user-1/11111111-aaaa-4bbb-8ccc-222222222222.png/../../user-2/11111111-aaaa-4bbb-8ccc-222222222222.png",
+    "user-1/not-a-uuid.png",                  # not what the app generates
+    "user-1/11111111-aaaa-4bbb-8ccc-222222222222.svg",                        # type not allowed
+    "user-1/11111111-aaaa-4bbb-8ccc-222222222222.png" + chr(10),                  # trailing newline
+    "user-1/",
+    "user-1",
+    "user-2/11111111-aaaa-4bbb-8ccc-222222222222.png",                        # someone else's folder
+    "",
+])
+def test_register_direct_upload_rejects_unexpected_paths(mock_db, bad_path):
+    from media.service import register_direct_upload
+
+    with pytest.raises(ValueError, match="Invalid upload path"):
+        register_direct_upload("user-1", bad_path)
+    mock_db.storage.from_.return_value.download.assert_not_called()
+    mock_db.storage.from_.return_value.remove.assert_not_called()
+
+
+def test_register_direct_upload_accepts_exactly_what_the_browser_generates(mock_db):
+    from media.service import _is_direct_upload_path
+
+    for ext in ("jpg", "png", "gif", "webp", "mp4", "mov"):
+        assert _is_direct_upload_path("user-1", f"user-1/11111111-aaaa-4bbb-8ccc-222222222222.{ext}")

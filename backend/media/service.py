@@ -1,3 +1,4 @@
+import re
 import uuid
 import database
 from middleware.logging import log_event as _log
@@ -48,6 +49,18 @@ def upload_media(user_id: str, filename: str, content: bytes, mime_type: str) ->
     return result.data[0]
 
 
+# The browser names direct uploads "<user_id>/<random uuid>.<ext>" (see api.uploadMedia). Accept
+# exactly that shape: a prefix check alone would let "<user_id>/../<other user>/x.png" through.
+_DIRECT_UPLOAD_NAME = re.compile(
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:jpg|png|gif|webp|mp4|mov)"
+)
+
+
+def _is_direct_upload_path(user_id: str, storage_path: str) -> bool:
+    folder, separator, filename = storage_path.partition("/")
+    return separator == "/" and folder == user_id and _DIRECT_UPLOAD_NAME.fullmatch(filename) is not None
+
+
 def register_direct_upload(user_id: str, storage_path: str) -> dict:
     """Validate and register a file uploaded directly to Supabase Storage.
 
@@ -56,8 +69,7 @@ def register_direct_upload(user_id: str, storage_path: str) -> dict:
     Storage folder, then this small request verifies the stored bytes and
     creates the same media_uploads record as the normal multipart endpoint.
     """
-    expected_prefix = f"{user_id}/"
-    if not storage_path.startswith(expected_prefix) or storage_path == expected_prefix:
+    if not _is_direct_upload_path(user_id, storage_path):
         raise ValueError("Invalid upload path")
 
     db = database.get_db()
