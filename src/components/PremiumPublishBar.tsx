@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { hasLocalImages, resolveLocalImages, uploadLocalImage } from '@/lib/premiumImages';
 
 function slugify(input: string): string {
   return input.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -42,6 +43,14 @@ export default function PremiumPublishBar({
   const [busy, setBusy] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const seededRef = useRef(false);
+  // local image URL -> upload promise, so each picture is uploaded once across autosaves
+  const imageCache = useRef(new Map<string, Promise<string>>());
+
+  // Pictures chosen from the device are browser-only blob: URLs; upload them so other people can see them.
+  const withUploadedImages = useCallback(
+    () => resolveLocalImages(content as Record<string, unknown>, uploadLocalImage, imageCache.current),
+    [content],
+  );
 
   // Seed the slug once from the initial content; never stomp a typed slug.
   useEffect(() => {
@@ -66,7 +75,7 @@ export default function PremiumPublishBar({
           event_key: eventKey,
           design_id: designId,
           theme_id: themeId,
-          content: content as Record<string, unknown>,
+          content: await withUploadedImages(),
         });
         setSaveStatus('saved');
       } catch {
@@ -74,7 +83,7 @@ export default function PremiumPublishBar({
       }
     }, 1200);
     return () => clearTimeout(t);
-  }, [siteId, eventKey, designId, themeId, content]);
+  }, [siteId, eventKey, designId, themeId, content, withUploadedImages]);
 
   const requireSignIn = () => {
     const back = window.location.pathname + window.location.search;
@@ -92,6 +101,9 @@ export default function PremiumPublishBar({
     }
     setBusy(true);
     try {
+      // Upload first: never publish a link whose images only exist in this browser tab.
+      if (hasLocalImages(content)) toast.info('Uploading your images…');
+      const uploadedContent = await withUploadedImages();
       if (siteId) {
         await api.updatePremiumSite(siteId, {
           slug,
@@ -99,7 +111,7 @@ export default function PremiumPublishBar({
           event_key: eventKey,
           design_id: designId,
           theme_id: themeId,
-          content: content as Record<string, unknown>,
+          content: uploadedContent,
         });
       } else {
         const created = await api.createPremiumSite({
@@ -107,7 +119,7 @@ export default function PremiumPublishBar({
           event_key: eventKey,
           design_id: designId,
           theme_id: themeId,
-          content: content as Record<string, unknown>,
+          content: uploadedContent,
           published: true,
         });
         setSiteId(created.id);

@@ -30,6 +30,7 @@ Run these SQL files in order in Supabase Dashboard → SQL Editor.
 | 023_rsvp_flow_and_analytics.sql | event RSVP configuration + quantity-based meal selections |
 | 024_security_hardening.sql | restrictive RLS policies, upload limits, and security indexes |
 | 025_share_link_rsvp_source.sql | allow analytics to identify RSVPs submitted through the public share link |
+| 026_premium_site_media_bucket.sql | public `premium-site-media` storage bucket for premium design images (backend-only writes) |
 
 **Note:** The `users` table already exists — do NOT run any migration that recreates it.
 Run files in numbered order as later ones reference earlier tables via foreign keys.

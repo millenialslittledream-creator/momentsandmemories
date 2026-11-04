@@ -603,3 +603,13 @@ Product owner feedback: the 32 hardcoded `eviteTemplates.ts` designs (the ones a
 **Tests**: backend pytest 163/163 (+10: Redis request format, fail-open, 429 from shared counter, admin lockout shared, switch).
 **Facts found**: live FKs use auth.users (migrations 001-009 are stale); Realtime publishes only qr_contact_sessions (RSVP live-update is polling); prod has 3 buckets.
 **Next steps**: create Upstash Redis in Vercel + redeploy; push to main when ready; build staging; run checklist; then load test on staging only.
+
+---
+
+## [2026-11-04] - Premium designs: uploaded pictures invisible on shared links
+
+**Status**: Code complete + tested locally (committed, NOT pushed). Bucket not yet created on the live Supabase project (see below).
+**Root cause**: the 3 premium editors (`WebsiteTemplates/InviteEditor`, `BirthdayTemplates/BirthdayEditor`, `EventTemplates/EventInviteEditor`) stored picked photos as `URL.createObjectURL()` blob: URLs; those exist only in the author's tab, so `/site/<slug>` showed broken images to everyone else.
+**Fix**: dedicated public bucket `premium-site-media` (migration 026; images only, 10 MB, no list policy, backend-only writes). New `POST /api/premium-websites/images` (auth, 60/min/user, type sniffed from bytes, path `<user_id>/<uuid>.<ext>`; creates the bucket on first use if missing). Frontend `src/lib/premiumImages.ts` swaps every blob:/data:image URL for the uploaded public URL (downscales > 3.5 MB for Vercel's 4.5 MB body limit) inside `PremiumPublishBar` before publish/autosave. Backend refuses to save a site containing blob: URLs or > 1 MB of content.
+**Tests**: backend 183 pass (+12), vitest 60 pass (+12 incl. PremiumPublishBar publishes only permanent URLs), tsc + eslint clean.
+**Not done / notes**: Supabase MCP in this session was signed in to a different account, so the bucket could not be created from here; run `backend/migrations/026_premium_site_media_bucket.sql` in the moments-and-memories project (or let the first upload create it). Sites published before this fix still contain dead blob: links: re-add the photos and republish. Orphaned images are not deleted when a site is deleted. Same blob: pattern also exists in `CreateEvite.tsx` (lines ~1190/1207) and `TemplateGallery.tsx:82` (evite flow), not touched.

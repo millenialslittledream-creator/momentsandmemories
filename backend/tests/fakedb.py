@@ -15,6 +15,7 @@ _lock = threading.Lock()
 STORE: dict[str, list[dict]] = {}
 LOG_COUNT = 0
 UPLOADS: list[str] = []
+UPLOAD_BUCKETS: list[str] = []
 TOKENS = {
     "token-alice": SimpleNamespace(id="11111111-1111-1111-1111-111111111111", email="alice@test.com"),
     "token-bob": SimpleNamespace(id="22222222-2222-2222-2222-222222222222", email="bob@test.com"),
@@ -139,9 +140,19 @@ class _Rpc:
         return Result([{"sum": 0}])
 
 
+MISSING_BUCKETS: set[str] = set()
+CREATED_BUCKETS: list[tuple[str, dict]] = []
+
+
 class _Bucket:
+    def __init__(self, name=""):
+        self.name = name
+
     def upload(self, path, content, file_options=None):
+        if self.name in MISSING_BUCKETS:
+            raise Exception("{'statusCode': 404, 'error': 'Bucket not found', 'message': 'Bucket not found'}")
         UPLOADS.append(path)
+        UPLOAD_BUCKETS.append(self.name)
 
     def get_public_url(self, path):
         return f"https://fake.storage/{path}"
@@ -167,11 +178,28 @@ class FakeDB:
             return SimpleNamespace(user=user)
 
     auth = _Auth()
-    storage = SimpleNamespace(from_=lambda b: _Bucket())
+    class _Storage:
+        def from_(self, name):
+            return _Bucket(name)
+
+        def create_bucket(self, name, options=None):
+            if name in CREATED_BUCKETS_NAMES():
+                raise Exception("The resource already exists")
+            MISSING_BUCKETS.discard(name)
+            CREATED_BUCKETS.append((name, options or {}))
+
+    storage = _Storage()
+
+
+def CREATED_BUCKETS_NAMES():
+    return {n for n, _ in CREATED_BUCKETS}
 
 
 def reset():
     global LOG_COUNT
     STORE.clear()
     UPLOADS.clear()
+    UPLOAD_BUCKETS.clear()
+    MISSING_BUCKETS.clear()
+    CREATED_BUCKETS.clear()
     LOG_COUNT = 0

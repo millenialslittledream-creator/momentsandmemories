@@ -404,6 +404,26 @@ export const api = {
     return res.json();
   },
 
+  // Premium website designs: stored in the public `premium-site-media` bucket so shared links work.
+  uploadPremiumImage: async (file: File): Promise<{ public_url: string; storage_path: string }> => {
+    const token = await getToken();
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_URL}/premium-websites/images`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      if (res.status === 401) throw new Error('Please sign in to upload images.');
+      if (res.status === 413) throw new Error('This image is too large. Please choose a smaller one.');
+      if (res.status === 429) throw new Error('Too many uploads at once. Please wait a moment and try again.');
+      throw new Error(typeof err.detail === 'string' ? err.detail : 'Image upload failed');
+    }
+    return res.json();
+  },
+
   // ── Custom templates (canvas editor) ────────────────────────────────────
   createCustomTemplate: (data: Record<string, unknown>) =>
     apiFetch<{ id: string }>('/custom-templates', { method: 'POST', body: JSON.stringify(data) }),

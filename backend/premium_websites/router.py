@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from middleware.auth import get_current_user
+from middleware.ratelimit import user_limit
 from premium_websites.schemas import CreatePremiumSiteRequest, UpdatePremiumSiteRequest
 from premium_websites import service
 
@@ -10,6 +11,16 @@ router = APIRouter(prefix="/premium-websites", tags=["premium-websites"])
 def create_site(data: CreatePremiumSiteRequest, current_user: dict = Depends(get_current_user)):
     try:
         return service.create_premium_site(current_user["sub"], data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/images", dependencies=[Depends(user_limit("premium-image", 60, 60))])
+async def upload_image(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    """Upload one design image; returns the public URL to store in the site content."""
+    try:
+        content = await file.read(service.MAX_IMAGE_BYTES + 1)
+        return service.upload_site_image(current_user["sub"], content)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -32,7 +43,7 @@ def update_site(site_id: str, data: UpdatePremiumSiteRequest, current_user: dict
     try:
         return service.update_premium_site(current_user["sub"], site_id, data)
     except ValueError as e:
-        status_code = 400 if "taken" in str(e) else 404
+        status_code = 404 if "not found" in str(e).lower() else 400
         raise HTTPException(status_code=status_code, detail=str(e))
 
 
