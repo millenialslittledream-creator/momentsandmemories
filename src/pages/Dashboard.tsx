@@ -9,6 +9,7 @@ import RSVPAnalytics from '@/sections/dashboard/RSVPAnalytics';
 import OverallRSVPAnalytics from '@/sections/dashboard/OverallRSVPAnalytics';
 import MessagingPanel from '@/sections/dashboard/MessagingPanel';
 import EventManageActions from '@/sections/dashboard/EventManageActions';
+import PremiumSitesPanel from '@/sections/dashboard/PremiumSitesPanel';
 // GalleryPanel and the Website Builder entry point are intentionally hidden from the
 // dashboard for now (not polished enough yet) — both stay reachable by direct URL.
 import WebsiteBuilder from '@/components/WebsiteBuilder';
@@ -549,6 +550,8 @@ export default function Dashboard() {
                 ))}
               </div>
             )}
+
+            <PremiumSitesPanel />
           </div>
 
           {/* ── Right column — Gift advertisement panel ── */}

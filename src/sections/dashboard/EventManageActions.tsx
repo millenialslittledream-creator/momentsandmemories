@@ -1,16 +1,7 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import InlineNotice, { type Notice } from '@/components/InlineNotice';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 
 interface EventManageActionsProps {
   event: { id: string; title: string; status: string };
@@ -107,31 +98,15 @@ export default function EventManageActions({ event, onStatusChange, onDeleted }:
       </button>
       <InlineNotice notice={notice} className="px-1" />
 
-      <AlertDialog open={confirmOpen} onOpenChange={(open) => !busy && setConfirmOpen(open)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this evite?</AlertDialogTitle>
-            <AlertDialogDescription>
-              “{event.title}” will be deleted permanently, together with its guest list, RSVPs, messages and shared photos.
-              Its link will stop working for everyone. This cannot be undone. To hide it without losing anything, use
-              Unpublish instead.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Keep it</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={busy}
-              onClick={(e) => {
-                e.preventDefault();
-                void confirmDelete();
-              }}
-              className="bg-red-700 text-white hover:bg-red-800"
-            >
-              {busy ? 'Deleting…' : 'Delete evite'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete this evite?"
+        description={`“${event.title}” will be deleted permanently, together with its guest list, RSVPs, messages and shared photos. Its link will stop working for everyone. This cannot be undone. To hide it without losing anything, use Unpublish instead.`}
+        confirmLabel="Delete evite"
+        busy={busy}
+        onConfirm={() => void confirmDelete()}
+      />
     </>
   );
 }

@@ -518,6 +518,9 @@ export const api = {
     }
   ) => apiFetch<unknown>(`/premium-websites/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
+  deletePremiumSite: (id: string) =>
+    apiFetch<{ status: string }>(`/premium-websites/${id}`, { method: 'DELETE' }),
+
   getPublicPremiumSite: (slug: string) =>
     publicGet<{
       slug: string;
