@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import RSVPAnalytics from '@/sections/dashboard/RSVPAnalytics';
 import OverallRSVPAnalytics from '@/sections/dashboard/OverallRSVPAnalytics';
 import MessagingPanel from '@/sections/dashboard/MessagingPanel';
+import EventManageActions from '@/sections/dashboard/EventManageActions';
 // GalleryPanel and the Website Builder entry point are intentionally hidden from the
 // dashboard for now (not polished enough yet) — both stay reachable by direct URL.
 import WebsiteBuilder from '@/components/WebsiteBuilder';
@@ -137,6 +138,19 @@ export default function Dashboard() {
   const [savingGuests, setSavingGuests] = useState(false);
   const [savedCount, setSavedCount] = useState<number | null>(null);
   const [deletingDraft, setDeletingDraft] = useState(false);
+
+  const handleEventStatusChange = (eventId: string, status: 'draft' | 'published') => {
+    setEvents((prev) => prev.map((e) => (e.id === eventId ? { ...e, status } : e)));
+    // Unpublished evites have no live RSVP panel, so close it if it was open.
+    if (status !== 'published') setExpandedEventId((open) => (open === eventId ? null : open));
+  };
+
+  const handleEventDeleted = (eventId: string) => {
+    setEvents((prev) => prev.filter((e) => e.id !== eventId));
+    setExpandedEventId((open) => (open === eventId ? null : open));
+    setWebsiteSlugByEvent((prev) => Object.fromEntries(Object.entries(prev).filter(([id]) => id !== eventId)));
+    setBookIdByEvent((prev) => Object.fromEntries(Object.entries(prev).filter(([id]) => id !== eventId)));
+  };
 
   const handleDeleteDraft = async () => {
     if (!draft || deletingDraft) return;
@@ -411,8 +425,8 @@ export default function Dashboard() {
                 {events.map((event) => (
                   <div key={event.id}>
                     {/* Event row */}
-                    <div className="flex items-center gap-3 md:gap-4 px-4 md:px-5 py-4 bg-white/55 border border-[#3d4a35]/10 hover:bg-white/75 transition-colors">
-                      <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-3 md:gap-4 px-4 md:px-5 py-4 bg-white/55 border border-[#3d4a35]/10 hover:bg-white/75 transition-colors">
+                      <div className="flex-1 min-w-[9rem]">
                         <p className="text-sm text-[#2a3328] truncate">{event.title}</p>
                         <p className="font-display text-[9px] tracking-[0.1em] uppercase text-[#5a6c50]/70 mt-0.5">
                           {new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -497,6 +511,11 @@ export default function Dashboard() {
                           </span>
                         </button>
                       )}
+                      <EventManageActions
+                        event={event}
+                        onStatusChange={handleEventStatusChange}
+                        onDeleted={handleEventDeleted}
+                      />
                     </div>
 
                     {/* Expanded panels */}

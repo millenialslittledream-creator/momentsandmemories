@@ -134,6 +134,9 @@ export const api = {
   updateEvent: (eventId: string, data: Record<string, unknown>) =>
     apiFetch<{ id: string }>(`/events/${eventId}`, { method: 'PATCH', body: JSON.stringify(data) }),
 
+  deleteEvent: (eventId: string) =>
+    apiFetch<{ deleted: boolean }>(`/events/${eventId}`, { method: 'DELETE' }),
+
   addInvitees: (eventId: string, invitees: Array<{ name: string; email?: string; phone?: string; source: string }>) =>
     apiFetch<unknown>(`/events/${eventId}/invitees`, { method: 'POST', body: JSON.stringify(invitees) }),
 
