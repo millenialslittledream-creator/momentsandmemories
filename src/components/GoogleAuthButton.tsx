@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import InlineNotice, { type Notice } from "@/components/InlineNotice";
 import { supabase } from "@/lib/supabase";
 import GoogleIcon from "@/components/GoogleIcon";
 import { rememberOAuthRedirect } from "@/lib/authRedirect";
@@ -91,6 +92,11 @@ export default function GoogleAuthButton({ redirectTo, disabled, fallbackClassNa
   const navigate = useNavigate();
   const holder = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<Notice>(null);
+  const fail = (text: string) => {
+    setNotice({ kind: 'error', text });
+    toast.error(text);
+  };
   const [gsiFailed, setGsiFailed] = useState(false);
   const useGsi = Boolean(CLIENT_ID) && !gsiFailed;
 
@@ -117,12 +123,11 @@ export default function GoogleAuthButton({ redirectTo, disabled, fallbackClassNa
               nonce: rawNonce,
             });
             if (error) {
-              toast.error(error.message);
+              fail(error.message);
               setBusy(false);
               return;
             }
-            toast.success("Welcome!");
-            navigate(redirectTo, { replace: true });
+                        navigate(redirectTo, { replace: true });
           },
         });
         gsi.accounts.id.renderButton(el, {
@@ -152,26 +157,30 @@ export default function GoogleAuthButton({ redirectTo, disabled, fallbackClassNa
         options: { redirectTo: `${window.location.origin}${redirectTo}` },
       });
       if (error) {
-        toast.error(error.message);
+        fail(error.message);
         setBusy(false);
       }
     } catch {
-      toast.error("Failed to continue with Google");
+      fail("Failed to continue with Google");
       setBusy(false);
     }
   };
 
   if (useGsi) {
     return (
-      <div
-        ref={holder}
-        aria-busy={busy}
-        className={`w-full flex justify-center min-h-[44px] ${busy || disabled ? "pointer-events-none opacity-60" : ""}`}
-      />
+      <div className="w-full">
+        <div
+          ref={holder}
+          aria-busy={busy}
+          className={`w-full flex justify-center min-h-[44px] ${busy || disabled ? "pointer-events-none opacity-60" : ""}`}
+        />
+        <InlineNotice notice={notice} className="mt-2 text-center" />
+      </div>
     );
   }
 
   return (
+    <div className="w-full">
     <button
       type="button"
       onClick={handleRedirectFlow}
@@ -184,5 +193,7 @@ export default function GoogleAuthButton({ redirectTo, disabled, fallbackClassNa
       <GoogleIcon />
       <span className="font-agatho text-lg text-[#1a2418]">Continue with Google</span>
     </button>
+    <InlineNotice notice={notice} className="mt-2 text-center" />
+    </div>
   );
 }

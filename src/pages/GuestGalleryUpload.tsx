@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import InlineNotice, { type Notice } from '@/components/InlineNotice';
 import MasonryGallery, { type GalleryPhoto } from '@/components/GuestGallery/MasonryGallery';
 
 export default function GuestGalleryUpload() {
@@ -12,6 +13,12 @@ export default function GuestGalleryUpload() {
   const [notFound, setNotFound] = useState(false);
   const [guestName, setGuestName] = useState(() => localStorage.getItem('guestGalleryName') || '');
   const [uploading, setUploading] = useState(false);
+  const [notice, setNotice] = useState<Notice>(null);
+  // Popups are off by default; keep the message on the page so errors are never silent.
+  const say = (kind: 'error' | 'success' | 'info', text: string) => {
+    setNotice({ kind, text });
+    toast[kind](text);
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refreshPhotos = useCallback(() => {
@@ -33,7 +40,7 @@ export default function GuestGalleryUpload() {
     e.target.value = '';
     if (files.length === 0 || !eventId) return;
     if (!guestName.trim()) {
-      toast.error('Add your name first so the host knows who shared it');
+      say('error', 'Add your name first so the host knows who shared it');
       return;
     }
     localStorage.setItem('guestGalleryName', guestName.trim());
@@ -42,10 +49,10 @@ export default function GuestGalleryUpload() {
       for (const file of files) {
         await api.uploadGalleryPhoto(eventId, file, guestName.trim());
       }
-      toast.success(files.length > 1 ? 'Photos shared!' : 'Photo shared!');
+      say('success', files.length > 1 ? 'Photos shared!' : 'Photo shared!');
       refreshPhotos();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Upload failed');
+      say('error', err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setUploading(false);
     }
@@ -94,6 +101,7 @@ export default function GuestGalleryUpload() {
             <span className="material-icons text-base">add_a_photo</span>
             {uploading ? 'Uploading…' : 'Add Photos'}
           </button>
+          <InlineNotice notice={notice} className="mt-3" />
           <input
             ref={fileInputRef}
             type="file"

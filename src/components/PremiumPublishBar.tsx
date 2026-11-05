@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import InlineNotice, { type Notice } from '@/components/InlineNotice';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { hasLocalImages, resolveLocalImages, uploadLocalImage } from '@/lib/premiumImages';
@@ -41,6 +42,12 @@ export default function PremiumPublishBar({
   const [slug, setSlug] = useState(() => slugify(slugSeed) || `${eventKey}-invite`);
   const [published, setPublished] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<Notice>(null);
+  // Popups are off by default; keep the message on the page so errors are never silent.
+  const say = (kind: 'error' | 'success' | 'info', text: string) => {
+    setNotice({ kind, text });
+    toast[kind](text);
+  };
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const seededRef = useRef(false);
   // local image URL -> upload promise, so each picture is uploaded once across autosaves
@@ -96,13 +103,13 @@ export default function PremiumPublishBar({
       return;
     }
     if (!slug) {
-      toast.error('Choose a link first');
+      say('error', 'Choose a link first');
       return;
     }
     setBusy(true);
     try {
       // Upload first: never publish a link whose images only exist in this browser tab.
-      if (hasLocalImages(content)) toast.info('Uploading your images…');
+      if (hasLocalImages(content)) say('info', 'Uploading your images…');
       const uploadedContent = await withUploadedImages();
       if (siteId) {
         await api.updatePremiumSite(siteId, {
@@ -127,9 +134,9 @@ export default function PremiumPublishBar({
       }
       setPublished(true);
       setSaveStatus('saved');
-      toast.success('Your website is live!', { description: publicUrl });
+      say('success', `Your website is live! ${publicUrl}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not publish');
+      say('error', e instanceof Error ? e.message : 'Could not publish');
     } finally {
       setBusy(false);
     }
@@ -143,7 +150,7 @@ export default function PremiumPublishBar({
       setPublished(false);
       toast('Website unpublished', { description: 'Your page is no longer publicly visible.' });
     } catch {
-      toast.error('Could not unpublish');
+      say('error', 'Could not unpublish');
     } finally {
       setBusy(false);
     }
@@ -151,7 +158,7 @@ export default function PremiumPublishBar({
 
   const copyUrl = () => {
     navigator.clipboard.writeText(publicUrl);
-    toast.success('Link copied!');
+    say('success', 'Link copied!');
   };
 
   return (
@@ -204,6 +211,7 @@ export default function PremiumPublishBar({
           </button>
         </>
       )}
+      <InlineNotice notice={notice} />
     </div>
   );
 }

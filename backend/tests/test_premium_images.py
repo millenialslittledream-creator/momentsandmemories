@@ -109,3 +109,9 @@ def test_other_storage_errors_are_not_masked_by_bucket_creation(client, fake_db)
         with pytest.raises(Exception, match="quota exceeded"):
             client.post("/premium-websites/images", headers=ALICE, files={"file": ("a.png", PNG, "image/png")})
     ensure.assert_not_called()
+
+
+def test_blob_rejection_message_tells_the_user_how_to_fix_it(client):
+    r = client.post("/premium-websites", headers=ALICE, json=_site(hero="blob:http://localhost/x"))
+    assert r.status_code == 400
+    assert "not uploaded" in r.json()["detail"] and "Refresh the page" in r.json()["detail"]

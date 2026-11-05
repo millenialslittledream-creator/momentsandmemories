@@ -28,7 +28,7 @@ def _assert_publishable_content(content) -> None:
     if len(json.dumps(content, default=str)) > MAX_CONTENT_CHARS:
         raise ValueError("Site content is too large. Upload images instead of embedding them.")
     if _contains_local_url(content):
-        raise ValueError("Some images were not uploaded, so visitors could not see them. Re-add them and publish again.")
+        raise ValueError("Some images were not uploaded, so visitors could not see them. Refresh the page (Ctrl+Shift+R), re-add the pictures if they disappeared, and publish again.")
 
 
 def _ensure_bucket(db) -> None:

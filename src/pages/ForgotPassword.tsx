@@ -1,17 +1,24 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import InlineNotice, { type Notice } from '@/components/InlineNotice';
 import { supabase } from "@/lib/supabase";
 import PageTransition from "@/components/PageTransition";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [notice, setNotice] = useState<Notice>(null);
+  // Popups are off by default; keep the message on the page so errors are never silent.
+  const say = (kind: 'error' | 'success' | 'info', text: string) => {
+    setNotice({ kind, text });
+    toast[kind](text);
+  };
   const [sent, setSent] = useState(false);
 
   const handleSubmit = async () => {
     if (!email.trim()) {
-      toast.error("Please enter your email");
+      say('error', "Please enter your email");
       return;
     }
     setLoading(true);
@@ -21,14 +28,14 @@ const ForgotPassword = () => {
       });
 
       if (error) {
-        toast.error(error.message);
+        say('error', error.message);
         return;
       }
 
       setSent(true);
-      toast.success("If an account exists, a reset link has been sent.");
+      say('success', "If an account exists, a reset link has been sent.");
     } catch {
-      toast.error("An unexpected error occurred");
+      say('error', "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -102,6 +109,7 @@ const ForgotPassword = () => {
                       onChange={e => setEmail(e.target.value)}
                     />
                   </div>
+                  <InlineNotice notice={notice} />
                   <button
                     type="submit"
                     disabled={loading}

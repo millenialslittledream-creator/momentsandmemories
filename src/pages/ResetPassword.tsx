@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import InlineNotice, { type Notice } from '@/components/InlineNotice';
 import { supabase } from "@/lib/supabase";
 import PageTransition from "@/components/PageTransition";
 
@@ -9,6 +10,12 @@ const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [notice, setNotice] = useState<Notice>(null);
+  // Popups are off by default; keep the message on the page so errors are never silent.
+  const say = (kind: 'error' | 'success' | 'info', text: string) => {
+    setNotice({ kind, text });
+    toast[kind](text);
+  };
   const [showPassword, setShowPassword] = useState(false);
 
   const checks = useMemo(() => ({
@@ -21,11 +28,11 @@ const ResetPassword = () => {
 
   const handleSubmit = async () => {
     if (!allValid) {
-      toast.error("Please meet all password requirements");
+      say('error', "Please meet all password requirements");
       return;
     }
     if (password !== confirmPassword) {
-      toast.error("Passwords don't match");
+      say('error', "Passwords don't match");
       return;
     }
     setLoading(true);
@@ -33,14 +40,14 @@ const ResetPassword = () => {
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) {
-        toast.error(error.message);
+        say('error', error.message);
         return;
       }
 
-      toast.success("Password updated successfully!");
+      say('success', "Password updated successfully!");
       setTimeout(() => navigate("/sign-in"), 1500);
     } catch {
-      toast.error("An unexpected error occurred");
+      say('error', "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -137,6 +144,7 @@ const ResetPassword = () => {
                   ))}
                 </div>
 
+                <InlineNotice notice={notice} />
                 <button
                   type="submit"
                   disabled={loading || !allValid}

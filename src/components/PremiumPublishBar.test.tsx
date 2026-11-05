@@ -60,7 +60,8 @@ describe('PremiumPublishBar image handling', () => {
     renderBar();
     fireEvent.click(screen.getByRole('button', { name: /publish & share/i }));
 
-    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith(expect.stringContaining('no longer available')));
+    // popups are off by default, so the message must also be on the page itself
+    expect(await screen.findByRole('alert')).toHaveTextContent('no longer available');
     expect(mocks.createPremiumSite).not.toHaveBeenCalled();
   });
 

@@ -93,7 +93,8 @@ function App() {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
-          <Toaster position="top-center" richColors />
+          {/* Popups are off by default. Set VITE_SHOW_TOASTS=true to bring them back. */}
+          {import.meta.env.VITE_SHOW_TOASTS === 'true' && <Toaster position="top-center" richColors />}
         </Router>
       </ReactLenis>
     </AuthProvider>

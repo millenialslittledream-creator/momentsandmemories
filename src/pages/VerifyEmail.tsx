@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import InlineNotice, { type Notice } from '@/components/InlineNotice';
 import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/AuthLayout";
 import { getSafeRedirectPath } from "@/lib/authRedirect";
@@ -17,6 +18,12 @@ const VerifyEmail = () => {
 
   const [otp, setOtp] = useState(["", "", "", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
+  const [notice, setNotice] = useState<Notice>(null);
+  // Popups are off by default; keep the message on the page so errors are never silent.
+  const say = (kind: 'error' | 'success' | 'info', text: string) => {
+    setNotice({ kind, text });
+    toast[kind](text);
+  };
   const [success, setSuccess] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(120);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -68,11 +75,11 @@ const VerifyEmail = () => {
   const handleVerify = async () => {
     const code = otp.join("");
     if (code.length < 8) {
-      toast.error("Please enter the full 8-digit code");
+      say('error', "Please enter the full 8-digit code");
       return;
     }
     if (!email) {
-      toast.error("Email not found. Please sign up again.");
+      say('error', "Email not found. Please sign up again.");
       navigate("/sign-up");
       return;
     }
@@ -85,13 +92,13 @@ const VerifyEmail = () => {
       });
 
       if (error) {
-        toast.error(error.message);
+        say('error', error.message);
         return;
       }
 
       setSuccess(true);
       try { sessionStorage.removeItem('mm_pending_signup_email'); } catch { /* storage may be unavailable */ }
-      toast.success("Email verified successfully!");
+      say('success', "Email verified successfully!");
       // verifyOtp establishes a session, so the user is now signed in — send
       // them straight to where they left off (e.g. /create) when we have a
       // resume target; otherwise fall back to sign-in.
@@ -100,7 +107,7 @@ const VerifyEmail = () => {
         2000
       );
     } catch {
-      toast.error("Verification failed. Please try again.");
+      say('error', "Verification failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -115,14 +122,14 @@ const VerifyEmail = () => {
       });
 
       if (error) {
-        toast.error(error.message);
+        say('error', error.message);
         return;
       }
 
       setResendCooldown(120);
-      toast.success("New OTP sent to your email!");
+      say('success', "New OTP sent to your email!");
     } catch {
-      toast.error("Failed to resend OTP");
+      say('error', "Failed to resend OTP");
     }
   };
 
@@ -187,6 +194,7 @@ const VerifyEmail = () => {
                     {resendCooldown > 0 ? formatTime(resendCooldown) : "Ready"}
                   </span>
                 </div>
+                <InlineNotice notice={notice} />
                 <button
                   onClick={handleVerify}
                   disabled={loading}
