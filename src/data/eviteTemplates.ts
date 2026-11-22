@@ -6,7 +6,7 @@ export interface TemplateFieldLayout {
   text?: string;
   prefix?: string;
   suffix?: string;
-  format?: 'longDate' | 'longDateDayFirst' | 'longDateUpper' | 'longDateDayMonth' | 'longDateDayMonthUpper' | 'ordinalDateThenWeekday' | 'ordinalDate' | 'weekdayTitle' | 'weekdayThenDayMonthUpper' | 'weekdayUpper' | 'dayOfMonth' | 'monthYearUpper' | 'dayMonthYearUpper' | 'monthAbbrUpper' | 'yearOnly' | 'firstLetterUpper' | 'firstWord' | 'restOfName' | 'time' | 'time12' | 'raw';
+  format?: 'longDate' | 'longDateDayFirst' | 'longDateUpper' | 'longDateDayMonth' | 'longDateDayMonthUpper' | 'ordinalDateThenWeekday' | 'ordinalDate' | 'weekdayTitle' | 'weekdayThenDayMonthUpper' | 'weekdayUpper' | 'weekdayMonthDayUpper' | 'weekdayAbbrUpper' | 'dayOfMonth' | 'dayOfMonthPadded' | 'monthYearUpper' | 'dayMonthYearUpper' | 'monthAbbrUpper' | 'dayMonthAbbrYearUpper' | 'yearOnly' | 'firstLetterUpper' | 'firstWord' | 'restOfName' | 'time' | 'time12' | 'raw';
   iconBefore?: string;
   iconSize?: number;
   iconGap?: number;
@@ -228,6 +228,29 @@ function babyLayout(fields: TemplateFieldLayout[]): TemplateLayout {
  *  declare the size its coordinates were measured in, or the overlay drifts. */
 function sizedLayout(naturalWidth: number, naturalHeight: number, fields: TemplateFieldLayout[]): TemplateLayout {
   return { naturalWidth, naturalHeight, fields };
+}
+
+/* ==========================================================================
+ * "OTHERS" CONCEPT CARDS (eventType: 'custom')
+ * --------------------------------------------------------------------------
+ * The occasion families the designer supplied as flat invitation cards —
+ * Christmas, Graduation, Pooja (Satyanarayana Katha / Ganapathi Homam) and
+ * Sweet 16. Same measurement approach as the other concept families:
+ *   {n}-preview.jpg  -> the designer's FILLED sample (gallery thumbnail)
+ *   {n}-blank.jpg    -> the SAME artwork with the variable text removed
+ *                       (the editable background / realImage)
+ * We overlay ONLY the host-entered values on top of the baked artwork, in
+ * the blank's own natural pixel space, matching the free-font / colour /
+ * size guidance from each family's "Typography & Design Breakdown" PDF.
+ * ======================================================================== */
+
+/** One overlaid value on an "Others" concept card. Defaults to Montserrat,
+ *  centred, small letter-spaced detail copy (the date/time/venue stack sits
+ *  centred under its icon on every card); every field overrides what it needs. */
+function ox(
+  o: Partial<TemplateFieldLayout> & { x: number; y: number; fontSize: number; color: string }
+): TemplateFieldLayout {
+  return { fontFamily: MS, fontWeight: '500', align: 'center', letterSpacing: 1, liningNums: true, ...o } as TemplateFieldLayout;
 }
 
 const localEviteTemplates: EviteTemplate[] = [
@@ -1899,6 +1922,263 @@ const localEviteTemplates: EviteTemplate[] = [
       ],
     },
   },
+
+  // ── Others · Christmas concept cards (oth-xmas-1 … oth-xmas-6) ───────────
+  // Flat festive cards. Every design prints the same three host values —
+  // DATE (abbreviated stamp + weekday), TIME (+ "ONWARDS") and VENUE — in a
+  // small Montserrat detail row; the title, tagline and ornaments are baked.
+  {
+    id: 'oth-xmas-1', eventType: 'custom', name: 'Green Arch', style: 'Elegant & Botanical',
+    previewImage: '/templates/others/christmas/1-preview.jpg',
+    realImage: '/templates/others/christmas/1-blank.jpg',
+    accent: '#9D2D1F',
+    // 3 centred columns (date · time · venue) under baked calendar/clock/pin icons.
+    layout: sizedLayout(1055, 1491, [
+      ox({ formKey: 'eventDate', format: 'dayMonthAbbrYearUpper', x: 589, y: 1024, fontSize: 20, color: '#3B463F', maxWidth: 200, fitChars: 12 }),
+      ox({ formKey: 'eventDate', format: 'weekdayUpper', x: 589, y: 1047, fontSize: 15, color: '#3B463F', maxWidth: 200 }),
+      ox({ formKey: 'eventTime', format: 'time12', x: 759, y: 1024, fontSize: 20, color: '#3B463F', maxWidth: 160 }),
+      ox({ text: 'ONWARDS', x: 759, y: 1047, fontSize: 15, color: '#3B463F' }),
+      ox({ formKey: 'venue', textTransform: 'uppercase', x: 936, y: 1024, fontSize: 20, color: '#3B463F', maxWidth: 250, lineHeight: 23, wrapAfterChars: 15 }),
+    ]),
+  },
+  {
+    id: 'oth-xmas-2', eventType: 'custom', name: 'Cozy At Home', style: 'Illustrated & Warm',
+    previewImage: '/templates/others/christmas/2-preview.jpg',
+    realImage: '/templates/others/christmas/2-blank.jpg',
+    accent: '#9D2D1F',
+    layout: sizedLayout(1055, 1491, [
+      ox({ formKey: 'eventDate', format: 'dayMonthAbbrYearUpper', x: 632, y: 892, fontSize: 20, color: '#4A3A2E', maxWidth: 200, fitChars: 12 }),
+      ox({ formKey: 'eventDate', format: 'weekdayUpper', x: 632, y: 915, fontSize: 15, color: '#4A3A2E', maxWidth: 200 }),
+      ox({ formKey: 'eventTime', format: 'time12', x: 779, y: 892, fontSize: 20, color: '#4A3A2E', maxWidth: 160 }),
+      ox({ text: 'ONWARDS', x: 779, y: 915, fontSize: 15, color: '#4A3A2E' }),
+      ox({ formKey: 'venue', textTransform: 'uppercase', x: 941, y: 892, fontSize: 20, color: '#4A3A2E', maxWidth: 250, lineHeight: 23, wrapAfterChars: 15 }),
+    ]),
+  },
+  {
+    id: 'oth-xmas-3', eventType: 'custom', name: 'Winter Cottage', style: 'Navy & Gold',
+    previewImage: '/templates/others/christmas/3-preview.jpg',
+    realImage: '/templates/others/christmas/3-blank.jpg',
+    accent: '#E4B75D',
+    // Light ivory ink on the navy panel; this card prints no weekday line.
+    layout: sizedLayout(1055, 1491, [
+      ox({ formKey: 'eventDate', format: 'dayMonthAbbrYearUpper', x: 319, y: 703, fontSize: 20, color: '#ECE2C9', maxWidth: 220, fitChars: 12 }),
+      ox({ formKey: 'eventTime', format: 'time12', x: 527, y: 703, fontSize: 20, color: '#ECE2C9', maxWidth: 170 }),
+      ox({ text: 'ONWARDS', x: 527, y: 727, fontSize: 15, color: '#ECE2C9' }),
+      ox({ formKey: 'venue', textTransform: 'uppercase', x: 749, y: 703, fontSize: 20, color: '#ECE2C9', maxWidth: 300, lineHeight: 24, wrapAfterChars: 16 }),
+    ]),
+  },
+  {
+    id: 'oth-xmas-4', eventType: 'custom', name: 'Golden Fir', style: 'Elegant & Gold',
+    previewImage: '/templates/others/christmas/4-preview.jpg',
+    realImage: '/templates/others/christmas/4-blank.jpg',
+    accent: '#B9873C',
+    // Centred DATE / TIME / VENUE columns under baked labels; venue takes a
+    // name + address, so it wraps across several lines.
+    layout: sizedLayout(1055, 1491, [
+      ox({ formKey: 'eventDate', format: 'dayMonthAbbrYearUpper', x: 440, y: 903, fontSize: 19, color: '#2E2E26', maxWidth: 200, fitChars: 12 }),
+      ox({ formKey: 'eventDate', format: 'weekdayUpper', x: 440, y: 930, fontSize: 14, color: '#2E2E26', maxWidth: 200 }),
+      ox({ formKey: 'eventTime', format: 'time12', x: 650, y: 903, fontSize: 19, color: '#2E2E26', maxWidth: 160 }),
+      ox({ text: 'ONWARDS', x: 650, y: 930, fontSize: 14, color: '#2E2E26' }),
+      ox({ formKey: 'venue', textTransform: 'uppercase', x: 872, y: 903, fontSize: 18, color: '#2E2E26', maxWidth: 320, lineHeight: 27, wrapAfterChars: 18 }),
+    ]),
+  },
+  {
+    id: 'oth-xmas-5', eventType: 'custom', name: 'Jolly Good Time', style: 'Festive & Playful',
+    previewImage: '/templates/others/christmas/5-preview.jpg',
+    realImage: '/templates/others/christmas/5-blank.jpg',
+    accent: '#9D2D1F',
+    layout: sizedLayout(1055, 1491, [
+      ox({ formKey: 'eventDate', format: 'dayMonthAbbrYearUpper', x: 628, y: 974, fontSize: 20, color: '#3A3730', maxWidth: 180, fitChars: 11 }),
+      ox({ formKey: 'eventDate', format: 'weekdayUpper', x: 628, y: 998, fontSize: 15, color: '#3A3730', maxWidth: 180 }),
+      ox({ formKey: 'eventTime', format: 'time12', x: 772, y: 974, fontSize: 20, color: '#3A3730', maxWidth: 160 }),
+      ox({ text: 'ONWARDS', x: 772, y: 1000, fontSize: 15, color: '#3A3730' }),
+      ox({ formKey: 'venue', textTransform: 'uppercase', x: 940, y: 974, fontSize: 20, color: '#3A3730', maxWidth: 250, lineHeight: 23, wrapAfterChars: 15 }),
+    ]),
+  },
+  {
+    id: 'oth-xmas-6', eventType: 'custom', name: 'Snow Globe', style: 'Magical & Classic',
+    previewImage: '/templates/others/christmas/6-preview.jpg',
+    realImage: '/templates/others/christmas/6-blank.jpg',
+    accent: '#9D2D1F',
+    layout: sizedLayout(1055, 1491, [
+      ox({ formKey: 'eventDate', format: 'dayMonthAbbrYearUpper', x: 231, y: 1255, fontSize: 25, fontWeight: '600', color: '#9D2D1F', maxWidth: 230, fitChars: 12 }),
+      ox({ formKey: 'eventDate', format: 'weekdayUpper', x: 231, y: 1289, fontSize: 15, color: '#4A2E22', maxWidth: 230 }),
+      ox({ formKey: 'eventTime', format: 'time12', x: 525, y: 1256, fontSize: 21, color: '#4A2E22', maxWidth: 170 }),
+      ox({ text: 'ONWARDS', x: 525, y: 1289, fontSize: 14, color: '#4A2E22' }),
+      ox({ formKey: 'venue', textTransform: 'uppercase', x: 816, y: 1258, fontSize: 20, color: '#4A2E22', maxWidth: 320, lineHeight: 24, wrapAfterChars: 18 }),
+    ]),
+  },
+
+  // ── Others · Graduation concept cards (oth-grad-1, oth-grad-2) ───────────
+  // Only the two designs whose blanks are fully clean are included; three of
+  // the supplied designs bake the graduate's name into the artwork, so they
+  // can't be personalised and are intentionally left out.
+  {
+    id: 'oth-grad-1', eventType: 'custom', name: 'Gold Editorial', style: 'Editorial & Luxe',
+    previewImage: '/templates/others/graduation/1-preview.jpg',
+    realImage: '/templates/others/graduation/1-blank.jpg',
+    accent: '#C69A45',
+    // Centred serif stack: big date, "AT <time>", venue name + address.
+    layout: sizedLayout(1055, 1491, [
+      ox({ formKey: 'eventDate', format: 'weekdayMonthDayUpper', x: 528, y: 1163, fontSize: 36, fontFamily: CG, fontWeight: '600', letterSpacing: 2, color: '#1A1A1A', maxWidth: 840, fitChars: 20 }),
+      ox({ formKey: 'eventTime', format: 'time12', prefix: 'AT ', x: 528, y: 1218, fontSize: 23, fontFamily: CG, fontWeight: '500', letterSpacing: 3, color: '#1A1A1A', maxWidth: 520 }),
+      ox({ formKey: 'venue', textTransform: 'uppercase', x: 528, y: 1298, fontSize: 24, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#1A1A1A', maxWidth: 840, lineHeight: 38, wrapAfterChars: 28 }),
+    ]),
+  },
+  {
+    id: 'oth-grad-2', eventType: 'custom', name: 'Navy & Gold', style: 'Refined & Celebratory',
+    previewImage: '/templates/others/graduation/5-preview.jpg',
+    realImage: '/templates/others/graduation/5-blank.jpg',
+    accent: '#C99535',
+    // "SAT | 20 | JUNE 2026" stamp + "6:00 PM / ONWARDS", then VENUE + address.
+    layout: sizedLayout(1055, 1491, [
+      ox({ formKey: 'eventDate', format: 'weekdayAbbrUpper', x: 299, y: 1083, fontSize: 22, fontFamily: CG, fontWeight: '600', letterSpacing: 2, color: '#10264A', maxWidth: 180 }),
+      ox({ formKey: 'eventDate', format: 'dayOfMonth', x: 524, y: 1050, fontSize: 46, fontFamily: CG, fontWeight: '700', color: '#10264A', maxWidth: 170 }),
+      ox({ formKey: 'eventDate', format: 'monthYearUpper', x: 524, y: 1123, fontSize: 17, fontFamily: CG, fontWeight: '600', letterSpacing: 2, color: '#10264A', maxWidth: 230, fitChars: 12 }),
+      ox({ formKey: 'eventTime', format: 'time12', x: 739, y: 1072, fontSize: 22, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#10264A', maxWidth: 190 }),
+      ox({ text: 'ONWARDS', x: 739, y: 1107, fontSize: 14, fontFamily: CG, fontWeight: '500', letterSpacing: 2, color: '#10264A' }),
+      ox({ formKey: 'venue', textTransform: 'uppercase', x: 528, y: 1213, fontSize: 20, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#10264A', maxWidth: 780, lineHeight: 29, wrapAfterChars: 30 }),
+    ]),
+  },
+
+  // ── Others · Pooja concept cards (oth-pooja-1 … oth-pooja-5) ─────────────
+  // Satyanarayana Katha + Ganapathi Homam. Baked: Ganesha emblem, invocation,
+  // title, invite lines, "VENUE" label. Variable: a date stamp (weekday · big
+  // day · month-year), time, and the 3-line venue address. b3/b4/b5 also
+  // re-print the occasion line the blank drops.
+  // NOTE: the supplied "Blue Temple" blank (pooja/1) is excluded — its blank
+  // kept baked icon placeholders exactly where the date values sit, so it can't
+  // be used as a clean editable background.
+  {
+    id: 'oth-pooja-2', eventType: 'custom', name: 'Lotus Garden', style: 'Watercolour & Warm',
+    previewImage: '/templates/others/pooja/2-preview.jpg',
+    realImage: '/templates/others/pooja/2-blank.jpg',
+    accent: '#A52C35',
+    layout: sizedLayout(1055, 1491, [
+      ox({ formKey: 'eventDate', format: 'weekdayUpper', align: 'left', x: 513, y: 830, fontSize: 13, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#4A3A2E', maxWidth: 220, fitChars: 11 }),
+      ox({ formKey: 'eventDate', format: 'dayOfMonthPadded', align: 'left', x: 513, y: 848, fontSize: 28, fontFamily: CG, fontWeight: '700', color: '#A52C35', maxWidth: 90 }),
+      ox({ formKey: 'eventDate', format: 'monthYearUpper', align: 'left', x: 585, y: 856, fontSize: 14, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#4A3A2E', maxWidth: 210, fitChars: 12 }),
+      ox({ formKey: 'eventTime', format: 'time12', align: 'left', x: 797, y: 840, fontSize: 16, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#4A3A2E', maxWidth: 190 }),
+      ox({ text: 'ONWARDS', align: 'left', x: 797, y: 868, fontSize: 12, fontFamily: CG, fontWeight: '500', letterSpacing: 2, color: '#4A3A2E' }),
+      ox({ formKey: 'venue', align: 'left', x: 593, y: 961, fontSize: 15, fontFamily: CG, fontWeight: '500', color: '#4A3A2E', maxWidth: 440, lineHeight: 24, wrapAfterChars: 32 }),
+    ]),
+  },
+  {
+    id: 'oth-pooja-3', eventType: 'custom', name: 'Ivory Arch', style: 'Soft & Serene',
+    previewImage: '/templates/others/pooja/3-preview.jpg',
+    realImage: '/templates/others/pooja/3-blank.jpg',
+    accent: '#8B2F28',
+    layout: sizedLayout(1055, 1491, [
+      ox({ text: 'SHRI SATYANARAYANA KATHA', align: 'center', x: 533, y: 626, fontSize: 15, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#8B2F28', maxWidth: 520 }),
+      ox({ formKey: 'eventDate', format: 'weekdayUpper', align: 'left', x: 331, y: 722, fontSize: 13, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#3F5B3C', maxWidth: 200, fitChars: 11 }),
+      ox({ formKey: 'eventDate', format: 'dayOfMonthPadded', align: 'left', x: 335, y: 740, fontSize: 28, fontFamily: CG, fontWeight: '700', color: '#8B2F28', maxWidth: 90 }),
+      ox({ formKey: 'eventDate', format: 'monthYearUpper', align: 'left', x: 410, y: 748, fontSize: 14, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#3F5B3C', maxWidth: 200, fitChars: 12 }),
+      ox({ formKey: 'eventTime', format: 'time12', align: 'left', x: 678, y: 733, fontSize: 16, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#3F5B3C', maxWidth: 180 }),
+      ox({ text: 'ONWARDS', align: 'left', x: 678, y: 760, fontSize: 12, fontFamily: CG, fontWeight: '500', letterSpacing: 2, color: '#3F5B3C' }),
+      ox({ formKey: 'venue', align: 'left', x: 451, y: 870, fontSize: 15, fontFamily: CG, fontWeight: '500', color: '#3F5B3C', maxWidth: 460, lineHeight: 24, wrapAfterChars: 34 }),
+    ]),
+  },
+  {
+    id: 'oth-pooja-4', eventType: 'custom', name: 'South Indian', style: 'Temple & Banana Leaf',
+    previewImage: '/templates/others/pooja/4-preview.jpg',
+    realImage: '/templates/others/pooja/4-blank.jpg',
+    accent: '#8B2F28',
+    layout: sizedLayout(1055, 1491, [
+      ox({ text: 'SHRI SATYANARAYANA KATHA', align: 'center', x: 547, y: 781, fontSize: 15, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#8B2F28', maxWidth: 540 }),
+      ox({ formKey: 'eventDate', format: 'weekdayUpper', align: 'left', x: 356, y: 905, fontSize: 13, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#3F5B3C', maxWidth: 200, fitChars: 11 }),
+      ox({ formKey: 'eventDate', format: 'dayOfMonthPadded', align: 'left', x: 360, y: 923, fontSize: 28, fontFamily: CG, fontWeight: '700', color: '#8B2F28', maxWidth: 90 }),
+      ox({ formKey: 'eventDate', format: 'monthYearUpper', align: 'left', x: 435, y: 931, fontSize: 14, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#3F5B3C', maxWidth: 200, fitChars: 12 }),
+      ox({ formKey: 'eventTime', format: 'time12', align: 'left', x: 690, y: 916, fontSize: 16, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#3F5B3C', maxWidth: 180 }),
+      ox({ text: 'ONWARDS', align: 'left', x: 690, y: 943, fontSize: 12, fontFamily: CG, fontWeight: '500', letterSpacing: 2, color: '#3F5B3C' }),
+      ox({ formKey: 'venue', align: 'left', x: 410, y: 1088, fontSize: 15, fontFamily: CG, fontWeight: '500', color: '#3F5B3C', maxWidth: 520, lineHeight: 24, wrapAfterChars: 36 }),
+    ]),
+  },
+  {
+    id: 'oth-pooja-5', eventType: 'custom', name: 'Banana Leaf', style: 'Ganapathi Homam',
+    previewImage: '/templates/others/pooja/5-preview.jpg',
+    realImage: '/templates/others/pooja/5-blank.jpg',
+    accent: '#C9A646',
+    // Centred gold text on the dark leaf; time reads on one line here.
+    layout: sizedLayout(1055, 1491, [
+      ox({ text: 'GANAPATHI HOMAM', x: 561, y: 826, fontSize: 22, fontFamily: CG, fontWeight: '600', letterSpacing: 3, color: '#E6D3A0', maxWidth: 620 }),
+      ox({ formKey: 'eventDate', format: 'weekdayUpper', x: 363, y: 1000, fontSize: 15, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#E6D3A0', maxWidth: 200, fitChars: 11 }),
+      ox({ formKey: 'eventDate', format: 'dayOfMonthPadded', x: 558, y: 984, fontSize: 34, fontFamily: CG, fontWeight: '700', color: '#E6D3A0', maxWidth: 110 }),
+      ox({ formKey: 'eventDate', format: 'monthYearUpper', x: 753, y: 1000, fontSize: 15, fontFamily: CG, fontWeight: '600', letterSpacing: 1, color: '#E6D3A0', maxWidth: 220, fitChars: 12 }),
+      ox({ formKey: 'eventTime', format: 'time12', suffix: ' ONWARDS', x: 561, y: 1072, fontSize: 16, fontFamily: CG, fontWeight: '600', letterSpacing: 2, color: '#E6D3A0', maxWidth: 440 }),
+      ox({ formKey: 'venue', x: 565, y: 1208, fontSize: 17, fontFamily: CG, fontWeight: '500', color: '#E6D3A0', maxWidth: 620, lineHeight: 34, wrapAfterChars: 34 }),
+    ]),
+  },
+
+  // ── Others · Sweet 16 concept cards (oth-sweet16-1 … oth-sweet16-6) ──────
+  // Baked: "SWEET 16" / "SWEET SIXTEEN", the invite lines + "HONORING" label.
+  // Variable: the honoree's name (collected as the evite identity, relabelled),
+  // plus date, time and venue. Name is set in Playfair (caps cards) or the
+  // Allura script (the "Name Here" cards); details are Montserrat.
+  {
+    id: 'oth-sweet16-1', eventType: 'custom', name: 'Grand Stage', style: 'Theatrical & Navy',
+    previewImage: '/templates/others/sweet16/1-preview.jpg',
+    realImage: '/templates/others/sweet16/1-blank.jpg',
+    accent: '#D6A94F',
+    layout: sizedLayout(1060, 1484, [
+      ox({ formKey: 'eventName', suffix: "’S", textTransform: 'uppercase', x: 531, y: 530, fontSize: 24, fontFamily: 'Playfair Display', fontWeight: '500', letterSpacing: 2, color: '#173B67', maxWidth: 560, fitChars: 15 }),
+      ox({ formKey: 'eventDate', format: 'weekdayMonthDayUpper', x: 531, y: 1037, fontSize: 18, fontWeight: '600', letterSpacing: 1, color: '#173B67', maxWidth: 520, fitChars: 20 }),
+      ox({ formKey: 'eventTime', format: 'time12', prefix: 'AT ', x: 531, y: 1074, fontSize: 15, fontWeight: '500', letterSpacing: 1, color: '#173B67', maxWidth: 320 }),
+      ox({ formKey: 'venue', textTransform: 'uppercase', x: 531, y: 1166, fontSize: 16, fontWeight: '500', color: '#173B67', maxWidth: 560, lineHeight: 24, wrapAfterChars: 28 }),
+    ]),
+  },
+  {
+    id: 'oth-sweet16-2', eventType: 'custom', name: 'Paper Collage', style: 'Blue & Gold Craft',
+    previewImage: '/templates/others/sweet16/2-preview.jpg',
+    realImage: '/templates/others/sweet16/2-blank.jpg',
+    accent: '#E8B94C',
+    layout: sizedLayout(1060, 1484, [
+      ox({ formKey: 'eventName', x: 529, y: 1226, fontSize: 44, fontFamily: 'Allura', fontWeight: '400', color: '#173E78', maxWidth: 560, fitChars: 18 }),
+      ox({ formKey: 'eventDate', format: 'weekdayMonthDayUpper', x: 382, y: 1290, fontSize: 15, fontWeight: '600', letterSpacing: 1, color: '#2E3A50', maxWidth: 260, fitChars: 16 }),
+      ox({ formKey: 'eventTime', format: 'time12', x: 676, y: 1290, fontSize: 15, fontWeight: '600', letterSpacing: 1, color: '#2E3A50', maxWidth: 260 }),
+      ox({ formKey: 'venue', textTransform: 'uppercase', x: 529, y: 1352, fontSize: 14, fontWeight: '500', color: '#2E3A50', maxWidth: 580, lineHeight: 22, wrapAfterChars: 38 }),
+    ]),
+  },
+  {
+    id: 'oth-sweet16-3', eventType: 'custom', name: 'Film Night', style: 'Lavender & Cinema',
+    previewImage: '/templates/others/sweet16/3-preview.jpg',
+    realImage: '/templates/others/sweet16/3-blank.jpg',
+    accent: '#6B4FA0',
+    layout: sizedLayout(1060, 1484, [
+      ox({ formKey: 'eventName', suffix: "’S", textTransform: 'uppercase', x: 534, y: 808, fontSize: 17, fontFamily: 'Playfair Display', fontWeight: '500', letterSpacing: 2, color: '#3A3550', maxWidth: 560, fitChars: 24 }),
+      ox({ formKey: 'eventDate', format: 'weekdayMonthDayUpper', x: 532, y: 1131, fontSize: 17, fontWeight: '600', letterSpacing: 1, color: '#3A3550', maxWidth: 520, fitChars: 20 }),
+      ox({ formKey: 'eventTime', format: 'time12', prefix: 'AT ', x: 530, y: 1181, fontSize: 15, fontWeight: '500', letterSpacing: 1, color: '#3A3550', maxWidth: 320 }),
+      ox({ formKey: 'venue', textTransform: 'uppercase', x: 532, y: 1234, fontSize: 16, fontWeight: '500', color: '#3A3550', maxWidth: 560, lineHeight: 24, wrapAfterChars: 28 }),
+    ]),
+  },
+  {
+    id: 'oth-sweet16-4', eventType: 'custom', name: 'Pastel Collage', style: 'Playful & Pink',
+    previewImage: '/templates/others/sweet16/4-preview.jpg',
+    realImage: '/templates/others/sweet16/4-blank.jpg',
+    accent: '#FC6099',
+    // Script name, then a 3-column footer (date · time · venue).
+    layout: sizedLayout(1060, 1484, [
+      ox({ formKey: 'eventName', textTransform: 'uppercase', x: 530, y: 1192, fontSize: 44, fontFamily: 'Allura', fontWeight: '400', color: '#E84C8A', maxWidth: 560, fitChars: 18 }),
+      ox({ formKey: 'eventDate', format: 'weekdayUpper', x: 231, y: 1310, fontSize: 14, fontWeight: '600', letterSpacing: 1, color: '#505152', maxWidth: 220, fitChars: 12 }),
+      ox({ formKey: 'eventDate', format: 'dayMonthAbbrYearUpper', x: 231, y: 1344, fontSize: 17, fontWeight: '600', letterSpacing: 1, color: '#505152', maxWidth: 230, fitChars: 12 }),
+      ox({ text: 'AT', x: 523, y: 1311, fontSize: 13, fontWeight: '600', letterSpacing: 1, color: '#505152' }),
+      ox({ formKey: 'eventTime', format: 'time12', x: 523, y: 1344, fontSize: 17, fontWeight: '600', letterSpacing: 1, color: '#505152', maxWidth: 200 }),
+      ox({ formKey: 'venue', textTransform: 'uppercase', x: 836, y: 1310, fontSize: 12, fontWeight: '500', color: '#505152', maxWidth: 370, lineHeight: 19, wrapAfterChars: 24 }),
+    ]),
+  },
+  {
+    id: 'oth-sweet16-5', eventType: 'custom', name: 'Fairytale Castle', style: 'Blue & Gold',
+    previewImage: '/templates/others/sweet16/5-preview.jpg',
+    realImage: '/templates/others/sweet16/5-blank.jpg',
+    accent: '#C9A24A',
+    layout: sizedLayout(1060, 1484, [
+      ox({ formKey: 'eventName', suffix: "’S", textTransform: 'uppercase', x: 530, y: 482, fontSize: 22, fontFamily: 'Playfair Display', fontWeight: '500', letterSpacing: 2, color: '#1E3A5F', maxWidth: 560, fitChars: 16 }),
+      ox({ formKey: 'eventDate', format: 'weekdayMonthDayUpper', x: 531, y: 937, fontSize: 18, fontWeight: '600', letterSpacing: 1, color: '#1E3A5F', maxWidth: 520, fitChars: 20 }),
+      ox({ formKey: 'eventTime', format: 'time12', prefix: 'AT ', x: 530, y: 977, fontSize: 15, fontWeight: '500', letterSpacing: 1, color: '#1E3A5F', maxWidth: 320 }),
+      ox({ formKey: 'venue', textTransform: 'uppercase', x: 531, y: 1054, fontSize: 17, fontWeight: '500', color: '#1E3A5F', maxWidth: 560, lineHeight: 25, wrapAfterChars: 28 }),
+    ]),
+  },
+  // NOTE: the supplied "Blush Arch" blank (sweet16/6) is excluded — its blank
+  // kept a baked "VENUE NAME" placeholder, so it isn't a clean background.
 ];
 
 export const eviteTemplates: EviteTemplate[] = localEviteTemplates.map((template) => ({

@@ -189,6 +189,10 @@ const grParentA: EventField = { name: 'fatherName', label: "Celebrant 1 Name", t
 const grParentB: EventField = { name: 'motherName', label: "Celebrant 2 Name", type: 'text', placeholder: 'e.g. Aishwarya', required: true };
 const grSetWithNote = (): EventField[] => [grParentA, grParentB, ...dtv(), bfNote];
 
+// Sweet 16 "Others" cards print the honoree's name; it doubles as the evite
+// identity ('eventName'), so withIdentityFields won't collect it twice.
+const sweetName: EventField = { name: 'eventName', label: "Birthday Honoree's Name", type: 'text', placeholder: 'e.g. Samantha', required: true };
+
 export const EVITE_IDENTITY_FIELD_NAMES = new Set([
   'celebrantName',
   'brideName',
@@ -302,6 +306,34 @@ export const TEMPLATE_FIELD_SETS: Record<string, EventField[]> = {
   'hw-c8': hwDateVenueSet(),
   'hw-c9': [bfHomeowner, bfHostNames, ...dtv(), cf('guestCount'), bfNote],
   'hw-c10': hwDateVenueSet(),
+
+  // Others · Christmas concept cards — each prints only date / time / venue.
+  // The occasion identity (eventName) is prepended by withIdentityFields.
+  'oth-xmas-1': dtv(),
+  'oth-xmas-2': dtv(),
+  'oth-xmas-3': dtv(),
+  'oth-xmas-4': dtv(),
+  'oth-xmas-5': dtv(),
+  'oth-xmas-6': dtv(),
+
+  // Others · Graduation (clean cards only) — date / time / venue.
+  'oth-grad-1': dtv(),
+  'oth-grad-2': dtv(),
+
+  // Others · Pooja — date / time / venue. (pooja-1 excluded: blank not clean.)
+  'oth-pooja-2': dtv(),
+  'oth-pooja-3': dtv(),
+  'oth-pooja-4': dtv(),
+  'oth-pooja-5': dtv(),
+
+  // Others · Sweet 16 — the honoree's name (collected as the evite identity
+  // 'eventName', relabelled) is printed on the card, plus date / time / venue.
+  'oth-sweet16-1': [sweetName, ...dtv()],
+  'oth-sweet16-2': [sweetName, ...dtv()],
+  'oth-sweet16-3': [sweetName, ...dtv()],
+  'oth-sweet16-4': [sweetName, ...dtv()],
+  'oth-sweet16-5': [sweetName, ...dtv()],
+  // oth-sweet16-6 excluded: blank kept a baked "VENUE NAME" placeholder.
 };
 
 // Event types that do NOT collect a Host Name in the editor.

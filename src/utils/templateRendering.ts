@@ -107,6 +107,31 @@ function formatDayOfMonth(dateStr: string): string {
   return String(d.getDate());
 }
 
+// "SATURDAY, JUNE 10" — weekday + month + day, CAPS, no year. The graduation
+// "Others" cards print the date this way (the year is omitted by the artwork).
+function formatWeekdayMonthDayUpper(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return dateStr;
+  const weekday = d.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+  const month = d.toLocaleDateString('en-US', { month: 'long' }).toUpperCase();
+  return `${weekday}, ${month} ${d.getDate()}`;
+}
+
+// "SAT" — abbreviated weekday, CAPS. Pairs with a big dayOfMonth + monthYear
+// for the stacked "SAT | 20 | JUNE 2026" date stamp.
+function formatWeekdayAbbrUpper(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+}
+
+// "06" — zero-padded day of month, for the big numeral in a date stamp.
+function formatDayOfMonthPadded(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return String(d.getDate()).padStart(2, '0');
+}
+
 // "22 JUNE 2025" — day + month + year on one line, no weekday.
 function formatDayMonthYearUpper(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');
@@ -128,6 +153,16 @@ function formatMonthAbbrUpper(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');
   if (Number.isNaN(d.getTime())) return dateStr;
   return d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+}
+
+// "25 DEC 2026" — day + ABBREVIATED month + year on one line, no weekday.
+// Matches the compact date stamp the "Others" event cards (Christmas, etc.)
+// print, where the weekday sits on its own second line.
+function formatDayMonthAbbrYearUpper(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return dateStr;
+  const month = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+  return `${d.getDate()} ${month} ${d.getFullYear()}`;
 }
 
 function formatYearOnly(dateStr: string): string {
@@ -254,14 +289,22 @@ export function formatFieldValue(
     formatted = formatWeekdayThenDayMonthUpper(raw);
   } else if (field.format === 'weekdayUpper') {
     formatted = formatWeekdayUpper(raw);
+  } else if (field.format === 'weekdayMonthDayUpper') {
+    formatted = formatWeekdayMonthDayUpper(raw);
+  } else if (field.format === 'weekdayAbbrUpper') {
+    formatted = formatWeekdayAbbrUpper(raw);
   } else if (field.format === 'dayOfMonth') {
     formatted = formatDayOfMonth(raw);
+  } else if (field.format === 'dayOfMonthPadded') {
+    formatted = formatDayOfMonthPadded(raw);
   } else if (field.format === 'monthYearUpper') {
     formatted = formatMonthYearUpper(raw);
   } else if (field.format === 'dayMonthYearUpper') {
     formatted = formatDayMonthYearUpper(raw);
   } else if (field.format === 'monthAbbrUpper') {
     formatted = formatMonthAbbrUpper(raw);
+  } else if (field.format === 'dayMonthAbbrYearUpper') {
+    formatted = formatDayMonthAbbrYearUpper(raw);
   } else if (field.format === 'yearOnly') {
     formatted = formatYearOnly(raw);
   } else if (field.format === 'time12') {

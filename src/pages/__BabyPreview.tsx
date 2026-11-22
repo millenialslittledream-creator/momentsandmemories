@@ -106,6 +106,42 @@ const GR_SAMPLE: Record<string, string> = {
   customMessage: 'Join us for games, laughter and a big reveal!',
 };
 
+// Others concepts — Christmas (oth-xmas-*). The cards print only
+// date / time / venue, so the sample just needs those; a real Dec date so the
+// derived weekday renders. Per-card overrides match each design's own printed
+// sample where it differs (e.g. the "Jolly Good Time" card's DEC 16 / 2 PM).
+const OTH_SAMPLE: Record<string, string> = {
+  eventName: 'Our Christmas Party',
+  eventDate: '2026-12-25',
+  eventTime: '18:00',
+  timezone: 'IST',
+  venue: 'Add Your Venue, Location Here',
+};
+const OTH_OVERRIDES: Record<string, Record<string, string>> = {
+  'oth-xmas-5': { eventDate: '2026-12-16', eventTime: '14:00', venue: 'River Café, 12 Festive Lane' },
+  'oth-xmas-4': { venue: 'The Grand Oaks Banquet Hall, 123 Celebration Lane, Greenwood' },
+  'oth-grad-1': { eventDate: '2026-06-13', eventTime: '12:00', venue: 'Cedar Falls Restaurant, 351 Riverway Blvd' },
+  'oth-grad-2': { eventDate: '2026-06-20', eventTime: '18:00', venue: 'The Gathering Hall, 123 Celebration Avenue, Riverdale' },
+};
+
+// Sweet 16 cards print the honoree name (eventName) + date / time / venue.
+const SWEET_SAMPLE: Record<string, string> = {
+  eventName: 'Samantha',
+  eventDate: '2026-05-08',
+  eventTime: '19:00',
+  timezone: 'IST',
+  venue: 'Mirabelle Hotel, 123 Celebration Lane, City Name, State 12345',
+};
+
+// Pooja cards print a date stamp + 3-line venue address.
+const POOJA_SAMPLE: Record<string, string> = {
+  eventName: 'Satyanarayana Katha',
+  eventDate: '2026-07-11',
+  eventTime: '09:00',
+  timezone: 'IST',
+  venue: 'Plot No. 42, Sri Venkata Nilayam, Sai Nagar, Medipally, Hyderabad, Telangana 500098',
+};
+
 // `?long=1` swaps in a deliberately long venue + note, so a card that can't
 // take a real-world address without colliding with the baked artwork shows it.
 const LONG: Record<string, string> = {
@@ -130,6 +166,11 @@ const baseSampleFor = (template: (typeof eviteTemplates)[number]) => {
   if (template.eventType === 'marriage') return WED_SAMPLE;
   if (template.eventType === 'housewarming') return HW_SAMPLE;
   if (template.eventType === 'genderreveal') return GR_SAMPLE;
+  if (template.eventType === 'custom') {
+    if (template.id.startsWith('oth-pooja')) return POOJA_SAMPLE;
+    if (template.id.startsWith('oth-sweet16')) return SWEET_SAMPLE;
+    return { ...OTH_SAMPLE, ...(OTH_OVERRIDES[template.id] || {}) };
+  }
   return { ...SAMPLE, ...(OVERRIDES[template.id] || {}) };
 };
 
