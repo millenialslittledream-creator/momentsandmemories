@@ -307,10 +307,9 @@ export default function CreateEvite() {
   );
 
   // Templates filtered by chip. Upload tile is injected as the first item.
-  // 'custom' is special: there are no inherently-custom designs, so we show
-  // every template (any of them can be repurposed for a custom event).
+  // 'custom' ("Others") now has its own dedicated concept cards, so it filters
+  // to those only; it no longer spills every other category's designs in.
   const visibleTemplates = useMemo(() => {
-    if (activeFilter === 'custom') return eviteTemplates;
     return eviteTemplates.filter((t) => t.eventType === activeFilter);
   }, [activeFilter]);
 
