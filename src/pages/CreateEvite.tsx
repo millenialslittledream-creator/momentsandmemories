@@ -1447,7 +1447,7 @@ export default function CreateEvite() {
           <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto scrollbar-subtle">
             <div
               ref={galleryRef}
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 pt-4 pb-6"
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 items-start gap-3 pt-4 pb-6"
             >
               {/* NOTE: the design-method tiles (upload / build-your-own /
                   premade / event-website) intentionally do NOT appear here.
@@ -1461,11 +1461,18 @@ export default function CreateEvite() {
                   onClick={() => openTemplate(t.id)}
                   className="template-card group text-left overflow-hidden bg-[#f7f2e8]/75 border border-[#2a3328]/10 hover:border-[#5f7256]/45 transition-all duration-300 flex flex-col shadow-sm"
                 >
-                  <div className="relative aspect-[9/16] overflow-hidden bg-[#192116]">
+                  <div
+                    className="relative overflow-hidden bg-[#192116]"
+                    style={{
+                      aspectRatio: t.layout
+                        ? `${t.layout.naturalWidth} / ${t.layout.naturalHeight}`
+                        : '9 / 16',
+                    }}
+                  >
                     <img
                       src={t.previewImage}
                       alt={t.name}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-all duration-300 flex items-center justify-center">
