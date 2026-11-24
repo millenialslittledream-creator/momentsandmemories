@@ -188,9 +188,9 @@ export default function PreviewStep({
   const renderCard = () => {
     if (selectedVersion?.kind === 'uploaded') {
       return selectedVersion.type === 'image' ? (
-        <img src={selectedVersion.url} alt="Invitation" className="w-full h-full object-cover" />
+        <img src={selectedVersion.url} alt="Invitation" className="block w-full h-auto" />
       ) : (
-        <video src={selectedVersion.url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+        <video src={selectedVersion.url} autoPlay loop muted playsInline className="block w-full h-auto" />
       );
     }
     if (selectedTemplate?.layout) {
@@ -205,8 +205,8 @@ export default function PreviewStep({
     }
     if (selectedTemplate) {
       return (
-        <div className="relative w-full h-full">
-          <img src={selectedTemplate.previewImage} alt={selectedTemplate.name} className="absolute inset-0 w-full h-full object-cover" />
+        <div className="relative w-full">
+          <img src={selectedTemplate.previewImage} alt={selectedTemplate.name} className="block w-full h-auto" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-end p-4">
             <p className="font-display text-[8px] tracking-[0.25em] uppercase text-white/55 mb-1">You're invited to</p>
             <h4 className="font-serif-exp text-lg text-white leading-tight">{eventTitle}</h4>
@@ -303,7 +303,9 @@ export default function PreviewStep({
             {/* Phone frame */}
             <div data-preserve-theme className="relative w-[190px] flex-shrink-0 rounded-[26px] border-[6px] border-[#0a0f0c] bg-[#0d1512] shadow-2xl overflow-hidden">
               <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-16 h-1 rounded-full bg-black/50 z-10" />
-              <div className="aspect-[9/16] w-full overflow-hidden">{renderCard()}</div>
+              <div className="aspect-[9/16] w-full overflow-hidden flex items-center justify-center">
+                <div className="w-full">{renderCard()}</div>
+              </div>
             </div>
 
             {/* Events in this invitation */}
