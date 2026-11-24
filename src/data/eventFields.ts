@@ -333,7 +333,7 @@ export const TEMPLATE_FIELD_SETS: Record<string, EventField[]> = {
   'oth-sweet16-3': [sweetName, ...dtv()],
   'oth-sweet16-4': [sweetName, ...dtv()],
   'oth-sweet16-5': [sweetName, ...dtv()],
-  // oth-sweet16-6 excluded: blank kept a baked "VENUE NAME" placeholder.
+  'oth-sweet16-6': [sweetName, ...dtv()],
 };
 
 // Event types that do NOT collect a Host Name in the editor.

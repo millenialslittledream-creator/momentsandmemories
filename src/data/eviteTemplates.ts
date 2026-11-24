@@ -2177,8 +2177,23 @@ const localEviteTemplates: EviteTemplate[] = [
       ox({ formKey: 'venue', textTransform: 'uppercase', x: 531, y: 1054, fontSize: 17, fontWeight: '500', color: '#1E3A5F', maxWidth: 560, lineHeight: 25, wrapAfterChars: 28 }),
     ]),
   },
-  // NOTE: the supplied "Blush Arch" blank (sweet16/6) is excluded — its blank
-  // kept a baked "VENUE NAME" placeholder, so it isn't a clean background.
+  {
+    id: 'oth-sweet16-6', eventType: 'custom', name: 'Blush Arch', style: 'Blush & Gold Floral',
+    previewImage: '/templates/others/sweet16/6-preview.jpg',
+    realImage: '/templates/others/sweet16/6-blank.jpg',
+    accent: '#C9A24A',
+    // The baked "VENUE NAME" placeholder was inpainted out of the blank; the
+    // real venue now prints in that slot, matching the designer's "with info"
+    // sample (venue name there, address wrapping below).
+    layout: sizedLayout(1060, 1484, [
+      ox({ formKey: 'eventName', x: 530, y: 752, fontSize: 46, fontFamily: 'Allura', fontWeight: '400', letterSpacing: 0, color: '#71293B', maxWidth: 520, fitChars: 16 }),
+      ox({ formKey: 'eventDate', format: 'weekdayUpper', x: 468, y: 888, fontSize: 15, fontWeight: '600', letterSpacing: 1, color: '#75564E', maxWidth: 230, fitChars: 12 }),
+      ox({ formKey: 'eventDate', format: 'dayMonthAbbrYearUpper', x: 468, y: 926, fontSize: 18, fontWeight: '600', letterSpacing: 1, color: '#75564E', maxWidth: 230, fitChars: 14 }),
+      // "AT" and the divider lines are baked into the artwork — only the time is dynamic.
+      ox({ formKey: 'eventTime', format: 'time12', x: 767, y: 928, fontSize: 18, fontWeight: '600', letterSpacing: 1, color: '#75564E', maxWidth: 200 }),
+      ox({ formKey: 'venue', textTransform: 'uppercase', x: 533, y: 992, fontSize: 16, fontWeight: '500', color: '#75564E', maxWidth: 420, lineHeight: 25, wrapAfterChars: 18, fitChars: 24 }),
+    ]),
+  },
 ];
 
 export const eviteTemplates: EviteTemplate[] = localEviteTemplates.map((template) => ({
